@@ -3,24 +3,25 @@
 
 %%
 %Specifying parameters
-nx = 90;                          %Number of steps in space(x)
-ny = 90;                          %Number of steps in space(y)->in a 90mm plate
-nz = 10;                          %Number of steps in space(z)->10mm depth of plate
-nt = 100;                         %Number of time steps 
+nx = 15;                          %Number of steps in space(x)
+ny = 15;                          %Number of steps in space(y)->in a 90mm plate
+nz = 15;                          %Number of steps in space(z)->10mm depth of plate
+nt = 200;                         %Number of time steps 
 dt = 0.01;                        %Width of each time step
 dx = 1/(nx-1);                    %Width of space step(x)
 dy = 1/(ny-1);                    %Width of space step(y)
 dz = 1/(nz-1);                    %Width of space step(z)
-x = 0:dx:9;                       %Range of x(0,9) and specifying the grid points
-y = 0:dy:9;                       %Range of y(0,9) and specifying the grid points
+x = (0:dx:1)*9;                   %Range of x(0,9) and specifying the grid points
+y = (0:dy:1)*9;                   %Range of y(0,9) and specifying the grid points
+z = (0:dz:1)*1;                   %Range of z(0,1) and specifying the grid points
 u = zeros(nx,ny,nz);              %Preallocating u
 un = zeros(nx,ny,nz);             %Preallocating un
-vis = 0.081;                      %Diffusion coefficient/viscocity   %%%MEK diffiusion coefficient in air
+vis = 0.081*1;                    %Diffusion coefficient/viscocity   %%%MEK diffiusion coefficient in air
 % UW=0;                             %x=0 Dirichlet B.C 
 % UE=0;                             %x=L Dirichlet B.C 
 % US=0;                             %y=0 Dirichlet B.C 
 % UN=0;                             %y=L Dirichlet B.C 
-UnW=0;                            %x=0 Neumann B.C (du/dn=UnW) west
+UnW=0.;                            %x=0 Neumann B.C (du/dn=UnW) west
 UnE=0;                            %x=L Neumann B.C (du/dn=UnE) east
 UnS=0;                            %y=0 Neumann B.C (du/dn=UnS) south
 UnN=0;                            %y=L Neumann B.C (du/dn=UnN) north
@@ -29,18 +30,25 @@ UnD=0;                            %z=L Neumann B.C (du/dn=UnD) down
 %%
 %Initial Conditions
 C0 = 2;  %initial concentration
-X0 = [4.3,4.7,0,0.1];  %butanone plug
-for i=1:nx
-    for j=1:ny
-        for k=1:nz
-            if ((X0(1)<=y(j)) && (y(j)<=X0(2)) && (X0(1)<=x(i)) && (x(i)<=X0(2)) && (X0(3)<=z(k)) && (z(k)<=X0(4)) )
-                u(i,j,k)=C0;
-            else
-                u(i,j,k)=0;
-            end
-        end
-    end
-end
+X0 = [4.,5.,0.0,0.25];  %butanone plug
+% for i=1:nx
+%     for j=1:ny
+%         for k=1:nz
+%             if ((X0(1)<=y(j)) & (y(j)<=X0(2)) & ...
+%                 (X0(1)<=x(i)) & (x(i)<=X0(2)) & ...
+%                 (X0(3)<=z(k)) & (z(k)<=X0(4)) )
+%                 u(i,j,k)=C0;
+%             else
+%                 u(i,j,k)=0;
+%             end
+%         end
+%     end
+% end
+xx = find(X0(1)<=x & X0(2)>=x);
+yy = find(X0(1)<=y & X0(2)>=y);
+zz = find(X0(3)<=z & X0(4)>=z);
+u(xx,yy,zz) = C0;
+
 %%
 %B.C vector
 bc=zeros(nx-2,ny-2,nz-2);
@@ -74,19 +82,24 @@ Az(1,1,1)=-1; Az(nz-2,nz-2,nz-2)=-1;  %Neumann B.C
 % L = L + kron(L1,kron(I,I));
 % A = kron();
 %%
-%Calculating the field variable for each time step
-i=2:nx-1;
-j=2:ny-1;
+%Calculating the field variable for each time step for 3-D diffusion
+figure;
 for it=0:nt
     un=u;
     %h=surf(x,y,squeeze(u(:,:,3))','EdgeColor','none');       %plotting the field variable
-    h=surf(squeeze(u(:,:,8))','EdgeColor','none');       %plotting the field variable
+    %h=surf(squeeze(u(:,:,4))','EdgeColor','none');       %plotting the field variable
+    [X,Y,Z] = ndgrid(1:size(u,1), 1:size(u,2), 1:size(u,3));
+    pointsize = 3;
+    h = scatter3(X(:), Y(:), Z(:), pointsize, u(:));
+    %h = slice(X,Y,Z,u,1,[],[],'nearest');
     shading interp
-    axis ([0 9 0 9 0 2])
-    title({['2-D Diffusion with {\nu} = ',num2str(vis)];['time (\itt) = ',num2str(it*dt)]})
+    %axis ([0 9 0 9 0 2])
+    title({['3-D Diffusion with {\nu} = ',num2str(vis)];['time (\itt) = ',num2str(it*dt)]})
     xlabel('Spatial co-ordinate (x) \rightarrow')
     ylabel('{\leftarrow} Spatial co-ordinate (y)')
     zlabel('Transport property profile (u) \rightarrow')
+    colormap jet
+    colorbar;
     drawnow; 
     refreshdata(h)
     %Uncomment as necessary
@@ -110,9 +123,9 @@ for it=0:nt
     u(:,ny)=u(:,ny-1)+UnN*dy;
     %}
     %Explicit method:{
-    for i=2:size(u,1)-1
-        for j=2:size(u,2)-1
-            for k=2:size(u,3)-1
+    for i=2:nx-1
+        for j=2:ny-1
+            for k=2:nz-1
                 u(i,j,k)=un(i,j,k)+(vis*dt*(un(i+1,j,k)-2*un(i,j,k)+un(i-1,j,k))/(dx*dx))+...
                 (vis*dt*(un(i,j+1,k)-2*un(i,j,k)+un(i,j-1,k))/(dy*dy))+...
             (vis*dt*(un(i,j,k+1)-2*un(i,j,k)+un(i,j,k-1))/(dz*dz));
@@ -126,13 +139,22 @@ for it=0:nt
 %     u(:,1)=US;
 %     u(:,ny)=UN;
     %Neumann:
-    u(1,:,:)=u(2,:,:)-UnW*dx;
-    u(nx,:,:)=u(nx-1,:,:)+UnE*dx;
-    u(:,1,:)=u(:,2,:)-UnS*dy;
-    u(:,ny,:)=u(:,ny-1,:)+UnN*dy;
-    u(:,:,1)=u(:,:,2)-UnU*dz;
-    u(:,:,nz)=u(:,:,nz-1)+UnD*dz;
+%     u(1,:,:)=u(2,:,:)-UnW*dx;
+%     u(nx,:,:)=u(nx-1,:,:)+UnE*dx;
+%     u(:,1,:)=u(:,2,:)-UnS*dy;
+%     u(:,ny,:)=u(:,ny-1,:)+UnN*dy;
+%     u(:,:,1)=u(:,:,2)-UnU*dz;
+%     u(:,:,nz)=u(:,:,nz-1)+UnD*dz;
     %}
+    %modified boundary condition
+    k = 1; %leakage
+    A = -3.5*10^-11;  B = 1/3.19;  %effective evaporation
+    u(1,:,:)=u(2,:,:)-k*u(2,:,:)*dx;
+    u(nx,:,:)=u(nx-1,:,:)+k*u(nx-1,:,:)*dx;
+    u(:,1,:)=u(:,2,:)-k*u(:,2,:)*dy;
+    u(:,ny,:)=u(:,ny-1,:)+k*u(:,ny-1,:)*dy;
+    u(:,:,1)=u(:,:,2)-(A+B*u(:,:,2))*dz;
+    u(:,:,nz)=u(:,:,nz-1)+k*u(:,:,nz-1)*dz;
 end
 
 %%
