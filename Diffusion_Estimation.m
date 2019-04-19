@@ -58,8 +58,8 @@ UnS=0;                           %y=0 Neumann B.C (du/dn=UnS)
 UnN=0;                           %y=L Neumann B.C (du/dn=UnN)
 %%
 %Initial Conditions
-C0 = 2;  %initial concentration
-X0 = [4.3,4.7];  %butanone plug
+C0 = 10;  %initial concentration
+X0 = [4.3,6];  %butanone plug
 for i=1:nx
     for j=1:ny
         if ((X0(1)<=y(j))&&(y(j)<=X0(2))&&(X0(1)<=x(i))&&(x(i)<=X0(2)))
@@ -97,7 +97,7 @@ for it=0:nt
     un=u;
     h=surf(x,y,u','EdgeColor','none');       %plotting the field variable
     shading interp
-    axis ([0 9 0 9 0 2])
+    axis ([0 9 0 9 0 10])
     title({['2-D Diffusion with {\nu} = ',num2str(vis)];['time (\itt) = ',num2str(it*dt)]})
     xlabel('Spatial co-ordinate (x) \rightarrow')
     ylabel('{\leftarrow} Spatial co-ordinate (y)')
