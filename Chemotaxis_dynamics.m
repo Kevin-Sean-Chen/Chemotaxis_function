@@ -3,32 +3,38 @@
 clear
 clc
 %%
-addpath('C:\Users\Kevin\Documents\GitHub\leifer-Behavior-Triggered-Averaging-Tracker\Experimental Analysis')
+addpath('C:\Users\Kevin\Documents\GitHub\leifer-Behavior-Triggered-Averaging-Tracker_new\Experimental Analysis')
 addpath('C:\Users\Kevin\Desktop\Chemotaxis_function')
 
 %batch analysis
-fields_to_load = {'Path','Time','Frames','SmoothSpeed'};
+fields_to_load = {'Path','Time','Frames'};%,'SmoothSpeed','Behaviors'};
 folder_names = getfoldersGUI();
 Tracks = loadtracks(folder_names,fields_to_load);
 
 %% % criteria %%%
+figure
+pix2mm = 1/31.5;
+M = imread('Z:\Kevin\20190817\Data20190817_165031\Frame_000000.jpg');
+imagesc(M,'XData',[0 size(M,2)*pix2mm],'YData',[0 size(M,1)*pix2mm]);
 nn = length(Tracks); %number of worms selected
-mint = 60*1;%60*1; %minimum time in seconds
-minx = 50*1;  %minimum displacement
+mint = 0*1;%60*1; %minimum time in seconds
+minx = 0*1;  %minimum displacement
 disth = 500;  %radius of pixels from target
 target = [2517,975];%[950,1100];%  %position of target/sourse of odorant (approximated from images)
-endingt = 60*15;  %only taking the first few minutes
+endingt = 60*30;  %only taking the first few minutes
 
 %visualize all paths and check criteria
 cand = [];
-figure;
+% figure;
+hold on
 for i = 1:nn
     if Tracks(i).Time(end)-Tracks(i).Time(1) > mint
         if (Tracks(i).Path(:,1)-mean(Tracks(i).Path(:,1))).^2 + (Tracks(i).Path(:,2)-mean(Tracks(i).Path(:,2))).^2 > minx^2
             pos = find(Tracks(i).Time<endingt);
             if isempty(pos)~=1
                 %plot(Tracks(i).Path(pos,1),Tracks(i).Path(pos,2)); %axis([1500,2500,0,2000]); pause();
-                plot(Tracks(i).Path(:,1),Tracks(i).Path(:,2)); %pause();%axis([1500,2500,0,2000]); 
+%                 plot(Tracks(i).Path(:,1),Tracks(i).Path(:,2),'k'); %pause();%axis([1500,2500,0,2000]); 
+                plot(Tracks(i).Path(:,1)*pix2mm,Tracks(i).Path(:,2)*pix2mm,'k');
                 hold on
                 cand = [cand i];
             end
@@ -36,6 +42,9 @@ for i = 1:nn
     end
 end
 
+set(gca,'fontsize',20)
+xlabel('X (mm)')
+ylabel('Y (mm)')
 %% First-passage time measurement
 crossing = 1800;
 timing = [];
@@ -118,7 +127,7 @@ for c = 1:length(cand)
     
     %%%select criteria
     for dd = 1:length(dists)
-        dists(dd) = distance(temp1(dd,:),target);
+        dists(dd) = distance(subs(dd,:),target);
     end
     %if distance(subs(1,:),p2) > 300%disth  &&  distance(subs(1,:),p2) > disth 
     %if isempty(find(dists<disth)) ~= 1  %&&   min(newtime) < 600
@@ -136,25 +145,32 @@ for c = 1:length(cand)
         %ThetaInDegrees = acosd(CosTheta);
         %angs(dd) = angles(vecs(dd,:),target-subs(dd,:)); %ThetaInDegrees;%
         angs(dd) = angles(vecs(dd-1,:),vecs(dd,:));
-        dCs(dd) = Est_con(temp1(dd-1,1),temp1(dd-1,2),target(1),target(2),50);
+        dCs(dd) = Est_con(subs(dd-1,1),subs(dd-1,2),target(1),target(2),50);
     end
     
     %%%for "Pirouttes" frequnecy
     [timestamps,runs] = def_turns(real(angs),p_thr,vecs);
-%     dC = [];
+    dC = [];
 %     for tt = 1:length(timestamps)
 %         dC = [dC Est_con(temp1(timestamps(tt),1),temp1(timestamps(tt),2),target(1),target(2),100)];
 %     end
-    allas = [allas angs];
-    alldC = [alldC dCs];
+    allas = [allas angs(2:end)];
+    alldC = [alldC dCs(2:end)];
     
     end
-    
+    %subplot(121);plot(subs(:,1),subs(:,2)); subplot(122);plot(dCs); pause();
+    %subplot(121);scatter(subs(:,1),subs(:,2),[],1:size(subs,1)); xlim([1250,2500]);ylim([0,1800]); subplot(122);scatter(2:length(dCs),dCs(2:end),[],2:size(dCs,2)); pause();
     
 end
 
 plot(diff(alldC),allas(1:end-1),'o')
 
+%% test kernel
+win = 50;
+allC = zeros(length(alldC)-win,win+1);
+for ii = 1:size(allC,1)
+    allC(ii,:) = alldC(ii:ii+win);%diff(alldC(ii:ii+win))/(alldC(ii)+0.000001);
+end
 %% plot adaptive binning
 bins = 30;
 threshold = 60;
@@ -234,7 +250,7 @@ for c = 1:length(cand)
     
     %%%select criteria
     for dd = 1:length(dists)
-        dists(dd) = distance(temp1(dd,:),target);
+        dists(dd) = distance(subs(dd,:),target);
     end
     %if distance(subs(1,:),p2) > 300%disth  &&  distance(subs(1,:),p2) > disth 
     %if isempty(find(dists<disth)) ~= 1  %&&   min(newtime) < 600
@@ -283,7 +299,7 @@ for c = 1:length(cand)
         %perp_dC = gradient(C0, xx+perp_dir[0], yy+perp_dir[1]) - gradient(C0, xx-perp_dir[0], yy-perp_dir[1])
         
         %forward concentration change
-        dCs(dd) = Est_con(temp1(dd-1,1),temp1(dd-1,2),target(1),target(2),50);
+        dCs(dd) = Est_con(subs(dd-1,1),subs(dd-1,2),target(1),target(2),50);
     end
     
     %%%for "Pirouttes" frequnecy
@@ -343,8 +359,8 @@ errorbar(bis,avang/0.3571,stdang)
 %objective function to minimize: nLL_chemotaxis(THETA, dth, dcp, dc)
 %a_,k_,A_,B_ = THETA
 f = @(x)nLL_chemotaxis(x,allas,alldcp,alldC);
-%[x,fval] = fminunc(f,rand(1,4));%[0,5,0.1,0.1]);
-[x,fval] = fminunc(f,[0.5, 100, 0.5, 50]+rand(1,4));
+[x,fval] = fminunc(f,rand(1,4));%[0,5,0.1,0.1]);
+%[x,fval] = fminunc(f,[0.5, 100, 0.5, 50]+rand(1,4));
 x
 fval
 
