@@ -1,0 +1,18 @@
+%Make_mask
+
+%% load image
+M = imread('Z:\Kevin\20190817\Data20190817_165031\Frame_000000.jpg');
+sx = size(M,2);
+sy = size(M,1);
+center = [sx-1200, sy/2];
+daim = 100;
+
+%% 
+Mask = zeros(size(M));
+for ii = 1:sx
+    for jj = 1:sy
+        if sqrt(sum(([ii,jj]-center).^2)) < diam
+            Mask(ii,jj) = 1;
+        end
+    end
+end

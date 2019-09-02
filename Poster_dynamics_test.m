@@ -56,10 +56,11 @@ plot(xcorr(allSs,alla12s(1,:)))
 win = 100;
 len = 10000;
 xx = hankel(1:len-win, len-win:len);  %design matrix in a time window
-stim = allSs(1:len);
-sinp = sin(phi(1,1:len));
-a3_ = alla12s(3,1:len);
-X = stim(xx);
-ss = sinp(xx);
-aa = a3_(xx);
+stim = allSs(1:len);%-mean(allSs(1:len));
+sinp = sin(phi(1,1:len));%-mean(sin(phi(1,1:len)));
+a3_ = alla12s(1,1:len);%-mean(alla12s(1,1:len));
+X = stim(xx) - repmat(mean(stim(xx),2),1,size(xx,2));
+ss = sinp(xx) - repmat(mean(sinp(xx),2),1,size(xx,2));
+aa = a3_(xx) - repmat(mean(a3_(xx),2),1,size(xx,2));
 
+imagesc(ss'*aa)  %%%triggered covariance of a3 turns

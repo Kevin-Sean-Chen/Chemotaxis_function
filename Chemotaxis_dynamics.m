@@ -1,5 +1,5 @@
 %Chemotaxis_dynamics
-%021419
+%083019
 clear
 clc
 %%
@@ -13,7 +13,7 @@ Tracks = loadtracks(folder_names,fields_to_load);
 
 %% % criteria %%%
 figure
-pix2mm = 1/31.5;
+pix2mm = 1;%/31.5;  %pixel to mm (camera position before the flow chanber setup)
 M = imread('Z:\Kevin\20190817\Data20190817_165031\Frame_000000.jpg');
 imagesc(M,'XData',[0 size(M,2)*pix2mm],'YData',[0 size(M,1)*pix2mm]);
 nn = length(Tracks); %number of worms selected
@@ -28,12 +28,12 @@ cand = [];
 % figure;
 hold on
 for i = 1:nn
-    if Tracks(i).Time(end)-Tracks(i).Time(1) > mint
-        if (Tracks(i).Path(:,1)-mean(Tracks(i).Path(:,1))).^2 + (Tracks(i).Path(:,2)-mean(Tracks(i).Path(:,2))).^2 > minx^2
+    if Tracks(i).Time(end)-Tracks(i).Time(1) > mint  %time cutoff
+        if (Tracks(i).Path(:,1)-mean(Tracks(i).Path(:,1))).^2 + (Tracks(i).Path(:,2)-mean(Tracks(i).Path(:,2))).^2 > minx^2  %space cutoff
             pos = find(Tracks(i).Time<endingt);
             if isempty(pos)~=1
                 %plot(Tracks(i).Path(pos,1),Tracks(i).Path(pos,2)); %axis([1500,2500,0,2000]); pause();
-%                 plot(Tracks(i).Path(:,1),Tracks(i).Path(:,2),'k'); %pause();%axis([1500,2500,0,2000]); 
+                %plot(Tracks(i).Path(:,1),Tracks(i).Path(:,2),'k'); %pause();%axis([1500,2500,0,2000]); 
                 plot(Tracks(i).Path(:,1)*pix2mm,Tracks(i).Path(:,2)*pix2mm,'k');
                 hold on
                 cand = [cand i];
@@ -46,42 +46,42 @@ set(gca,'fontsize',20)
 xlabel('X (mm)')
 ylabel('Y (mm)')
 %% First-passage time measurement
-crossing = 1800;
+crossing = 1800;  %criteria in pixel space
 timing = [];
 figure;
 for c = 1:length(cand)
     pos = find(Tracks(cand(c)).Path(:,1)>crossing);
     if size(pos) ~= 0
-        timing = [timing Tracks(cand(c)).Time(pos(1))];
+        timing = [timing Tracks(cand(c)).Time(pos(1))];  %record the time spent to the first crossing
     end
 end
 hist(timing)
 %% Smoothed speed
 speed = [];
 for i = 1:nn
-    speed = [speed Tracks(i).SmoothSpeed];
+    speed = [speed Tracks(i).SmoothSpeed];  %speed distribution
 end
-
+hist(speed)
 %% approximate diffusion coefficient through time
 partt = 5;
 Mt = 30*60;
-bin_times = [0:Mt/(partt):Mt];
+bin_times = [0:Mt/(partt):Mt];   %time bins
 
 Ds = [];
 for tt = 1:length(bin_times)-1
     sub_tracks = FilterTracksByTime(Tracks,bin_times(tt)*14,bin_times(tt+1)*14);  %Mochi's code to select tracks within a time window
     xsqu = 0;
     for ii = 1:length(sub_tracks)
-        xsqu = xsqu + mean(diff(sub_tracks(ii).Path(:,1)).^2);
+        xsqu = xsqu + mean(diff(sub_tracks(ii).Path(:,1)).^2);  %mean square displacement
     end
     Ds = [Ds xsqu/length(sub_tracks)];
 end
 
+hist(Ds)
 %% approximate diffusion coefficient through space
 partt = 6;
 Mt = 30*60;
-%frame is 1944 X 2592
-bin_space = [2592/2: (2592/2)/partt: 2592];
+bin_space = [2592/2: (2592/2)/partt: 2592];  %spatial bins with frame as 1944 X 2592
 
 Ds = [];
 for xx = 1:length(bin_space)-1
@@ -97,7 +97,7 @@ for xx = 1:length(bin_space)-1
     end
     Ds = [Ds xsqu/tr];
 end
-
+hist(Ds)
 %% %%%%% Peurette
 %% Estimating concentration
 figure;
@@ -165,32 +165,22 @@ end
 
 plot(diff(alldC),allas(1:end-1),'o')
 
-%% test kernel
+%% test with design matrix
 win = 50;
 allC = zeros(length(alldC)-win,win+1);
 for ii = 1:size(allC,1)
     allC(ii,:) = alldC(ii:ii+win);%diff(alldC(ii:ii+win))/(alldC(ii)+0.000001);
 end
+imagesc(cov(allC))  %covariance of the concentration change in a sliding window
 %% plot adaptive binning
-bins = 30;
+bins = 20;
 threshold = 60;
 dC_ = diff(alldC);
 dA_ = allas;
 dA_(isnan(allas)) = 0;
 dA_ = dA_(1:end-1);
-pos = find(abs(dC_)<0.001);
+pos = find(abs(dC_)<0.0001);
 dC_(pos) = [];  dA_(pos) = [];
-
-% [va,id] = sort(dC_);
-% avang = zeros(1,bins);
-% dCbin = zeros(1,bins);
-% numinbin = floor(length(id)/bins);
-% for ii = 1:bins
-%     %avang(ii) = mean(dA_(id((ii-1)*numinbin+1:ii*numinbin)));
-%     avang(ii) = length(find(dA_(id((ii-1)*numinbin+1:ii*numinbin))>threshold));
-%     dCbin(ii) = va(ii*numinbin);
-% end
-% plot(dCbin,avang,'-o')
 
 avang = zeros(1,bins);
 [cts,bis] = hist(dC_,bins);
@@ -205,6 +195,17 @@ plot(bis(avang~=NaN),avang(avang~=NaN),'-o')
 
 % b = glmfit(dC_,dA_,'binomial','link','logit')
 % plot(x, y./n,'o',x,yfit./n,'-','LineWidth',2)
+
+% [va,id] = sort(dC_);
+% avang = zeros(1,bins);
+% dCbin = zeros(1,bins);
+% numinbin = floor(length(id)/bins);
+% for ii = 1:bins
+%     %avang(ii) = mean(dA_(id((ii-1)*numinbin+1:ii*numinbin)));
+%     avang(ii) = length(find(dA_(id((ii-1)*numinbin+1:ii*numinbin))>threshold));
+%     dCbin(ii) = va(ii*numinbin);
+% end
+% plot(dCbin,avang,'-o')
 %% Logistic
 CC = bis;%dCbin; %bis(avang~=0);%
 AA = avang%/max(avang); %avang(avang~=0);%

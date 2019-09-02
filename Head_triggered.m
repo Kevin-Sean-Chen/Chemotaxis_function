@@ -1,7 +1,7 @@
 clear; clc;
 %% Head_triggered
 addpath('C:\Users\Kevin\Documents\GitHub\leifer-Behavior-Triggered-Averaging-Tracker\Experimental Analysis')
-fields_to_load = {'Path','Time','Behaviors','LEDPower','Centerlines','AngSpeed'};
+fields_to_load = {'Path','Time','Behaviors','LEDPower','Centerlines','AngSpeed','ProjectedEigenValues'};
 folder_names = getfoldersGUI();
 Tracks = loadtracks(folder_names,fields_to_load);%(1:3)
 
@@ -79,12 +79,36 @@ for w = 1:5000%nn
     
 end
 
+%% triggered eigen-values!!
+moden = 2;  %the eigen-mode of interest
+nn = length(Tracks);
+thre = 1;  %arbitrary... setting a trigger point larger than 2 std of the time-series
+
+win = 150;  %window around the triggering point
+trigs = [];  %triggering stimuli
+eigdyn = [];  %looking at the eigen-value dynamics
+for w = 1:nn
+    temp = Tracks(w).ProjectedEigenValues;
+    temp = temp(moden,:);
+    stim = Tracks(w).LEDPower;
+    
+    thre_std = zscore(temp);
+    
+    pos = find((thre_std)>thre);  %thresholding conditiond!!!
+    for ii = 1:length(pos)
+        if pos(ii)-win>0 && pos(ii)+win<length(thre_std)
+            trigs = [trigs ; stim(pos(ii)-win:pos(ii)+win)];
+            eigdyn = [eigdyn; thre_std(pos(ii)-50:pos(ii)+50)];
+        end
+    end
+    
+end
 %% %%%%%%%%%%%%%%%%%%%%%%%% path-triggered analysis
 %% visualize paths
 smooth_n = 10;
 for w = 1:100%length(Tracks)
-    w = I(w);
-    %w = randi(length(Tracks));
+%     w = I(w);
+    w = randi(length(Tracks));
     temp = Tracks(w).Path;
     temp(:,1) = smooth(temp(:,1),smooth_n);  temp(:,2) = smooth(temp(:,2),smooth_n);  %%% remove tracking noise
     Pangs = zeros(1,size(temp,1)-1);
