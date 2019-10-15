@@ -13,28 +13,30 @@ Tracks = loadtracks(folder_names,fields_to_load);
 
 %% % criteria %%%
 figure
-pix2mm = 1;%/31.5;  %pixel to mm (camera position before the flow chanber setup)
+pix2mm = 1/31.5;  %pixel to mm (camera position before the flow chanber setup)
 M = imread('Z:\Kevin\20190817\Data20190817_165031\Frame_000000.jpg');
 imagesc(M,'XData',[0 size(M,2)*pix2mm],'YData',[0 size(M,1)*pix2mm]);
 nn = length(Tracks); %number of worms selected
-mint = 0*1;%60*1; %minimum time in seconds
-minx = 0*1;  %minimum displacement
-disth = 500;  %radius of pixels from target
+mint = 60*3;%60*1; %minimum time in seconds
+minx = 30*1;  %minimum displacement (in terms of pixels)
+disth = 300;  %radius of pixels from target
 target = [2517,975];%[950,1100];%  %position of target/sourse of odorant (approximated from images)
-endingt = 60*30;  %only taking the first few minutes
+endingt = 60*15;  %only taking the first few minutes
 
 %visualize all paths and check criteria
 cand = [];
 % figure;
 hold on
+alldists = [];
 for i = 1:nn
     if Tracks(i).Time(end)-Tracks(i).Time(1) > mint  %time cutoff
-        if (Tracks(i).Path(:,1)-mean(Tracks(i).Path(:,1))).^2 + (Tracks(i).Path(:,2)-mean(Tracks(i).Path(:,2))).^2 > minx^2  %space cutoff
-            pos = find(Tracks(i).Time<endingt);
+        displace = mean((Tracks(i).Path(:,1)-mean(Tracks(i).Path(:,1))).^2 + (Tracks(i).Path(:,2)-mean(Tracks(i).Path(:,2))).^2); 
+        alldists = [alldists displace*pix2mm^2];
+        if displace > minx^2  %space cutoff
+            pos = find(Tracks(i).Time>endingt);
             if isempty(pos)~=1
-                %plot(Tracks(i).Path(pos,1),Tracks(i).Path(pos,2)); %axis([1500,2500,0,2000]); pause();
-                %plot(Tracks(i).Path(:,1),Tracks(i).Path(:,2),'k'); %pause();%axis([1500,2500,0,2000]); 
-                plot(Tracks(i).Path(:,1)*pix2mm,Tracks(i).Path(:,2)*pix2mm,'k');
+                plot(Tracks(i).Path(pos,1)*pix2mm,Tracks(i).Path(pos,2)*pix2mm,'k');  %pause();%axis([1500,2500,0,2000]); 
+%                 plot(Tracks(i).Path(:,1)*pix2mm,Tracks(i).Path(:,2)*pix2mm,'k');  %pause();%axis([1500,2500,0,2000]); 
                 hold on
                 cand = [cand i];
             end
@@ -173,7 +175,7 @@ for ii = 1:size(allC,1)
 end
 imagesc(cov(allC))  %covariance of the concentration change in a sliding window
 %% plot adaptive binning
-bins = 20;
+bins = 100;
 threshold = 60;
 dC_ = diff(alldC);
 dA_ = allas;
@@ -219,6 +221,14 @@ yfit = glmval(b,xx,'logit');
 plot(xx,yfit,'-')
 hold on
 plot(CC,AA,'ro')
+
+%% or ignore the binning part and fit directly to binary data
+[b,dev,stats] = glmfit(diff(alldC), temp_turn(1:end-1)', 'binomial', 'link', 'logit')
+xx = linspace(min(CC), max(CC), 30);
+yfit = glmval(b,xx,'logit');
+plot(xx,yfit,'-')
+hold on
+plot(diff(alldC),temp_turn(1:end-1),'ro')
 
 %% %%%%% Weathervaning
 %% %%%%%
@@ -359,9 +369,9 @@ errorbar(bis,avang/0.3571,stdang)
 %% Log-Likelihood method
 %objective function to minimize: nLL_chemotaxis(THETA, dth, dcp, dc)
 %a_,k_,A_,B_ = THETA
-f = @(x)nLL_chemotaxis(x,allas,alldcp,alldC);
-[x,fval] = fminunc(f,rand(1,4));%[0,5,0.1,0.1]);
-%[x,fval] = fminunc(f,[0.5, 100, 0.5, 50]+rand(1,4));
+f = @(x)nLL_chemotaxis(x,allas(1:end-1),alldcp(1:end-1),diff(alldC));
+%[x,fval] = fminunc(f,rand(1,4));%[0,5,0.1,0.1]);
+[x,fval] = fminunc(f,[0.5, 10, 0.5, 50]+rand(1,4));
 x
 fval
 
@@ -371,14 +381,14 @@ figure;
 alpha = x(1);  kappa = (1/x(2))^0.5*(180/pi);  A = x(3);  B = x(4);
 %alpha = 1.1;  kappa = 0.1*(180/pi);  A = 0.4;  B = 20;
 test = [];
-C0 = 50000000;
+C0 = 100000;
 origin = [target(1)/2,target(2)];%[0,0];
 target2 = target-[100,0];%origin+[500,0];%-[target(1)/2,target(2)];
-for rep = 1:20
+for rep = 1:30
     
-T = 1000;
+T = 1500;
 dt = 1;
-vm = 2.5;  %should be adjusted with the velocity statistics~~
+vm = 5.0;  %should be adjusted with the velocity statistics~~ this is approximately 0.2mm X 
 vs = 0.5;
 tracks = zeros(T,2);
 tracks(1,:) = origin; %initial position
