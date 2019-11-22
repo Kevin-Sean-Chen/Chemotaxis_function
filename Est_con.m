@@ -4,7 +4,7 @@ function [X] = Est_con(x,y,x0,y0,C0)
 %origin x0,y0 and factor C0
 
 %C0 = 0.2;
-D = 0.000015;
+D = 1.5*1e-3;
 duT = 60*60*100;
 d = 0.18;
 %2-D diffusion

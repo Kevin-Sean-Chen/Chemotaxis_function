@@ -1,4 +1,7 @@
 %Chemotaxis_dynamics
+%%%
+% test with inference on turning rate and bearing angle in this script
+%%%
 %083019
 clear
 clc
@@ -7,35 +10,44 @@ addpath('C:\Users\Kevin\Documents\GitHub\leifer-Behavior-Triggered-Averaging-Tra
 addpath('C:\Users\Kevin\Desktop\Chemotaxis_function')
 
 %batch analysis
-fields_to_load = {'Path','Time','Frames'};%,'SmoothSpeed','Behaviors'};
+fields_to_load = {'Path','Time','Frames','SmoothSpeed'};%,'Behaviors'};
 folder_names = getfoldersGUI();
 Tracks = loadtracks(folder_names,fields_to_load);
 
 %% % criteria %%%
-figure
-pix2mm = 1/31.5;  %pixel to mm (camera position before the flow chanber setup)
+figure();
 M = imread('Z:\Kevin\20190817\Data20190817_165031\Frame_000000.jpg');
+% M = imread('Z:\Kevin\20191113_GWN_N2_naive\Data20191113_140408\Frame_000000.jpg');
+pix2mm = 1/16.5;
+% pix2mm = 1;%1/31.5;  %pixel to mm (camera position before the flow chanber setup) %%%16.5 for new camera and 31.5 for old one
 imagesc(M,'XData',[0 size(M,2)*pix2mm],'YData',[0 size(M,1)*pix2mm]);
 nn = length(Tracks); %number of worms selected
-mint = 60*3;%60*1; %minimum time in seconds
-minx = 30*1;  %minimum displacement (in terms of pixels)
+mint = 60*1;%60*1; %minimum time in seconds
+minx = 100*1;  %minimum displacement (in terms of pixels)
 disth = 300;  %radius of pixels from target
-target = [2517,975];%[950,1100];%  %position of target/sourse of odorant (approximated from images)
-endingt = 60*15;  %only taking the first few minutes
+target = [2517,975];%[950,1100];%  %position of target/sourse of odorant (approximated from images)%[250,1750];%
+endingt = 60*30;  %only taking the first few minutes
 
 %visualize all paths and check criteria
 cand = [];
 % figure;
 hold on
 alldists = [];
+filt = 14;  %filtering time window
+poly_degree = 3;  %polynomial fit for the tracks
 for i = 1:nn
     if Tracks(i).Time(end)-Tracks(i).Time(1) > mint  %time cutoff
         displace = mean((Tracks(i).Path(:,1)-mean(Tracks(i).Path(:,1))).^2 + (Tracks(i).Path(:,2)-mean(Tracks(i).Path(:,2))).^2); 
         alldists = [alldists displace*pix2mm^2];
         if displace > minx^2  %space cutoff
-            pos = find(Tracks(i).Time>endingt);
+            pos = find(Tracks(i).Time<endingt);
             if isempty(pos)~=1
-                plot(Tracks(i).Path(pos,1)*pix2mm,Tracks(i).Path(pos,2)*pix2mm,'k');  %pause();%axis([1500,2500,0,2000]); 
+                temp = Tracks(i).Path;
+                temp1 = zeros(round(size(temp,1)/1),2);
+                temp1(:,1) = smooth(temp(1:round(length(temp)/1),1), filt,'sgolay',poly_degree);
+                temp1(:,2) = smooth(temp(1:round(length(temp)/1),2), filt,'sgolay',poly_degree);
+                plot(temp1(:,1)*pix2mm, temp1(:,2)*pix2mm,'k'); %pause();%axis([1500,2500,0,2000]); 
+%                 plot(Tracks(i).Path(pos,1)*pix2mm,Tracks(i).Path(pos,2)*pix2mm,'k');  %pause();%axis([1500,2500,0,2000]); 
 %                 plot(Tracks(i).Path(:,1)*pix2mm,Tracks(i).Path(:,2)*pix2mm,'k');  %pause();%axis([1500,2500,0,2000]); 
                 hold on
                 cand = [cand i];
@@ -48,7 +60,7 @@ set(gca,'fontsize',20)
 xlabel('X (mm)')
 ylabel('Y (mm)')
 %% First-passage time measurement
-crossing = 1800;  %criteria in pixel space
+crossing = 250;  %criteria in pixel space
 timing = [];
 figure;
 for c = 1:length(cand)
@@ -103,9 +115,10 @@ hist(Ds)
 %% %%%%% Peurette
 %% Estimating concentration
 figure;
-bin = 5;
-filt = 7;
-p_thr = 60;
+bin = 1;  %bin for subsampling
+filt = 14;  %filtering time window
+poly_degree = 3;  %polynomial fit for the tracks
+p_thr = 60;  %threshold of turning angle to define discrete events
 ct = 0;
 allas = [];
 alldC = [];
@@ -117,8 +130,10 @@ for c = 1:length(cand)
     id = cand(c);
     temp = Tracks(id).Path;
     temp1 = zeros(round(size(temp,1)/1),2);
-    temp1(:,1) = smooth(temp(1:round(length(temp)/1),1),filt);
-    temp1(:,2) = smooth(temp(1:round(length(temp)/1),2),filt);
+%     temp1(:,1) = smooth(temp(1:round(length(temp)/1),1),filt);
+%     temp1(:,2) = smooth(temp(1:round(length(temp)/1),2),filt);
+    temp1(:,1) = smooth(temp(1:round(length(temp)/1),1), filt,'sgolay',poly_degree);
+    temp1(:,2) = smooth(temp(1:round(length(temp)/1),2), filt,'sgolay',poly_degree);
     temp2 = Tracks(id).Time;
     subs = temp1(1:bin:end,:);
     newtime = temp2(1:bin:end);
@@ -134,7 +149,7 @@ for c = 1:length(cand)
     %if distance(subs(1,:),p2) > 300%disth  &&  distance(subs(1,:),p2) > disth 
     %if isempty(find(dists<disth)) ~= 1  %&&   min(newtime) < 600
         ct = ct +1;
-    %if sqrt((p1(1)-p2(1))^2 + (p1(2)-p2(2))^2) < 300 && sqrt((p1(1)-p2(1))^2 + (p1(2)-p2(2))^2) > 300%dist
+%     if sqrt((p1(1)-p2(1))^2 + (p1(2)-p2(2))^2) < 300 && sqrt((p1(1)-p2(1))^2 + (p1(2)-p2(2))^2) > 300%dist
     %if newtime(1)<60*30  &&  distance(p1,p2) > 300  %newtime(1)> 60*5
     if 1==1
 %     if length(find(temp1(:,2)>1000)) < length(find(temp1(:,2)<1000))  %approximately the gradient front~~
@@ -165,7 +180,9 @@ for c = 1:length(cand)
     
 end
 
-plot(diff(alldC),allas(1:end-1),'o')
+% plot(diff(alldC),allas(1:end-1),'o')
+plot((alldC),allas(1:end),'o')
+
 
 %% test with design matrix
 win = 50;
@@ -192,7 +209,7 @@ for bi = 2:length(bis)
         avang(bi) = length(dA_(pos)>threshold)/(length(pos)+1);%%mean(dA_(pos));%
     end
 end
-plot(bis(avang~=NaN),avang(avang~=NaN),'-o')
+plot(bis(find(isnan(avang)==0)),avang(find(isnan(avang)==0)),'-o')
 %plot(bis(avang~=0),avang(avang~=0),'-o')
 
 % b = glmfit(dC_,dA_,'binomial','link','logit')
@@ -233,14 +250,15 @@ plot(diff(alldC),temp_turn(1:end-1),'ro')
 %% %%%%% Weathervaning
 %% %%%%%
 figure;
-bin = 5;
-filt = 7;
-p_thr = 50;
+bin = 7;
+filt = 30;
+p_thr = 60;
 ct = 0;
 allas = [];
 alldB = [];
 alldcp = [];
 alldC = [];
+alldis = [];
 
 timelim = 60*10;
 
@@ -249,12 +267,12 @@ for c = 1:length(cand)
     id = cand(c);
     temp = Tracks(id).Path;
     temp1 = zeros(round(size(temp,1)/1),2);
-    temp1(:,1) = smooth(temp(1:round(length(temp)/1),1),filt);
-    temp1(:,2) = smooth(temp(1:round(length(temp)/1),2),filt);
+    temp1(:,1) = smooth(temp(1:round(length(temp)/1),1), filt,'sgolay',poly_degree);
+    temp1(:,2) = smooth(temp(1:round(length(temp)/1),2), filt,'sgolay',poly_degree);
     temp2 = Tracks(id).Time;
     subs = temp1(1:bin:end,:);
     newtime = temp2(1:bin:end);
-    vecs = [[0,0]; diff(subs)];
+    vecs = diff(subs);%[[0,0]; diff(subs)];
     newtime = newtime(1:size(vecs,1));
     dists = zeros(1,size(subs,1));
     angs = zeros(1,size(vecs,1));    
@@ -272,38 +290,44 @@ for c = 1:length(cand)
 %     if length(find(temp1(:,2)>1000)) < length(find(temp1(:,2)<1000))  %approximately the gradient front~~
         
 
-    %%%for angle
+    %%%for time step calculations
     dBs = zeros(1,size(vecs,1));
     dCp = zeros(1,size(vecs,1));
     dCs = zeros(1,size(vecs,1));
+    dds = zeros(1,size(vecs,1));
     for dd = 2:length(angs)
         %CosTheta = dot(vecs(dd,:),(target-subs(dd,:)))/(norm(vecs(dd,:))*norm((target-subs(dd,:))));
         %ThetaInDegrees = acosd(CosTheta);
         %angs(dd) = angles(vecs(dd,:),target-subs(dd,:)); %ThetaInDegrees;
         %angs(dd) = angles(vecs(dd-1,:),vecs(dd,:)) / norm(vecs(dd-1));
         %%%complex plan method
-        v1 = vecs(dd-1,:)/norm(vecs(dd-1,:));
-        v2 = vecs(dd,:)/norm(vecs(dd,:));
-        tempz1 = [v1(1)+v1(2)*(-1)^0.5];
-        tempz2 = [v2(1)+v2(2)*(-1)^0.5];  %complex plane representation
-        angs(dd) =  sign(angle(tempz1)-angle(tempz2))*(angles(vecs(dd-1,:),vecs(dd,:)) / norm(vecs(dd-1)));  %
+%         v1 = vecs(dd-1,:)/norm(vecs(dd-1,:));
+%         v2 = vecs(dd,:)/norm(vecs(dd,:));
+%         tempz1 = [v1(1)+v1(2)*(-1)^0.5];
+%         tempz2 = [v2(1)+v2(2)*(-1)^0.5];  %complex plane representation
+%         angs(dd) =  sign(angle(tempz1)-angle(tempz2))*(angles(vecs(dd-1,:),vecs(dd,:)) / norm(vecs(dd-1)));  %
+        %%%angle function
+%         angs(dd) = angles(vecs(dd-1,:)/norm(vecs(dd-1,:)),vecs(dd,:)/norm(vecs(dd,:)));
+        angs(dd) = angles(vecs(dd-1,:)/norm(vecs(dd-1,:)),vecs(dd,:)/norm(vecs(dd,:)))/norm(vecs(dd,:));  %curving rate?
         %%%asin method
         %angs(dd) = ...%sign( asin( dot( vecs(dd-1,:)/norm(vecs(dd-1,:)) , (vecs(dd-1,:)-vecs(dd,:))/norm(vecs(dd-1,:)-vecs(dd,:)) ) ) )*...
         %    (angles(vecs(dd-1,:),vecs(dd,:)) / norm(vecs(dd-1)));  %curving rate
         %if isreal(angs(dd))~=1
         %    break
         %end
-        v1 = vecs(dd-1,:)/norm(vecs(dd-1,:));
-        v2 =(subs(dd,:) - target)/norm(subs(dd,:) - target);
-        tempz1 = [v1(1)+v1(2)*(-1)^0.5];
-        tempz2 = [v2(1)+v2(2)*(-1)^0.5];  %complex plane representation
-        dBs(dd) = sign(angle(tempz1)-angle(tempz2))*(angles(vecs(dd-1,:),(subs(dd,:) - target)));  %+/- angle to the targetarcsin(1/sqrt(2))
+%         v1 = vecs(dd-1,:)/norm(vecs(dd-1,:));
+%         v2 =(subs(dd,:) - target)/norm(subs(dd,:) - target);
+%         tempz1 = [v1(1)+v1(2)*(-1)^0.5];
+%         tempz2 = [v2(1)+v2(2)*(-1)^0.5];  %complex plane representation
+%         dBs(dd) = sign(angle(tempz1)-angle(tempz2))*(angles(vecs(dd-1,:),(subs(dd,:) - target)));  %+/- angle to the targetarcsin(1/sqrt(2))
+%         dBs(dd) = angles(vecs(dd,:)/norm(vecs(dd,:)),(target-subs(dd-1,:))/norm(subs(dd-1,:)-target));
+        dBs(dd) = angles(vecs(dd,:)/norm(vecs(dd,:)),(subs(dd-1,:)-target)/norm(subs(dd-1,:)-target));
         
         %perpendicular concentration change
         perp_dir = [-vecs(dd-1,2), vecs(dd-1,1)];
         perp_dir = perp_dir/norm(perp_dir);
         dCp(dd) = Est_con(subs(dd-1,1)+perp_dir(1)*1., subs(dd-1,2)+perp_dir(2)*1, target(1), target(2), 50)...
-            -Est_con(subs(dd-1,1)-perp_dir(1)*1, subs(dd-1,2)-perp_dir(2)*1, target(1), target(2), 50);
+                  -Est_con(subs(dd-1,1)-perp_dir(1)*1, subs(dd-1,2)-perp_dir(2)*1, target(1), target(2), 50);
         %(temp1(dd-1,1),temp1(dd-1,2),target(1),target(2),50)
         %perp_dir = np.array([-dxy[1], dxy[0]])
         %perp_dir = perp_dir/np.linalg.norm(perp_dir)
@@ -311,11 +335,14 @@ for c = 1:length(cand)
         
         %forward concentration change
         dCs(dd) = Est_con(subs(dd-1,1),subs(dd-1,2),target(1),target(2),50);
+        
+        %%%check displacement
+        dds(dd) = norm(vecs(dd,:));
     end
     
     %%%for "Pirouttes" frequnecy
     [timestamps,runs] = def_turns(abs(real(angs)),p_thr,vecs);
-    %%%remival
+    %%%removal
 %     angs(timestamps) = [];
 %     dBs(timestamps) = [];
 %     dCp(timestamps) = [];
@@ -330,6 +357,7 @@ for c = 1:length(cand)
     alldB = [alldB dBs];
     alldcp = [alldcp dCp];
     alldC = [alldC dCs];
+    alldis = [alldis dds];  %displacement (effective velocity)
     
     end
     
@@ -337,23 +365,33 @@ for c = 1:length(cand)
 end
 
 %%%
-rem = find(abs(allas)>360);
-allas(rem) = [];
-alldB(rem) = [];
-alldcp(rem) = [];
-alldC(rem) = [];
+% rem = find(abs(allas)>360);
+% allas(rem) = [];
+% alldB(rem) = [];
+% alldcp(rem) = [];
+% alldC(rem) = [];
 plot(alldB,allas,'o')
 figure; plot(alldcp,allas,'o')
+% histogram(alldis)
+
+%% removing small jitterings (test)
+vec_threshold = 0.15;%median(alldis);
+vec_marks = find(alldis>vec_threshold);
+
+
 %% plot adaptive binning
-bins = 100;
-dC_ = alldB;
-dA_ = allas;
+bins = 50;
+dC_ = alldB(vec_marks);
+dA_ = allas(vec_marks);
 
 avang = zeros(1,bins);
 stdang = zeros(1,bins);
-[cts,bis] = hist(dC_,bins);
+h = histogram(dC_,bins);
+cts = h.Values;
+bis = h.BinEdges(1:end-1);
 for bi = 2:length(bis)
-    pos = find(bis(bi-1)<dC_ & bis(bi)>dC_);
+    pos = intersect(find(bis(bi-1)<dC_),find((bis(bi)>=dC_)));
+%     pos = find((bis(bi-1)<dC_) & (bis(bi)>dC_));
     if isempty(pos)~=1
         avang(bi) = mean(dA_(pos));%length(dA_(pos)>threshold);%/(length(pos)+1);%
         stdang(bi) = std(dA_(pos));

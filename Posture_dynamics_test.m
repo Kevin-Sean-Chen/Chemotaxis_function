@@ -64,3 +64,7 @@ ss = sinp(xx) - repmat(mean(sinp(xx),2),1,size(xx,2));
 aa = a3_(xx) - repmat(mean(a3_(xx),2),1,size(xx,2));
 
 imagesc(ss'*aa)  %%%triggered covariance of a3 turns
+
+%% build Langevin forcing landscape!!
+
+
