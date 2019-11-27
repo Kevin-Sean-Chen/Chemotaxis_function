@@ -1,4 +1,8 @@
 %Pirouettes_analysis
+%%%
+%Following the original Pirouette paper: detect turns, measure intervels to
+%find runs, and check with angular correlations
+%%%
 %101419
 clear
 clc
@@ -13,16 +17,16 @@ Tracks = loadtracks(folder_names,fields_to_load);
 
 %% pre-processing
 figure;
-% M = imread('Z:\Kevin\20190817\Data20190817_165031\Frame_000000.jpg');
-M = imread('Z:\Kevin\20191113_GWN_N2_naive\Data20191113_140408\Frame_000000.jpg');
-pix2mm = 1/16.5;  %1/31.5;  %pixel to mm (camera position before the flow chanber setup) %%%16.5 for new camera and 31.5 for old one
+M = imread('Z:\Kevin\20190817\Data20190817_165031\Frame_000000.jpg');
+% M = imread('Z:\Kevin\20191113_GWN_N2_naive\Data20191113_140408\Frame_000000.jpg');
+pix2mm = 1/31.5;  %pixel to mm (camera position before the flow chanber setup) %%%16.5 for new camera and 31.5 for old one
 imagesc(M,'XData',[0 size(M,2)*pix2mm],'YData',[0 size(M,1)*pix2mm]);
 
 poly_degree = 3;  %polynomial fitting for moving window
 filt = 15;  %window the path (has to be odd because it is +/- points around the center)
 fr = 1/14;  %1/14 seconds between each frame  (~0.0714 second for each frame)
 nn = length(Tracks); %number of worms selected
-mint = 60*1; %minimum time in seconds
+mint = 60*3; %minimum time in seconds
 minx = 100;  %minimum displacement (in terms of pixels)
 target = [2517,975];  %position of target/sourse of odorant (approximated from images)
 endingt = 60*15;  %only taking the first few minutes

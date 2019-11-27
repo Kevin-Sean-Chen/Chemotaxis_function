@@ -1,6 +1,17 @@
 %Negative Log-likelihood for chemotaxis
 function [NLL] = nLL_chemotaxis(THETA, dth, dcp, dc)
-
+    a_ = THETA(1);
+    K_ = THETA(2);
+    A_ = THETA(3);
+    B_ = THETA(4);
+    
+    d2r = pi/180;
+    P = A_./(1+exp(B_*dc));  %sigmoid(A_,B_,dc); 
+    C = 1/(2*pi*besseli(0,K_));
+    VM = C * exp(K_*cos((dth-a_*dcp)*d2r));  %von Mises distribution
+    %%%plot(dth,VM,'o') #check VM shape
+    marginalP = (1-P).*VM + (1/(2*pi))*P;  %marginalized probability
+    NLL = -nansum(log(marginalP + 1e-8));
 end
 
 % def nLL(THETA, dth,dcp,dc):

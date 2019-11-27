@@ -6,7 +6,7 @@
 clear
 clc
 %%
-addpath('C:\Users\Kevin\Documents\GitHub\leifer-Behavior-Triggered-Averaging-Tracker_new\Experimental Analysis')
+addpath('C:\Users\Kevin\Documents\GitHub\leifer-Behavior-Triggered-Averaging-Tracker\Experimental Analysis')
 addpath('C:\Users\Kevin\Desktop\Chemotaxis_function')
 
 %batch analysis
@@ -17,15 +17,15 @@ Tracks = loadtracks(folder_names,fields_to_load);
 %% % criteria %%%
 figure();
 M = imread('Z:\Kevin\20190817\Data20190817_165031\Frame_000000.jpg');
-% M = imread('Z:\Kevin\20191113_GWN_N2_naive\Data20191113_140408\Frame_000000.jpg');
-pix2mm = 1/16.5;
-% pix2mm = 1;%1/31.5;  %pixel to mm (camera position before the flow chanber setup) %%%16.5 for new camera and 31.5 for old one
+% M = imread('Z:\Kevin\20191113_GWN_N2_app+\Data20191113_152718\Frame_000000.jpg');
+% pix2mm = 1/16.5;
+pix2mm = 1/31.5;  %pixel to mm (camera position before the flow chanber setup) %%%16.5 for new camera and 31.5 for old one
 imagesc(M,'XData',[0 size(M,2)*pix2mm],'YData',[0 size(M,1)*pix2mm]);
 nn = length(Tracks); %number of worms selected
 mint = 60*1;%60*1; %minimum time in seconds
 minx = 100*1;  %minimum displacement (in terms of pixels)
 disth = 300;  %radius of pixels from target
-target = [2517,975];%[950,1100];%  %position of target/sourse of odorant (approximated from images)%[250,1750];%
+target = [2517,975];%[2000 750];%[950,1100];%  %position of target/sourse of odorant (approximated from images)%[250,1750];%
 endingt = 60*30;  %only taking the first few minutes
 
 %visualize all paths and check criteria
@@ -33,7 +33,7 @@ cand = [];
 % figure;
 hold on
 alldists = [];
-filt = 14;  %filtering time window
+filt = 30;  %filtering time window
 poly_degree = 3;  %polynomial fit for the tracks
 for i = 1:nn
     if Tracks(i).Time(end)-Tracks(i).Time(1) > mint  %time cutoff
@@ -49,7 +49,7 @@ for i = 1:nn
                 plot(temp1(:,1)*pix2mm, temp1(:,2)*pix2mm,'k'); %pause();%axis([1500,2500,0,2000]); 
 %                 plot(Tracks(i).Path(pos,1)*pix2mm,Tracks(i).Path(pos,2)*pix2mm,'k');  %pause();%axis([1500,2500,0,2000]); 
 %                 plot(Tracks(i).Path(:,1)*pix2mm,Tracks(i).Path(:,2)*pix2mm,'k');  %pause();%axis([1500,2500,0,2000]); 
-                hold on
+%                 hold on
                 cand = [cand i];
             end
         end
@@ -115,10 +115,11 @@ hist(Ds)
 %% %%%%% Peurette
 %% Estimating concentration
 figure;
-bin = 1;  %bin for subsampling
-filt = 14;  %filtering time window
+bin = 10;  %bin for subsampling
+filt = 30;  %filtering time window
 poly_degree = 3;  %polynomial fit for the tracks
-p_thr = 60;  %threshold of turning angle to define discrete events
+p_thr = 80;  %threshold of turning angle to define discrete events
+l_window = 2;  %lag in time window to detect concentration
 ct = 0;
 allas = [];
 alldC = [];
@@ -146,28 +147,31 @@ for c = 1:length(cand)
     for dd = 1:length(dists)
         dists(dd) = distance(subs(dd,:),target);
     end
+    ct = ct +1;
+    
+    %%%condition on paths
     %if distance(subs(1,:),p2) > 300%disth  &&  distance(subs(1,:),p2) > disth 
-    %if isempty(find(dists<disth)) ~= 1  %&&   min(newtime) < 600
-        ct = ct +1;
-%     if sqrt((p1(1)-p2(1))^2 + (p1(2)-p2(2))^2) < 300 && sqrt((p1(1)-p2(1))^2 + (p1(2)-p2(2))^2) > 300%dist
+    %if isempty(find(dists<disth)) ~= 1  %&&   min(newtime) < 600    
+    %if sqrt((p1(1)-p2(1))^2 + (p1(2)-p2(2))^2) < 300 && sqrt((p1(1)-p2(1))^2 + (p1(2)-p2(2))^2) > 300%dist
     %if newtime(1)<60*30  &&  distance(p1,p2) > 300  %newtime(1)> 60*5
-    if 1==1
-%     if length(find(temp1(:,2)>1000)) < length(find(temp1(:,2)<1000))  %approximately the gradient front~~
-        
+    %if length(find(temp1(:,2)>1000)) < length(find(temp1(:,2)<1000))  %approximately the gradient front~~
+    if 1==1  
 
     %%%for angle
     dCs = zeros(1,size(vecs,1));  
-    for dd = 2:length(angs)
+    for dd = l_window+1:length(angs)
         %CosTheta = dot(vecs(dd,:),(target-subs(dd,:)))/(norm(vecs(dd,:))*norm((target-subs(dd,:))));
         %ThetaInDegrees = acosd(CosTheta);
         %angs(dd) = angles(vecs(dd,:),target-subs(dd,:)); %ThetaInDegrees;%
-        angs(dd) = angles(vecs(dd-1,:),vecs(dd,:));
-        dCs(dd) = Est_con(subs(dd-1,1),subs(dd-1,2),target(1),target(2),50);
+        angs(dd) = angles(vecs(dd-l_window,:),vecs(dd,:));
+        dCs(dd) = Est_con(subs(dd-l_window,1),subs(dd-l_window,2),target(1),target(2),50);
     end
+    angs = angs(l_window+1:end);
+    dCs = dCs(l_window+1:end);
     
     %%%for "Pirouttes" frequnecy
     [timestamps,runs] = def_turns(real(angs),p_thr,vecs);
-    dC = [];
+%     dC = [];
 %     for tt = 1:length(timestamps)
 %         dC = [dC Est_con(temp1(timestamps(tt),1),temp1(timestamps(tt),2),target(1),target(2),100)];
 %     end
@@ -185,31 +189,45 @@ plot((alldC),allas(1:end),'o')
 
 
 %% test with design matrix
-win = 50;
-allC = zeros(length(alldC)-win,win+1);
-for ii = 1:size(allC,1)
-    allC(ii,:) = alldC(ii:ii+win);%diff(alldC(ii:ii+win))/(alldC(ii)+0.000001);
-end
-imagesc(cov(allC))  %covariance of the concentration change in a sliding window
+% win = 50;
+% allC = zeros(length(alldC)-win,win+1);
+% for ii = 1:10000%size(allC,1)
+%     allC(ii,:) = alldC(ii:ii+win);%diff(alldC(ii:ii+win))/(alldC(ii)+0.000001);
+% end
+% imagesc(cov(allC))  %covariance of the concentration change in a sliding window
 %% plot adaptive binning
-bins = 100;
-threshold = 60;
-dC_ = diff(alldC);
+bins = 50;  %number of adaptive bins to begin with
+threshold = 60;  %threshold for a random sharp turn
+dC_ = alldC;%diff(alldC);
 dA_ = allas;
-dA_(isnan(allas)) = 0;
-dA_ = dA_(1:end-1);
-pos = find(abs(dC_)<0.0001);
+dA_ = dA_;%(1:end-1);
+pos = find(abs(dC_)<1e-9);  %remove super small dC due to jittering
 dC_(pos) = [];  dA_(pos) = [];
 
-avang = zeros(1,bins);
-[cts,bis] = hist(dC_,bins);
-for bi = 2:length(bis)
-    pos = find(bis(bi-1)<dC_ & bis(bi)>dC_);
-    if isempty(pos)~=1
-        avang(bi) = length(dA_(pos)>threshold)/(length(pos)+1);%%mean(dA_(pos));%
-    end
+avang = [];
+adapt_b = [];
+[sortedC,sortedI] = sort(dC_);
+rough_in_bins = floor(length(dC_)/bins);
+
+for bi = 1:bins-1
+    pos = sortedI((bi-1)*rough_in_bins+1:bi*rough_in_bins);
+    avang = [avang sum(abs(dA_(pos))>threshold)/(length(pos)+1)];
+    adapt_b = [adapt_b mean(sortedC(pos))];
 end
-plot(bis(find(isnan(avang)==0)),avang(find(isnan(avang)==0)),'-o')
+pos = sortedI(bi*rough_in_bins:end);
+avang = [avang sum(abs(dA_(pos))>threshold)/(length(pos)+1)];
+adapt_b = [adapt_b mean(sortedC(pos))];
+%[cts,bis] = hist(dC_,bins);
+% for bi = 2:length(bis)
+%     pos = find(bis(bi-1)<dC_ & bis(bi)>dC_);
+%     if isempty(pos)~=1 && cts(bi-1)~=0
+% %         avang(bi) = length(dA_(pos)>threshold)/(length(pos)+1);%%mean(dA_(pos));%
+%         avang = [avang length(dA_(pos)>threshold)/(length(pos)+1)];
+%         adapt_b = [adapt_b bis(bi)];
+%     end
+% end
+plot(adapt_b,avang,'o')
+% plot(bis(find(isnan(avang)==0)),avang(find(isnan(avang)==0)),'-o')
 %plot(bis(avang~=0),avang(avang~=0),'-o')
 
 % b = glmfit(dC_,dA_,'binomial','link','logit')
@@ -225,12 +243,32 @@ plot(bis(find(isnan(avang)==0)),avang(find(isnan(avang)==0)),'-o')
 %     dCbin(ii) = va(ii*numinbin);
 % end
 % plot(dCbin,avang,'-o')
+%% custom Logistic
+%test with doulbe exponent
+Fexponent = fittype('a/(1+exp(b*x)) + c','dependent',{'y'},'independent',...
+{'x'},'coefficients',{'a', 'b', 'c'});  %'e'
+xVals = adapt_b-mean(adapt_b);
+rVals = avang;
+%all the fitting options required
+minWindow = 1;
+fitOptions = fitoptions(Fexponent);
+fitOptions.Lower = [0,0.0001,0];
+fitOptions.Upper = [1,100000,1];
+fitOptions.StartPoint=[1,0.01,0.01];%[range(rVals(rVals~=0)),-.0001,range(rVals(rVals~=0)),-.0001];
+fitOptions.Weights=zeros(size(rVals));
+fitOptions.Weights(minWindow:end-minWindow)=1;
+        
+%do exponential fitting
+[f,fout] = fit(xVals',rVals',Fexponent,fitOptions);
+f
+hold on
+plot(adapt_b,f.a./(1+exp(f.b*(adapt_b-mean(adapt_b))))+f.c)
 %% Logistic
-CC = bis;%dCbin; %bis(avang~=0);%
+CC = adapt_b*10000;%bis;%dCbin; %bis(avang~=0);%
 AA = avang%/max(avang); %avang(avang~=0);%
-pos = CC<-0.01;
-CC(pos) = [];
-AA(pos) = [];
+% pos = CC<-0.01;
+% CC(pos) = [];
+% AA(pos) = [];
 
 [b,dev,stats] = glmfit(CC, AA', 'binomial', 'link', 'logit')
 xx = linspace(min(CC), max(CC), 30);
@@ -250,9 +288,10 @@ plot(diff(alldC),temp_turn(1:end-1),'ro')
 %% %%%%% Weathervaning
 %% %%%%%
 figure;
-bin = 7;
+bin = 5;
 filt = 30;
 p_thr = 60;
+l_window = 20;  %lag time
 ct = 0;
 allas = [];
 alldB = [];
@@ -295,7 +334,7 @@ for c = 1:length(cand)
     dCp = zeros(1,size(vecs,1));
     dCs = zeros(1,size(vecs,1));
     dds = zeros(1,size(vecs,1));
-    for dd = 2:length(angs)
+    for dd = l_window+1:length(angs)
         %CosTheta = dot(vecs(dd,:),(target-subs(dd,:)))/(norm(vecs(dd,:))*norm((target-subs(dd,:))));
         %ThetaInDegrees = acosd(CosTheta);
         %angs(dd) = angles(vecs(dd,:),target-subs(dd,:)); %ThetaInDegrees;
@@ -308,7 +347,8 @@ for c = 1:length(cand)
 %         angs(dd) =  sign(angle(tempz1)-angle(tempz2))*(angles(vecs(dd-1,:),vecs(dd,:)) / norm(vecs(dd-1)));  %
         %%%angle function
 %         angs(dd) = angles(vecs(dd-1,:)/norm(vecs(dd-1,:)),vecs(dd,:)/norm(vecs(dd,:)));
-        angs(dd) = angles(vecs(dd-1,:)/norm(vecs(dd-1,:)),vecs(dd,:)/norm(vecs(dd,:)))/norm(vecs(dd,:));  %curving rate?
+        angs(dd) = angles(vecs(dd-l_window,:)/norm(vecs(dd-l_window,:)),vecs(dd,:)/norm(vecs(dd,:)));%/(norm(vecs(dd,:)));  %curving rate?
+%         angs(dd) = angles(sum(vecs(dd-l_window:dd,:))/norm(sum(vecs(dd-l_window:dd,:))),vecs(dd,:)/norm(vecs(dd,:)));
         %%%asin method
         %angs(dd) = ...%sign( asin( dot( vecs(dd-1,:)/norm(vecs(dd-1,:)) , (vecs(dd-1,:)-vecs(dd,:))/norm(vecs(dd-1,:)-vecs(dd,:)) ) ) )*...
         %    (angles(vecs(dd-1,:),vecs(dd,:)) / norm(vecs(dd-1)));  %curving rate
@@ -321,24 +361,31 @@ for c = 1:length(cand)
 %         tempz2 = [v2(1)+v2(2)*(-1)^0.5];  %complex plane representation
 %         dBs(dd) = sign(angle(tempz1)-angle(tempz2))*(angles(vecs(dd-1,:),(subs(dd,:) - target)));  %+/- angle to the targetarcsin(1/sqrt(2))
 %         dBs(dd) = angles(vecs(dd,:)/norm(vecs(dd,:)),(target-subs(dd-1,:))/norm(subs(dd-1,:)-target));
-        dBs(dd) = angles(vecs(dd,:)/norm(vecs(dd,:)),(subs(dd-1,:)-target)/norm(subs(dd-1,:)-target));
+        dBs(dd) = angles(vecs(dd-l_window,:)/norm(vecs(dd-l_window,:)),(subs(dd-l_window,:)-target)/norm(subs(dd-l_window,:)-target));
+%         dBs(dd) = angles(sum(vecs(dd-l_window:dd,:))/norm(sum(vecs(dd-l_window:dd,:))),(subs(dd-l_window,:)-target)/norm(subs(dd-l_window,:)-target));
         
         %perpendicular concentration change
-        perp_dir = [-vecs(dd-1,2), vecs(dd-1,1)];
+        perp_dir = [-vecs(dd-l_window,2), vecs(dd-l_window,1)];
         perp_dir = perp_dir/norm(perp_dir);
-        dCp(dd) = Est_con(subs(dd-1,1)+perp_dir(1)*1., subs(dd-1,2)+perp_dir(2)*1, target(1), target(2), 50)...
-                  -Est_con(subs(dd-1,1)-perp_dir(1)*1, subs(dd-1,2)-perp_dir(2)*1, target(1), target(2), 50);
+        dCp(dd) = Est_con(subs(dd-l_window,1)+perp_dir(1)*1., subs(dd-l_window,2)+perp_dir(2)*1, target(1), target(2), 50)...
+                  -Est_con(subs(dd-l_window,1)-perp_dir(1)*1, subs(dd-l_window,2)-perp_dir(2)*1, target(1), target(2), 50);
         %(temp1(dd-1,1),temp1(dd-1,2),target(1),target(2),50)
         %perp_dir = np.array([-dxy[1], dxy[0]])
         %perp_dir = perp_dir/np.linalg.norm(perp_dir)
         %perp_dC = gradient(C0, xx+perp_dir[0], yy+perp_dir[1]) - gradient(C0, xx-perp_dir[0], yy-perp_dir[1])
         
         %forward concentration change
-        dCs(dd) = Est_con(subs(dd-1,1),subs(dd-1,2),target(1),target(2),50);
+        dCs(dd) = Est_con(subs(dd-l_window,1),subs(dd-l_window,2),target(1),target(2),50);
         
         %%%check displacement
         dds(dd) = norm(vecs(dd,:));
     end
+    %remove zeros
+    dBs = dBs(l_window+1:end);
+    dCp = dCp(l_window+1:end);
+    dCs = dCs(l_window+1:end);
+    dds = dds(l_window+1:end);
+    angs = angs(l_window+1:end);
     
     %%%for "Pirouttes" frequnecy
     [timestamps,runs] = def_turns(abs(real(angs)),p_thr,vecs);
@@ -375,14 +422,18 @@ figure; plot(alldcp,allas,'o')
 % histogram(alldis)
 
 %% removing small jitterings (test)
-vec_threshold = 0.15;%median(alldis);
-vec_marks = find(alldis>vec_threshold);
+vec_threshold = 0.1;%median(alldis);
+vec_marks = find(alldis > vec_threshold);
 
+%% removing large anlge changes (test)
+ang_threshold = 20;%median(alldis);
+ang_marks = find(abs(allas) < ang_threshold);
 
+va_marks = intersect(vec_marks, ang_marks);
 %% plot adaptive binning
-bins = 50;
-dC_ = alldB(vec_marks);
-dA_ = allas(vec_marks);
+bins = 60;
+dC_ = alldB(va_marks);
+dA_ = allas(va_marks)./(alldis(va_marks)*pix2mm);  %curving rate (deg/mm)
 
 avang = zeros(1,bins);
 stdang = zeros(1,bins);
@@ -399,7 +450,7 @@ for bi = 2:length(bis)
 end
 %plot(bis(avang~=NaN),avang(avang~=NaN),'-o')
 %plot(bis(avang~=0),avang(avang~=0),'-o')
-errorbar(bis,avang/0.3571,stdang)
+errorbar(bis,avang,stdang)
 
 % b = glmfit(dC_,dA_,'binomial','link','logit')
 % plot(x, y./n,'o',x,yfit./n,'-','LineWidth',2)
@@ -408,8 +459,8 @@ errorbar(bis,avang/0.3571,stdang)
 %objective function to minimize: nLL_chemotaxis(THETA, dth, dcp, dc)
 %a_,k_,A_,B_ = THETA
 f = @(x)nLL_chemotaxis(x,allas(1:end-1),alldcp(1:end-1),diff(alldC));
-%[x,fval] = fminunc(f,rand(1,4));%[0,5,0.1,0.1]);
-[x,fval] = fminunc(f,[0.5, 10, 0.5, 50]+rand(1,4));
+[x,fval] = fminunc(f,rand(1,4));%[0,5,0.1,0.1]);  %random initiation
+% [x,fval] = fminunc(f,[0.5, 10, 0.5, 50]+rand(1,4));  %a closer to a reasonable value
 x
 fval
 
@@ -422,9 +473,14 @@ test = [];
 C0 = 100000;
 origin = [target(1)/2,target(2)];%[0,0];
 target2 = target-[100,0];%origin+[500,0];%-[target(1)/2,target(2)];
+
+alldths = [];
+alldCs = [];
+alldCps = [];
+allths = [];
 for rep = 1:30
     
-T = 1500;
+T = 2000;
 dt = 1;
 vm = 5.0;  %should be adjusted with the velocity statistics~~ this is approximately 0.2mm X 
 vs = 0.5;
@@ -460,6 +516,7 @@ for t = 1+2:T
     
     vv = vm+vs*randn;
     ths(t) = ths(t-1)+dth*dt;
+    if ths(t)>180; ths(t) = ths(t)-180; end;  if ths(t)<-180; ths(t) = ths(t)+360; end  %within -180~180 degree range
     e1 = [1,0];
     vec = [tracks(t-1,1)  tracks(t-1,2)]-origin; %current vector
     theta = acosd(max(-1,min((vec*e1')/norm(vec)/norm(e1),1)));  %current angle
@@ -476,6 +533,11 @@ plot(tracks(:,1),tracks(:,2))
 hold on
 plot(target2(1),target2(2),'ro')
 plot(origin(1),origin(2),'ko')%(target2(1)/2,target2(2),'ko')
+
+alldths = [alldths dths];
+alldCs = [alldCs dcs];
+alldCps = [alldCps dCp];
+allths = [allths ths];
 
 end
 
