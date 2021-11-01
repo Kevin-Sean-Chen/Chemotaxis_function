@@ -6,8 +6,10 @@
 clear
 clc
 %%
-addpath('C:\Users\Kevin\Documents\GitHub\leifer-Behavior-Triggered-Averaging-Tracker\Experimental Analysis')
-addpath('C:\Users\Kevin\Desktop\Chemotaxis_function')
+%addpath('C:\Users\Kevin\Documents\GitHub\leifer-Behavior-Triggered-Averaging-Tracker\Experimental Analysis')
+%addpath('C:\Users\Kevin\Desktop\Chemotaxis_function')
+addpath('/home/kschen/github/leifer-Behavior-Triggered-Averaging-Tracker-new')
+addpath('/home/kschen/github/Chemotaxis_function')
 
 %batch analysis
 fields_to_load = {'Path','Time','Frames','SmoothSpeed'};%,'Behaviors'};
@@ -16,13 +18,14 @@ Tracks = loadtracks(folder_names,fields_to_load);
 
 %% % criteria %%%
 figure();
-M = imread('Z:\Kevin\20190817\Data20190817_165031\Frame_000000.jpg');
+% M = imread('Z:\Kevin\20190817\Data20190817_165031\Frame_000000.jpg');
+M = imread('/tigress/LEIFER/Kevin/20190817/Data20190817_165031/Frame_000000.jpg');
 % M = imread('Z:\Kevin\20191113_GWN_N2_app+\Data20191113_152718\Frame_000000.jpg');
 % pix2mm = 1/16.5;
 pix2mm = 1/31.5;  %pixel to mm (camera position before the flow chanber setup) %%%16.5 for new camera and 31.5 for old one
 imagesc(M,'XData',[0 size(M,2)*pix2mm],'YData',[0 size(M,1)*pix2mm]);
 nn = length(Tracks); %number of worms selected
-mint = 60*1;%60*1; %minimum time in seconds
+mint = 60*3;%60*1; %minimum time in seconds
 minx = 100*1;  %minimum displacement (in terms of pixels)
 disth = 300;  %radius of pixels from target
 target = [2517,975];%[2000 750];%[950,1100];%  %position of target/sourse of odorant (approximated from images)%[250,1750];%
