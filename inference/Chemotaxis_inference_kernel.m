@@ -4,29 +4,38 @@
 %%% given Paths as cells with all 2D-trajectories
 %%% and Fcon as a function that maps 2D position to an odor value readout
 
+Cmap = load('/projects/LEIFER/Kevin/Data_odor_flow_equ/20211029_GWN_app+_MEK110mM_40ml/Landscape.mat');
+Fcon = load('/projects/LEIFER/Kevin/Data_odor_flow_equ/20211029_GWN_app+_MEK110mM_40ml/OdorFx.mat');
+Fcon = Fcon.F;
+Cmap = Cmap.vq1;
+Cmap = fliplr(flipud(Cmap));  %%% for inverted camper!
+Paths = load('/projects/LEIFER/Kevin/Data_odor_flow_equ/App+_tracks.mat'); Tracks = Paths.Tracks;
+Tracks = deleted_tracks;
+
 %%
 figure;
 %%% pre-processing parameters
 poly_degree = 3;  %polynomial fit for the tracks
-bin = 7;  %temporal binning
-filt = 5;  %filtering tracks
-l_window = 5;  %lag time
+bin = 7;  %temporal binning  %~0.5 s
+filt = 10;  %filtering tracks
+l_window = 2;  %lag time
 
 %%% gather time series
 allas = []; %angles
 alldcp = [];  %perpendicular dC
 alldC = [];  %tangential dC
 alldis = [];  %displacements
-for c = 1:length(Paths)
+
+for c = 1:length(Tracks) %length(Paths)
     
     %%% process path to angles and distances
-    temp = Paths{c};
+%     temp = Paths{c};  %for loading deleted tracks
+    temp = Tracks(c).Path;  %for loading saved tracks
     temp1 = zeros(round(size(temp,1)/1),2);
     temp1(:,1) = smooth(temp(1:round(length(temp)/1),1), filt,'sgolay',poly_degree);
     temp1(:,2) = smooth(temp(1:round(length(temp)/1),2), filt,'sgolay',poly_degree);
     subs = temp1(1:bin:end,:);
     vecs = diff(subs);
-    dists = zeros(1,size(subs,1));
     angs = zeros(1,size(vecs,1));    
 
     %%% for time step calculations
@@ -35,7 +44,7 @@ for c = 1:length(Paths)
     dds = zeros(1,size(vecs,1));
     
     %%% iterate through worms
-    for dd = l_window+1:length(angs)
+    for dd = (l_window+1):length(angs)
         %%% angle function
 %         angs(dd) = angles(vecs(dd-1,:)/norm(vecs(dd-1,:)),vecs(dd,:)/norm(vecs(dd,:)));
         angs(dd) = angles(vecs(dd-l_window,:)/norm(vecs(dd-l_window,:)),vecs(dd,:)/norm(vecs(dd,:)));%/(norm(vecs(dd,:)));  %curving rate?
@@ -47,63 +56,82 @@ for c = 1:length(Paths)
              - Fcon(subs(dd-l_window,1)-perp_dir(1)*1, subs(dd-l_window,2)-perp_dir(2)*1);
         
         %forward concentration change
-        dCs(dd) = Fcon(subs(dd-l_window,1),subs(dd-l_window,2));
+        dCs(dd) = Fcon(subs(dd,1),subs(dd,2)) - Fcon(subs(dd-l_window,1),subs(dd-l_window,2));
         
         %%%check displacement
-        dds(dd) = norm(vecs(dd,:));
+        dds(dd) = norm(subs(dd,1)-subs(dd-l_window,1), subs(dd,2)-subs(dd-l_window,2));
+        %norm(vecs(dd,:));
+%         dd
+%         dds(dd)
+%         pause();
 
+    end
     %remove zeros
-    dCp = dCp(l_window+1:end);
-    dCs = dCs(l_window+1:end);
-    dds = dds(l_window+1:end);
-    angs = angs(l_window+1:end);
+    dCp = dCp((l_window+1):end);
+    dCs = dCs((l_window+1):end);
+    dds = dds((l_window+1):end);
+    angs = angs((l_window+1):end);
     
     allas = [allas angs];
     alldcp = [alldcp dCp];
     alldC = [alldC dCs];
     alldis = [alldis dds];  %displacement (effective velocity)
     
-    end
-    
     
 end
 
-%% test with stats-model for kernels
-[cosBasis, tgrid, basisPeaks] = makeRaisedCosBasis(6, [0, 10], 1.3);
-ang_fit = allas(1:30000-1);
-dcp_fit = alldcp(1:30000-1);
-ddc_fit = (alldC(1:30000-1));
-lfun = @(x)nLL_kernel_chemotaxis(x,ang_fit, dcp_fit, ddc_fit, cosBasis);
-% [x,fval] = fminunc(f,randn(1,10));  %random initiation
-[x,fval] = fminunc(lfun,[100, 0.001, randn(1,6), -1, 50]+randn(1,10)*0.);  %a closer to a reasonable value
+%%
+%     K_ = THETA(1);  %variance of von Mises
+%     A_ = THETA(2);  %max turn probability
+%     B_ = THETA(3:8);  %kernel for dC transitional concentration difference (weights on kerenl basis)
+%     C_ = THETA(9);  %baseline turning rate
+%     Amp = THETA(10);  %amplitude for kernel for dcp normal concentration difference
+%     tau = THETA(11);  %time scale for dcp kernel
+%     K2_ = THETA(12);  %vairance of the sharp turn von Mises
 
-% opts = optimset('display','iter');
-% LB = [1e-5, 1e-5, ones(1,6)*-inf, -inf, 1e-5];
-% UB = [1000, 1, ones(1,6)*inf, inf, 100];
+%% test with stats-model for kernels
+nB = 4;
+[cosBasis, tgrid, basisPeaks] = makeRaisedCosBasis(nB, [0, 10], 1.3);
+ang_fit = allas(1:end-1);
+dcp_fit = alldcp(1:end-1);
+ddc_fit = (alldC(1:end-1));
+lfun = @(x)nLL_kernel_chemotaxis(x,ang_fit, dcp_fit, ddc_fit, cosBasis);
+% [x,fval] = fminunc(lfun,randn(1,10));  %random initiation
+% [x,fval,exitflag,output,grad,hessian] = fminunc(lfun,[500, 0.0, randn(1,6), -1, 100]+randn(1,10)*0.);  %a closer to a reasonable value
+
+opts = optimset('display','iter');
+% opts.Algorithm = 'sqp';
+LB = [1e-5, 1e-5, ones(1,nB)*-inf, 1e-5 -inf, 1e-5, 1e-5];
+UB = [30, 1, ones(1,nB)*inf, 1, inf, 100, 30];
 % prs0 = rand(1,10);
-% fmincon(lfun,prs0,[],[],[],[],LB,UB,[],opts);
+prs0 = [1, 0.1, randn(1,nB), 0.01, -1, 100, 1] + randn(1,10)*0.;
+[x,fval] = fmincon(lfun,prs0,[],[],[],[],LB,UB,[],opts);
 
 x
 fval
 
 %% sufficient statistics
-K_ = x(1); A_ = x(2); B_ = x(3:8); Amp = x(9); tau = x(10);
+K_ = x(1); A_ = x(2); B_ = x(3:6); C_ = x(7)/1; Amp = x(8); tau = x(9); K2_ = x(10);
+
 figure
 subplot(2,2,1)
 xx = 1:length(cosBasis);
 plot(Amp*exp(-xx/tau))
-title('\delta C_p kernel')
+title('\delta C^{\perp} kernel')
 subplot(2,2,2)
 plot(B_ * cosBasis')
-title('\delta C kereel')
+title('\delta C kernel')
+
 subplot(2,2,3)
 filt_dcp = conv(dcp_fit, Amp*exp(-xx/tau), 'same');
 [aa,bb] = hist((ang_fit - filt_dcp)*pi/180 , 300);
-bar( bb, 1/(2*pi*besseli(0,K_)) * exp(K_*cos( bb )) , 100);
-title('von Mises for \delta C_p')
+bar( bb, 1/(2*pi*besseli(0,K_^2)) * exp(K_^2*cos( bb )) , 100); hold on
+bar( bb, 1/(2*pi*besseli(0,K2_^2)) * exp(K2_^2*cos( bb-pi )) , 100,'r');
+title('von Mises for \delta C^{\perp}')
 subplot(2,2,4)
 filt_ddc = conv( ddc_fit, B_, 'same' );
-plot(filt_ddc , A_ ./ (1 + exp( filt_ddc)) ,'o')
+Pturns = A_ ./ (1 + exp( filt_ddc)) + C_;
+plot(filt_ddc , Pturns,'o')
 title('Logistic for \delta C')
 
 %% Generative model, with inferred parameters~
@@ -111,10 +139,12 @@ figure;
 imagesc(Cmap); hold on;
 
 % reconstruct parameters 
-kappa = (1/K_)^0.5*(180/pi);  
-A = A_;
-Kddc = Amp*exp(-xx/tau);
-Kdcp = B_ * cosBasis';
+kappa = (1/K_)^1*(180/pi);  
+A = A_*1;
+Kdcp = Amp*exp(-xx/tau);
+Kddc = B_ * cosBasis';
+Pturn_base = C_;
+kappa2 = (1/K2_)^1*(180/pi);  
 wind = size(cosBasis,1);
 
 origin = [size(Cmap,2)/2,size(Cmap,1)/2];
@@ -123,15 +153,19 @@ alldCs = [];
 alldCps = [];
 allths = [];
 
-for rep = 1:30
+REP = 20;
+T = 3000;
+trackss = zeros(REP,T,2);
+
+for rep = 1:REP
     
-T = 2000;
+% T = 3000;
 dt = 1;
-vm = 2.5;  %should be adjusted with the velocity statistics~~ this is approximately 0.2mm X 
-vs = 1.;
+vm = 0.2*33;  %should be adjusted with the velocity statistics~~ this is approximately 0.2mm X 
+vs = .2;
 tracks = zeros(T,2);
-tracks(1,:) = origin; %initial position
-tracks(2,:) = origin+randn(1,2)*vm*dt;
+tracks(1,:) = [rand()*size(Cmap,2), rand()*size(Cmap,1)];%origin; %initial position
+tracks(2,:) = tracks(1,:)+randn(1,2)*vm*dt;%origin+randn(1,2)*vm*dt;
 ths = zeros(1,T);  ths(1:3) = randn(1,3)*360; %initial angle
 dxy = randn(1,2);  %change in each step
 
@@ -142,8 +176,8 @@ dCv = zeros(1,wind);
 dCpv = zeros(1,wind);
 for t = 1+2:T
     %%% dC in a window
-%     dCv = [Fcon(tracks(t-1,1),tracks(t-1,2)) - Fcon(tracks(t-2,1),tracks(t-2,2)) ,  dCv];  % step-wise derivative
-    dCv = [Fcon(tracks(t-1,1),tracks(t-1,2)) ,  dCv];  % absolute concentration
+    dCv = [Fcon(tracks(t-1,1),tracks(t-1,2)) - Fcon(tracks(t-2,1),tracks(t-2,2)) ,  dCv];  % step-wise derivative
+%     dCv = [Fcon(tracks(t-1,1),tracks(t-1,2)) ,  dCv];  % absolute concentration
 %     dCv = [Fcon(tracks(t-1,1),tracks(t-1,2)) - dCv(end),   dCv];  % moving threshold
     dCv = dCv(1:end-1);  %remove out of window
     perp_dir = [-dxy(2) dxy(1)];
@@ -152,22 +186,26 @@ for t = 1+2:T
     dCpv = [Fcon(tracks(t-1,1)+perp_dir(1),tracks(t-1,2)+perp_dir(2)) - Fcon(tracks(t-1,1)-perp_dir(1),tracks(t-1,2)-perp_dir(2)) ,  dCpv];
     dCpv = dCpv(1:end-1);
     
-    wv = -sum(Kdcp.*dCpv)/length(wind) + kappa*randn;
-    P_event = A/(1+exp( (sum(Kddc.*dCv)/length(wind)) *dt));
-    if rand < P_event
+    wv = -sum(Kdcp.*dCpv)/1 + kappa*randn;%length(wind)
+    P_event = A/(1+exp( (sum(Kddc.*dCv)/1) *dt)) + Pturn_base;%length(wind)
+    if rand < P_event*1
         beta = 1;
     else
         beta = 0;
     end
-    rt = beta*(rand*360-180);
+    rt = beta*[(randn*kappa2-180) + 0*(rand*360-180)];
     dth = wv+rt;
-%     if dth>180; dth = dth-180; end;  if dth<-180; dth = dth+360; end  %within -180~180 degree range
+    if dth>180; dth = dth-180; end;  if dth<-180; dth = dth+360; end  %within -180~180 degree range
     
-%     dths(t) = dth;
-%     dcs(t) = dC;
-%     dcps(t) = dCp;
+    dths(t) = dth;
+    dcs(t) = dCv(1);
+    dcps(t) = dCpv(1);
     
     vv = vm+vs*randn;
+%     vv = alldis(randi(length(alldis)));
+%     if vv==0
+%         vv = 0.1;
+%     end
     ths(t) = ths(t-1)+dth*dt;
 %     if ths(t)>180; ths(t) = ths(t)-180; end;  if ths(t)<-180; ths(t) = ths(t)+360; end  %within -180~180 degree range
     e1 = [1,0];
@@ -184,11 +222,30 @@ end
 
 plot(tracks(:,1),tracks(:,2))
 hold on
-plot(origin(1),origin(2),'ko')%(target2(1)/2,target2(2),'ko')
+plot(tracks(1,1), tracks(1,2),'ko') %(origin(1),origin(2),'ko')%
 
-% alldths = [alldths dths];
-% alldCs = [alldCs dcs];
-% alldCps = [alldCps dCp];
-% allths = [allths ths];
+alldths = [alldths dths];
+alldCs = [alldCs dcs];
+alldCps = [alldCps dcps];
+allths = [allths ths];
+
+trackss(rep,:,:) = tracks;
 
 end
+
+%% Check statistics
+figure()
+subplot(3,2,1); hist(allas,100);xlim([-180,180]);  ylabel('\delta \theta'); title('data'); subplot(3,2,2); hist(alldths,100); xlim([-180,180]);title('model');
+subplot(3,2,3); hist(alldC,100);  ylabel('\delta C');      subplot(3,2,4); hist(alldCs,100)
+subplot(3,2,5); hist(alldcp,100); ylabel('\delta C^{\perp}');     subplot(3,2,6); hist(alldCps,100)
+
+%%
+figure()
+for ii =1:REP
+    plot(trackss(ii,:,1)-trackss(ii,1,1),trackss(ii,:,2)-trackss(ii,1,2));
+    hold on
+end
+plot([0,0],[0,0],'k.','MarkerSize',40)
+hold off
+set(gca,'Ydir','reverse')
+

@@ -3,8 +3,9 @@ clear; clc;
 %%%
 %tragger analysis directly on heading, eigen-worms, and path directions
 %%%
-addpath('C:\Users\Kevin\Documents\GitHub\leifer-Behavior-Triggered-Averaging-Tracker\Experimental Analysis')
-fields_to_load = {'Path','Time','Behaviors','LEDPower','Centerlines','AngSpeed','ProjectedEigenValues'};
+addpath('C:\Users\Kevin\Documents\GitHub\leifer-Behavior-Triggered-Averaging-Tracker-new\Experimental Analysis')
+% fields_to_load = {'Path','Time','Behaviors','LEDPower','Centerlines','AngSpeed','ProjectedEigenValues'};
+fields_to_load = {'Path','Time','Behaviors','AngSpeed','ProjectedEigenValues'};
 folder_names = getfoldersGUI();
 Tracks = loadtracks(folder_names,fields_to_load);%(1:3)
 

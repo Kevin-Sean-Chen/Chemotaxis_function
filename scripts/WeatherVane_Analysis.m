@@ -15,8 +15,10 @@ folder_names = getfoldersGUI();
 Tracks = loadtracks(folder_names,fields_to_load);
 
 %% pre-processing
-M = imread('Z:\Kevin\20190817\Data20190817_165031\Frame_000000.jpg');
+% M = imread('Z:\Kevin\20190817\Data20190817_165031\Frame_000000.jpg');
 % M = imread('Z:\Kevin\20191113_GWN_N2_naive\Data20191113_140408\Frame_000000.jpg');
+test = load('/projects/LEIFER/Kevin/Data_odor_flow_equ/20211013_biased_110mM/Landscape.mat');
+M = test.vq1;
 pix2mm = 1/31.5;  %pixel to mm (camera position before the flow chanber setup) %%%16.5 for new camera and 31.5 for old one
 imagesc(M,'XData',[0 size(M,2)*pix2mm],'YData',[0 size(M,1)*pix2mm]);
 

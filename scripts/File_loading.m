@@ -1,7 +1,7 @@
 clear; clc;
 %% File_loading
 addpath('C:\Users\Kevin\Documents\GitHub\leifer-Behavior-Triggered-Averaging-Tracker\Experimental Analysis')
-fields_to_load = {'Path','Time','Speed','Behaviors','LEDPower'};
+fields_to_load = {'Path','Time','Speed','Behaviors'};
 folder_names = getfoldersGUI();
 Tracks = loadtracks(folder_names,fields_to_load);%(1:3)
 %filtered_tracks = FilterTracksByTime(T
@@ -76,7 +76,7 @@ end
 %% 
 
 %load data
-load('LEDPower.mat')
+load('LEDVoltages.mat')
 allS = values;
 load('Behaviors.mat')
 allB = values;
@@ -95,11 +95,12 @@ for ii = 1:length(pos)
 end
 
 %% all STA
+figure;
 alltrigs = [];
-for ww = 1:435
+for ww = 1:length(allB)
     
 num = ww;
-beh = 4;
+beh = 8;
 win = 140;
 acs = 140;
 pos = find(allB{num}(beh,:) == 1);
@@ -143,7 +144,7 @@ if isempty(overlap)~=1
 %     trknum(bt) = trknum(bt)+1;
             
 temp = Tracks(ww).Behaviors;
-stim = Tracks(ww).LEDPower;
+stim = allS{ww};%Tracks(ww).LEDPower;
 
 temp = temp(:,overlap);
 stim = stim(overlap);
