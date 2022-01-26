@@ -1,5 +1,10 @@
 %Negative Log-likelihood for chemotaxis with kernels
-function [NLL] = nLL_kernel_chemotaxis(THETA, dth, dcp, dc, Basis)
+function [NLL] = nLL_kernel_chemotaxis(THETA, dth, dcp, dc, Basis, lambda)
+
+    if nargin < 6
+        lambda = 50;
+    end
+
 
     %%% Assume we parameterize in such way first
     K_ = THETA(1);  %variance of von Mises
@@ -25,12 +30,12 @@ function [NLL] = nLL_kernel_chemotaxis(THETA, dth, dcp, dc, Basis)
 %     marginalP = (1-P).*VM + (1/(2*pi))*P;  %marginalized probability
     %%% turning analge model
     VM_turn = 1/(2*pi*besseli(0,K2_^2)) * exp(K2_^2*cos((dth*d2r - pi)));  %test for non-uniform turns (sharp turns)
-    gamma = 0.5;
+    gamma = 0.75;
     VM_turn = (1-gamma)*1/(2*pi) + gamma*VM_turn;
     
     marginalP = (1-P).*VM + VM_turn.*P;
     
-    lambda = 10;
+%     lambda = 10;
     NLL = -nansum(log(marginalP + 0*1e-10))  + lambda*(sum((B_ - 0).^2) + C_^2);  % adding slope l2 regularization
 end
 

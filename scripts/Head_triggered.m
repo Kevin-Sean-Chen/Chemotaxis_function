@@ -4,8 +4,8 @@ clear; clc;
 %tragger analysis directly on heading, eigen-worms, and path directions
 %%%
 addpath('C:\Users\Kevin\Documents\GitHub\leifer-Behavior-Triggered-Averaging-Tracker-new\Experimental Analysis')
-% fields_to_load = {'Path','Time','Behaviors','LEDPower','Centerlines','AngSpeed','ProjectedEigenValues'};
-fields_to_load = {'Path','Time','Behaviors','AngSpeed','ProjectedEigenValues'};
+fields_to_load = {'Path','Time','Behaviors','LEDPower','Centerlines','AngSpeed','ProjectedEigenValues'};
+% fields_to_load = {'Path','Time','Behaviors','AngSpeed','ProjectedEigenValues'};
 folder_names = getfoldersGUI();
 Tracks = loadtracks(folder_names,fields_to_load);%(1:3)
 
@@ -51,18 +51,19 @@ end
 %% triggered head angle
 nn = length(Tracks);
 tip = 1;
-base = 5;  %head is from base to tip
+base = 15;  %head is from base to tip
 endp = 20;  %ending for body-center reference
 
-% tip = 20;
-% base = 15;  %head is from base to tip (3 or 5)
-% endp = 1;  %ending for body-center reference
+tip = 20;
+base = 15;  %head is from base to tip (3 or 5)
+endp = 1;  %ending for body-center reference
 
 thr = 60;  %quite arbitrary for sudden head angle change (30 or 50 (typical head swings <30 according to data))
 win = 150;
 trigs = [];  %triggering stimuli
 headyn = [];  %looking at the head dynamics
 for w = 1:5000%nn
+    w
     temp = Tracks(w).Centerlines;
     stim = Tracks(w).LEDPower;
     
