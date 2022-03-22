@@ -17,8 +17,12 @@ Cmap =load('/projects/LEIFER/Kevin/Data_odor_flow_equ/20211029_GWN_app+_MEK110mM
 Fcon = load('/projects/LEIFER/Kevin/Data_odor_flow_equ/20211029_GWN_app+_MEK110mM_40ml/OdorFx.mat');
 Fcon = Fcon.F;
 
+Cmap = load('/home/kschen/github/OdorSensorArray/OSA_MFC_PID_scripts/Landscape_low.mat');
+Fcon = load('/home/kschen/github/OdorSensorArray/OSA_MFC_PID_scripts/OdorFx_low.mat');
+Fcon = Fcon.F;
+
 %% compute dc before pirouettes
-dc_window = 14*2.;  %7bins for 0.5s in real time
+dc_window = 14*1.;  %7bins for 0.5s in real time
 fr2sec = 14/dc_window;  %frames to seconds in real time
 all_dC = [];
 all_pr = [];
@@ -27,11 +31,12 @@ for c = 1:length(Tracks)
     %%% load observations
     prs = Tracks(c).Pirouettes;
     paths = Tracks(c).Path;
+%     pos = find(Tracks(c).Time>start_time);
     
     %%% compute dC
     dCi = [];
     for dd = dc_window+1:dc_window:size(paths,1)
-        dCi = [dCi  (Fcon(paths(dd-dc_window,1),paths(dd-dc_window,2)) - Fcon(paths(dd,1),paths(dd,2)))*fr2sec];  %record dC for this track
+        dCi = [dCi  -(Fcon(paths(dd-dc_window,1),paths(dd-dc_window,2)) - Fcon(paths(dd,1),paths(dd,2)))*fr2sec];  %record dC for this track
     end
     
     %%% mark pirouettes
@@ -71,7 +76,7 @@ EE = ( ((cnt_i-1)./(cnt_b.^2)) + (cnt_i.^2.*(cnt_b-1)./(cnt_b.^4)) ).^0.5 *1/14;
 
 figure()
 plot(dc_i, p_cnts, '-o')
-% errorbar(dc_i, p_cnts, EE,'-o','LineWidth',2)
+errorbar(dc_i, p_cnts, EE,'-o','LineWidth',2)
 xlabel('\delta C/s', 'Fontsize',20)
 % ylabel('P(turn|\delta C)', 'Fontsize',20)
 ylabel('P(pirouette) (event/s)', 'Fontsize',20)
@@ -125,7 +130,7 @@ end
 %%
 bins = 30;
 dC_ = all_dcp;
-dA_ = all_ang;
+dA_ = all_ang*fr2sec;
 
 avang = zeros(1,bins);
 stdang = zeros(1,bins);

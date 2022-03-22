@@ -7,6 +7,11 @@
 Cmap = load('/projects/LEIFER/Kevin/Data_odor_flow_equ/20211029_GWN_app+_MEK110mM_40ml/Landscape.mat');
 Fcon = load('/projects/LEIFER/Kevin/Data_odor_flow_equ/20211029_GWN_app+_MEK110mM_40ml/OdorFx.mat');
 Fcon = Fcon.F;
+
+Cmap = load('/home/kschen/github/OdorSensorArray/OSA_MFC_PID_scripts/Landscape_low.mat');
+Fcon = load('/home/kschen/github/OdorSensorArray/OSA_MFC_PID_scripts/OdorFx_low.mat');
+Fcon = Fcon.F;
+
 Cmap = Cmap.vq1;
 Cmap = fliplr(flipud(Cmap));  %%% for inverted camper!
 
@@ -22,7 +27,7 @@ Tracks = loadtracks(folder_names,fields_to_load);
 figure;
 %%% pre-processing parameters
 poly_degree = 3;  %polynomial fit for the tracks
-bin = 7;  %temporal binning  %~0.5 s
+bin = 4;  %temporal binning  %~0.5 s
 filt = 7;  %filtering tracks
 l_window = 2;  %lag time
 
@@ -101,16 +106,16 @@ nB = 4;
 ang_fit = allas(1:end-1);
 dcp_fit = alldcp(1:end-1);
 ddc_fit = (alldC(1:end-1));
-lfun = @(x)nLL_kernel_chemotaxis(x,ang_fit, dcp_fit, ddc_fit, cosBasis);
+lfun = @(x)nLL_kernel_chemotaxis(x,ang_fit, dcp_fit, ddc_fit, cosBasis, 0);
 % [x,fval] = fminunc(lfun,randn(1,10));  %random initiation
 % [x,fval,exitflag,output,grad,hessian] = fminunc(lfun,[500, 0.0, randn(1,6), -1, 100]+randn(1,10)*0.);  %a closer to a reasonable value
 
 opts = optimset('display','iter');
 % opts.Algorithm = 'sqp';
 LB = [1e-5, 1e-5, ones(1,nB)*-inf, 1e-5 -inf, 1e-5, 1e-5];
-UB = [30, 0.5, ones(1,nB)*inf, 0.5, inf, 100, 30];
+UB = [10, 0.04, ones(1,nB)*inf, 0.01, inf, 100, 30];
 % prs0 = rand(1,10);
-prs0 = [1, 0.1, randn(1,nB), 0.01, -1, 100, 0.1] + randn(1,10)*0.1;
+prs0 = [1, 0.01, randn(1,nB)*10, 0.01, -10, 100, 0.1] + randn(1,10)*0.;
 [x,fval] = fmincon(lfun,prs0,[],[],[],[],LB,UB,[],opts);
 
 x
@@ -249,7 +254,7 @@ bar( bb, 1/(2*pi*besseli(0,K_^2)) * exp(K_^2*cos( bb )) , 100); hold on
 bar( bb, 1/(2*pi*besseli(0,K2_^2)) * exp(K2_^2*cos( bb-pi )) , 100,'r');
 title('von Mises for \delta C^{\perp}')
 subplot(2,2,4)
-filt_ddc = conv( ddc_fit, B_, 'same' );
+filt_ddc = conv( ddc_fit, (B_ * cosBasis'), 'same' );
 Pturns = A_ ./ (1 + exp( filt_ddc)) + C_;
 plot(filt_ddc , Pturns,'o')
 title('Logistic for \delta C')
@@ -372,3 +377,48 @@ plot([0,0],[0,0],'k.','MarkerSize',40)
 hold off
 set(gca,'Ydir','reverse')
 
+
+%% Reconstruction from inferred kernel
+bins = 30;
+dC_ = dcp_fit;
+dA_ = filt_dcp*14*l_window;
+
+avang = zeros(1,bins);
+stdang = zeros(1,bins);
+% h = histogram(dC_,bins);
+% cts = h.Values;
+% bis = h.BinEdges(1:end-1);
+[cts,bis] = hist(dC_,bins);
+for bi = 2:length(bis)
+    pos = intersect(find(bis(bi-1)<dC_),find((bis(bi)>=dC_)));
+    if isempty(pos)~=1
+        avang(bi) = mean(dA_(pos));
+        stdang(bi) = std(dA_(pos));
+    end
+end
+
+figure()
+set(gca,'FontSize',20);
+errorbar(bis,avang,stdang)
+figure()
+plot(bis,avang,'-o')
+xlabel('\delta C^{\perp}', 'Fontsize',20)
+ylabel('<\delta \theta>','Fontsize',20)
+set(gcf,'color','w');
+xAX = get(gca,'XAxis');
+set(xAX,'FontSize', 15);
+xAX = get(gca,'YAxis');
+set(xAX,'FontSize', 15);
+
+%% 
+figure;
+Pturns = A_ ./ (1 + exp( filt_ddc)) + C_;
+plot(filt_ddc/length((B_ * cosBasis')) , Pturns,'o')
+
+xlabel('\delta C', 'Fontsize',20)
+ylabel('P(turn|\delta C)', 'Fontsize',20)
+set(gcf,'color','w');
+xAX = get(gca,'XAxis');
+set(xAX,'FontSize', 15);
+xAX = get(gca,'YAxis');
+set(xAX,'FontSize', 15);

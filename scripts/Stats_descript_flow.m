@@ -16,13 +16,17 @@ test = load('/projects/LEIFER/Kevin/Data_odor_flow_equ/20211029_GWN_app+_MEK110m
 Cmap =load('/projects/LEIFER/Kevin/Data_odor_flow_equ/20211029_GWN_app+_MEK110mM_40ml/Landscape.mat');
 Fcon = load('/projects/LEIFER/Kevin/Data_odor_flow_equ/20211029_GWN_app+_MEK110mM_40ml/OdorFx.mat');
 
-    % Cmap = load('/projects/LEIFER/Kevin/Data_odor_flow_equ/20220113_GWN_app+_MEK110mM_gasphase_30ml_200air/Landscape.mat');
-% Fcon = load('/projects/LEIFER/Kevin/Data_odor_flow_equ/20220113_GWN_app+_MEK110mM_gasphase_30ml_200air/OdorFx.mat');
+Cmap = load('/projects/LEIFER/Kevin/Data_odor_flow_equ/20220113_GWN_app+_MEK110mM_gasphase_30ml_200air/Landscape.mat');
+Fcon = load('/projects/LEIFER/Kevin/Data_odor_flow_equ/20220113_GWN_app+_MEK110mM_gasphase_30ml_200air/OdorFx.mat');
+
+Cmap = load('/home/kschen/github/OdorSensorArray/OSA_MFC_PID_scripts/Landscape_low.mat');
+Fcon = load('/home/kschen/github/OdorSensorArray/OSA_MFC_PID_scripts/OdorFx_low.mat');
 
 Fcon = Fcon.F;
 M = Cmap.vq1;
-M = fliplr(flipud(M));  %flipped camera
+M = (flipud(M));  %flipped camera
 
+%%
 poly_degree = 3;  %polynomial fitting for moving window
 filt = 7;  %window the path (has to be odd because it is +/- points around the center)
 fr = 1/14;  %1/14 seconds between each frame  (~0.0714 second for each frame)
@@ -30,7 +34,7 @@ nn = length(Tracks); %number of worms selected
 mint = 60*3; %minimum time in seconds
 minx = 20;  %minimum displacement (in terms of pixels)
 target = [2517,975];  %position of target/sourse of odorant (approximated from images)
-endingt = 60*15;  %only taking the first few minutes
+endingt = 60*30;  %only taking the first few minutes
 pix2mm = 1/31.5;
 
 figure();
@@ -43,21 +47,64 @@ for i = 1:nn
         displace = mean((Tracks(i).Path(:,1)-mean(Tracks(i).Path(:,1))).^2 + (Tracks(i).Path(:,2)-mean(Tracks(i).Path(:,2))).^2); %pixel displacement
         alldists = [alldists displace*pix2mm^2];  %all dispacements in mm
         if displace > minx^2  %space cutoff
-            pos = find(Tracks(i).Time>endingt);  %time window cutoff (the later time points are less correct...)
+            pos = find(Tracks(i).Time<endingt);  %time window cutoff (the later time points are less correct...)
 %             if isempty(pos)~=1
                 x_smooth = smooth(Tracks(i).Path(pos,1), filt,'sgolay',poly_degree);
                 y_smooth = smooth(Tracks(i).Path(pos,2), filt,'sgolay',poly_degree);
-                plot(x_smooth*pix2mm, y_smooth*pix2mm,'k'); hold on;
+                plot(x_smooth*pix2mm, y_smooth*pix2mm,'k','LineWidth',1); hold on;
+                plot(x_smooth(1)*pix2mm, y_smooth(1)*pix2mm,'r.')
+                plot(x_smooth(end)*pix2mm, y_smooth(end)*pix2mm,'g.')
                 cand = [cand i];
             end
 %         end
 %     end
 end
 
+%%
+figure();
+for i = 1:nn
+    pos = find(Tracks(i).Time<endingt);  %time window cutoff (the later time points are less correct...)
+    x_smooth = smooth(Tracks(i).Path(pos,1), filt,'sgolay',poly_degree);
+    y_smooth = smooth(Tracks(i).Path(pos,2), filt,'sgolay',poly_degree);
+    imagesc(M,'XData',[0 size(M,2)*pix2mm],'YData',[0 size(M,1)*pix2mm]); hold on;
+    plot(x_smooth*pix2mm, y_smooth*pix2mm,'k');
+    plot(x_smooth(1)*pix2mm, y_smooth(1)*pix2mm,'r*')
+    title(num2str(i))
+    pause();
+end
+
+%%
+track = Tracks(15).Path;
+bin = 1;
+x_smooth = smooth(track(:,1), filt,'sgolay',poly_degree);
+y_smooth = smooth(track(:,2), filt,'sgolay',poly_degree);
+temp = [x_smooth'; y_smooth']';
+subs = temp(1:bin:end,:);
+vecs = diff(subs);
+Ct = zeros(1,length(vecs));
+dtht = Ct*1;
+for pp = 2:length(vecs)
+    Ct(pp) = Fcon(subs(pp,1), subs(pp,2));
+    dtht(pp) = angles(vecs(pp-1,:)/norm(vecs(pp-1,:)),vecs(pp,:)/norm(vecs(pp,:)));
+end
+time_ = [1:length(vecs)]/14*bin;
+figure;
+subplot(211); plot(time_(2:end-1), Ct(2:end-1)); ylabel('ppm');
+xAX = get(gca,'YAxis');
+set(xAX,'FontSize', 15);
+xticks([]);
+subplot(212); plot(time_(2:end-1), dtht(2:end-1), 'k'); ylabel('d\theta'); xlabel('time (s)')
+set(gcf,'color','w');
+xAX = get(gca,'XAxis');
+set(xAX,'FontSize', 15);
+xAX = get(gca,'YAxis');
+set(xAX,'FontSize', 15);
+
+
 %% calculate aboservables
 figure;
 poly_degree = 3;  %polynomial fit for the tracks
-bin = 7;  %temporal binning
+bin = 4;  %temporal binning
 filt = 7;  %filtering tracks
 l_window = 2;  %lag time
 allas = []; %angles
@@ -176,13 +223,13 @@ for bi = 2:length(bis)
     end
 end
 figure()
-% errorbar(bis,avang,stdang)
+errorbar(bis,avang,stdang)
 plot(bis(2:end),p_cnts(2:end)./cnts(2:end),'-o')
 xlabel('dC')
 ylabel('P(sharp turn)')
 
 %% adaptive binning test
-bins = 30;
+bins = 25;
 p_threshold = 120;
 num_points = floor(length(allas)/bins);  %number of points in one bin, now that we fix this value
 [val,pos] = sort(dC_);

@@ -51,18 +51,18 @@ end
 %% triggered head angle
 nn = length(Tracks);
 tip = 1;
-base = 15;  %head is from base to tip
+base = 3;  %head is from base to tip
 endp = 20;  %ending for body-center reference
 
-tip = 20;
-base = 15;  %head is from base to tip (3 or 5)
-endp = 1;  %ending for body-center reference
+% tip = 20;
+% base = 15;  %head is from base to tip (3 or 5)
+% endp = 1;  %ending for body-center reference
 
 thr = 60;  %quite arbitrary for sudden head angle change (30 or 50 (typical head swings <30 according to data))
 win = 150;
 trigs = [];  %triggering stimuli
 headyn = [];  %looking at the head dynamics
-for w = 1:5000%nn
+for w = 10000:15000
     w
     temp = Tracks(w).Centerlines;
     stim = Tracks(w).LEDPower;
@@ -74,7 +74,8 @@ for w = 1:5000%nn
         head_angs(t) = angles(heada,centl);
     end
     
-    pos = find(diff(head_angs)<thr & diff(head_angs)>30);  %thresholding conditiond!!!
+%     pos = find(diff(head_angs)<thr & diff(head_angs)>30);  %thresholding conditiond!!!
+    pos = find(diff(head_angs)>thr);
     for ii = 1:length(pos)
         if pos(ii)-win>0 && pos(ii)+win<length(head_angs)
             trigs = [trigs ; stim(pos(ii)-win:pos(ii)+win)];

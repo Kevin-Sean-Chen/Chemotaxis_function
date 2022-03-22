@@ -15,6 +15,13 @@ Tracks = loadtracks(folder_names,fields_to_load);
 test = load('/projects/LEIFER/Kevin/Data_odor_flow_equ/20211029_GWN_app+_MEK110mM_40ml/Landscape.mat');
 Cmap =load('/projects/LEIFER/Kevin/Data_odor_flow_equ/20211029_GWN_app+_MEK110mM_40ml/Landscape.mat');
 Fcon = load('/projects/LEIFER/Kevin/Data_odor_flow_equ/20211029_GWN_app+_MEK110mM_40ml/OdorFx.mat');
+
+Cmap = load('/projects/LEIFER/Kevin/Data_odor_flow_equ/20220113_GWN_app+_MEK110mM_gasphase_30ml_200air/Landscape.mat');
+Fcon = load('/projects/LEIFER/Kevin/Data_odor_flow_equ/20220113_GWN_app+_MEK110mM_gasphase_30ml_200air/OdorFx.mat');
+
+% Cmap = load('/home/kschen/github/OdorSensorArray/OSA_MFC_PID_scripts/Landscape_low.mat');
+% Fcon = load('/home/kschen/github/OdorSensorArray/OSA_MFC_PID_scripts/OdorFx_low.mat');
+
 Fcon = Fcon.F;
 
 %% test with RBW and WV index vs. CI (biased-random walk, weathervaning, and chemotaxis index)
@@ -72,7 +79,7 @@ for c = 1:length(Tracks)
     if dC>=0
         ci_high = ci_high+dC;  %recording for chemotaxis performance
     elseif dC<0
-        ci_low = ci_low+1*abs(dC);
+        ci_low = ci_low+abs(dC);
     end
     
 %     c
@@ -95,22 +102,33 @@ app_ = [0.09  0.21  0.35 ;
         0.15  0.16  0.34;
         0.09  0.16  0.32]';
 nai_ = [0.08  0.09  0.15;
-        0.13  0.07  0.26
+        0.13  0.07  0.26;
         0.13  0.069  0.21;
         0.09  0.1  0.25]';
 ave_ = [0.04  0.14  0.19;
         0.01  0.18  0.25;
         0.03  0.21  0.25]';
+
+    
 %%% low C
-app_ = [0.12, 0.16, 0.39];
-nai_ = [0.08,0.07,0.26];
-ave_ = [0.05,-0.0008,0.08];
+app_ = [0.12, 0.16, 0.39;
+        0.08, 0.15, 0.32;
+        0.14  0.11,  0.38]';
+nai_ = [0.08,0.07,0.26;
+       0.10  0.071  0.20;
+       0.08, 0.065, 0.21]';
+%         0.09, 0.13, 0.24]';
+ave_ = [0.05,-0.0008,0.08;
+        0.02 , 0.02, 0.1;
+        0.06, 0.0, 0.04;
+        0.07, 0.04, 0.23]';
 
 figure();
 plot(app_,'b-o','linewidth',2); hold on
 plot(nai_,'k-o','linewidth',2); hold on
 plot(ave_,'r-o','linewidth',2); hold on
 % plot([0.083  0.08  0.21],'k-*','linewidth',2)
+plot([0.06  0.1  0.22],'r-*','linewidth',2)
 names = {'BRW'; 'WV'; 'CI'};
 ylabel('Index')
 set(gca,'xtick',[1:3],'xticklabel',names,'FontSize',20)
@@ -138,4 +156,4 @@ ylabel('Index')
 % set(gca,'linewidth',2,'FontSize',20)
 set(gca,'xticklabel',names,'FontSize',20)
 set(gcf,'color','w');
-legend([hBar(1), hBar(2),hBar(3)], 'App','Naive','Ave')
+legend([hBar(1), hBar(2),hBar(3)], 'Appetitive','Naive','Aversive')

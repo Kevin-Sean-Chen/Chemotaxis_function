@@ -17,7 +17,7 @@ function [NLL] = nLL_kernel_chemotaxis(THETA, dth, dcp, dc, Basis, lambda)
     
     %[cosBasis, tgrid, basisPeaks] = makeRaisedCosBasis(5, [0, 10], 1.5);
     B_ = B_ * Basis';  %reconstruct with basis
-    B_ = B_ - mean(B_);  %zero-mean to remove dc baseline
+%     B_ = B_ - mean(B_);  %zero-mean to remove dc baseline
     P = A_ ./ (1 + exp( conv( dc, B_, 'same' ))) + C_;  %sigmoid(A_,B_,dc); 
     
     K_win = 1:length(B_);
@@ -30,7 +30,7 @@ function [NLL] = nLL_kernel_chemotaxis(THETA, dth, dcp, dc, Basis, lambda)
 %     marginalP = (1-P).*VM + (1/(2*pi))*P;  %marginalized probability
     %%% turning analge model
     VM_turn = 1/(2*pi*besseli(0,K2_^2)) * exp(K2_^2*cos((dth*d2r - pi)));  %test for non-uniform turns (sharp turns)
-    gamma = 0.75;
+    gamma = 0.9;
     VM_turn = (1-gamma)*1/(2*pi) + gamma*VM_turn;
     
     marginalP = (1-P).*VM + VM_turn.*P;

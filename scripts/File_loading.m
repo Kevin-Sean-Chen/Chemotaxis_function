@@ -1,7 +1,7 @@
 clear; clc;
 %% File_loading
 addpath('C:\Users\Kevin\Documents\GitHub\leifer-Behavior-Triggered-Averaging-Tracker\Experimental Analysis')
-fields_to_load = {'Path','Time','Speed','Behaviors'};
+fields_to_load = {'Path','Time','Speed','Behaviors','LEDPower'};
 folder_names = getfoldersGUI();
 Tracks = loadtracks(folder_names,fields_to_load);%(1:3)
 %filtered_tracks = FilterTracksByTime(T
@@ -124,11 +124,12 @@ beh = bb; % behavioral state
 win = 140;
 acs = 140;
 %%%time windows
-partt = 6; %6
+partt = 5; %6
 bin_times = [0:Mt/(partt):Mt]*60;
 trknum = zeros(1,partt);
 trknum2 = zeros(1,partt);
 trknum3 = cell(1,partt);
+BTA_max = zeros(1,partt);
 
 for bt = 1:length(bin_times)-1
 alltrigs = [];
@@ -144,7 +145,7 @@ if isempty(overlap)~=1
 %     trknum(bt) = trknum(bt)+1;
             
 temp = Tracks(ww).Behaviors;
-stim = allS{ww};%Tracks(ww).LEDPower;
+stim = Tracks(ww).LEDPower;%allS{ww};%
 
 temp = temp(:,overlap);
 stim = stim(overlap);
@@ -174,6 +175,8 @@ Ker = mean(alltrigs);
 plot([-acs:win]*(1/14),Ker,'Linewidth',2)
 set(gca,'Fontsize',20)
 hold on
+
+BTA_max(bt) = max(Ker);
 
 end
 
@@ -420,3 +423,26 @@ PC1 = waves*U(:,1);
 PC2 = waves*U(:,2);
 
 
+%%
+%% bar plot
+figure
+m_ap = mean(app_bta');
+m_na = mean(nai_bta');
+m_av = mean(ave_bta');
+s_ap = std(app_bta');
+s_na = std(nai_bta');
+s_av = std(ave_bta');
+
+
+bar(1,m_ap); hold on
+bar(2,m_na);
+bar(3,m_av);
+errorbar(1:3, [m_ap;m_na;m_av]', [s_ap;s_na;s_av]', '.')          
+xlim([0.5,3.5])
+ylim([20,33])
+hold off
+ylabel('maximum triggered average (mM/cm^2)')
+names = {'Appetitive'; 'Naive'; 'Aversive'};
+% set(gca,'linewidth',2,'FontSize',20)
+set(gca,'xticklabel',names,'FontSize',20)
+set(gcf,'color','w');
