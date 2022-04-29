@@ -12,15 +12,21 @@ folder_names = getfoldersGUI();
 Tracks = loadtracks(folder_names,fields_to_load);
 
 %% pre-processing visualization
-test = load('/projects/LEIFER/Kevin/Data_odor_flow_equ/20211029_GWN_app+_MEK110mM_40ml/Landscape.mat');
-Cmap =load('/projects/LEIFER/Kevin/Data_odor_flow_equ/20211029_GWN_app+_MEK110mM_40ml/Landscape.mat');
-Fcon = load('/projects/LEIFER/Kevin/Data_odor_flow_equ/20211029_GWN_app+_MEK110mM_40ml/OdorFx.mat');
+% test = load('/projects/LEIFER/Kevin/Data_odor_flow_equ/20211029_GWN_app+_MEK110mM_40ml/Landscape.mat');
+% Cmap =load('/projects/LEIFER/Kevin/Data_odor_flow_equ/20211029_GWN_app+_MEK110mM_40ml/Landscape.mat');
+% Fcon = load('/projects/LEIFER/Kevin/Data_odor_flow_equ/20211029_GWN_app+_MEK110mM_40ml/OdorFx.mat');
+% 
+% Cmap = load('/projects/LEIFER/Kevin/Data_odor_flow_equ/20220113_GWN_app+_MEK110mM_gasphase_30ml_200air/Landscape.mat');
+% Fcon = load('/projects/LEIFER/Kevin/Data_odor_flow_equ/20220113_GWN_app+_MEK110mM_gasphase_30ml_200air/OdorFx.mat');
 
-Cmap = load('/projects/LEIFER/Kevin/Data_odor_flow_equ/20220113_GWN_app+_MEK110mM_gasphase_30ml_200air/Landscape.mat');
-Fcon = load('/projects/LEIFER/Kevin/Data_odor_flow_equ/20220113_GWN_app+_MEK110mM_gasphase_30ml_200air/OdorFx.mat');
+Cmap = load('/projects/LEIFER/Kevin/Data_odor_flow_equ/Landscape_low.mat');
+Fcon = load('/projects/LEIFER/Kevin/Data_odor_flow_equ/OdorFx_low.mat');
 
-Cmap = load('/home/kschen/github/OdorSensorArray/OSA_MFC_PID_scripts/Landscape_low.mat');
-Fcon = load('/home/kschen/github/OdorSensorArray/OSA_MFC_PID_scripts/OdorFx_low.mat');
+Fcon = load('/projects/LEIFER/Kevin/Data_odor_flow_equ/OdorFx_cone_110mM.mat');
+Cmap = load('/projects/LEIFER/Kevin/Data_odor_flow_equ/Landscape_cone_110mM.mat');
+
+% Fcon = load('/projects/LEIFER/Kevin/Data_odor_flow_equ/OdorFx_cone_low.mat');
+% Cmap = load('/projects/LEIFER/Kevin/Data_odor_flow_equ/Landscape_cone_low.mat');
 
 Fcon = Fcon.F;
 M = Cmap.vq1;
@@ -32,7 +38,7 @@ filt = 7;  %window the path (has to be odd because it is +/- points around the c
 fr = 1/14;  %1/14 seconds between each frame  (~0.0714 second for each frame)
 nn = length(Tracks); %number of worms selected
 mint = 60*3; %minimum time in seconds
-minx = 20;  %minimum displacement (in terms of pixels)
+minx = 250;  %minimum displacement (in terms of pixels)
 target = [2517,975];  %position of target/sourse of odorant (approximated from images)
 endingt = 60*30;  %only taking the first few minutes
 pix2mm = 1/31.5;
@@ -52,14 +58,17 @@ for i = 1:nn
                 x_smooth = smooth(Tracks(i).Path(pos,1), filt,'sgolay',poly_degree);
                 y_smooth = smooth(Tracks(i).Path(pos,2), filt,'sgolay',poly_degree);
                 plot(x_smooth*pix2mm, y_smooth*pix2mm,'k','LineWidth',1); hold on;
-                plot(x_smooth(1)*pix2mm, y_smooth(1)*pix2mm,'r.')
-                plot(x_smooth(end)*pix2mm, y_smooth(end)*pix2mm,'g.')
+                plot(x_smooth(1)*pix2mm, y_smooth(1)*pix2mm,'g.')
+                plot(x_smooth(end)*pix2mm, y_smooth(end)*pix2mm,'r.')
                 cand = [cand i];
             end
 %         end
 %     end
 end
 
+xlabel('x (mm)'); ylabel('y (mm)'); h = colorbar();  ylabel(h, 'ppm');
+set(gca,'Fontsize',20); set(gcf,'color','w');
+set ( gca, 'xdir', 'reverse' )
 %%
 figure();
 for i = 1:nn
@@ -74,8 +83,8 @@ for i = 1:nn
 end
 
 %%
-track = Tracks(15).Path;
-bin = 1;
+track = Tracks(77).Path(1:end,:);
+bin = 7;
 x_smooth = smooth(track(:,1), filt,'sgolay',poly_degree);
 y_smooth = smooth(track(:,2), filt,'sgolay',poly_degree);
 temp = [x_smooth'; y_smooth']';
@@ -84,16 +93,17 @@ vecs = diff(subs);
 Ct = zeros(1,length(vecs));
 dtht = Ct*1;
 for pp = 2:length(vecs)
-    Ct(pp) = Fcon(subs(pp,1), subs(pp,2));
+%     Ct(pp) = Fcon(subs(pp,1), subs(pp,2));
+    Ct(pp) = M(floor(subs(pp,2)), floor(subs(pp,1)));
     dtht(pp) = angles(vecs(pp-1,:)/norm(vecs(pp-1,:)),vecs(pp,:)/norm(vecs(pp,:)));
 end
 time_ = [1:length(vecs)]/14*bin;
 figure;
-subplot(211); plot(time_(2:end-1), Ct(2:end-1)); ylabel('ppm');
+subplot(211); plot(time_(2:end-1), Ct(2:end-1),'b', 'Linewidth',3); ylabel('ppm');
 xAX = get(gca,'YAxis');
 set(xAX,'FontSize', 15);
 xticks([]);
-subplot(212); plot(time_(2:end-1), dtht(2:end-1), 'k'); ylabel('d\theta'); xlabel('time (s)')
+subplot(212); plot(time_(2:end-1), dtht(2:end-1), 'k', 'Linewidth',1); ylabel('d\theta'); xlabel('time (s)')
 set(gcf,'color','w');
 xAX = get(gca,'XAxis');
 set(xAX,'FontSize', 15);
