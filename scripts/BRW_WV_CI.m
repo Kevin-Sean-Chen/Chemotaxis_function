@@ -27,7 +27,7 @@ Fcon = Fcon.F;
 %% test with RBW and WV index vs. CI (biased-random walk, weathervaning, and chemotaxis index)
 % chemotaxis = struct('brw','wv','ci');
 dC_window = 14*5;  %time window for dC measurement for turns
-time_wind = 60*30;  %first few minutes
+time_wind = 60*15;  %first few minutes
 
 % initializing counts
 run_up = 0;  %recording for runs
