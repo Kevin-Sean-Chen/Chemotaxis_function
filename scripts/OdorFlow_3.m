@@ -7,7 +7,7 @@ addpath('C:\Users\Kevin\Documents\GitHub\leifer-Behavior-Triggered-Averaging-Tra
 addpath('C:\Users\Kevin\Desktop\Chemotaxis_function')
 
 %batch analysis
-fields_to_load = {'Path','Time','Runs','Pirouettes','SmoothSpeed','AngSpeed'};%,'Behaviors'};
+fields_to_load = {'Path','Time','Runs','Pirouettes','SmoothSpeed','AngSpeed','SmoothX','SmoothY'};%,'Behaviors'};
 folder_names = getfoldersGUI();
 Tracks = loadtracks(folder_names,fields_to_load);
 
@@ -19,19 +19,19 @@ Fcon = load('/projects/LEIFER/Kevin/Data_odor_flow_equ/OdorFx_low.mat');
 % Fcon = load('/projects/LEIFER/Kevin/Data_odor_flow_equ/OdorFx_cone_low.mat');
 % Cmap = load('/projects/LEIFER/Kevin/Data_odor_flow_equ/Landscape_cone_low.mat');
 % 
-Fcon = load('/projects/LEIFER/Kevin/Data_odor_flow_equ/OdorFx_cone_110mM.mat');
-Cmap = load('/projects/LEIFER/Kevin/Data_odor_flow_equ/Landscape_cone_110mM.mat');
+% Fcon = load('/projects/LEIFER/Kevin/Data_odor_flow_equ/OdorFx_cone_110mM.mat');
+% Cmap = load('/projects/LEIFER/Kevin/Data_odor_flow_equ/Landscape_cone_110mM.mat');
 
 Fcon = Fcon.F;
 M = Cmap.vq1;
-M = (flipud(M));  %flipped camera
+M = fliplr(flipud(M));  %flipped camera
 
 %% pand a,b 
 poly_degree = 3;  %polynomial fitting for moving window
 filt = 7;  %window the path (has to be odd because it is +/- points around the center)
 fr = 1/14;  %1/14 seconds between each frame  (~0.0714 second for each frame)
 nn = length(Tracks); %number of worms selected
-mint = 60*1; %minimum time in seconds
+mint = 60*2.; %minimum time in seconds
 minx = 100;  %minimum displacement (in terms of pixels)
 endingt = 60*30;  %only taking the first few minutes
 pix2mm = 1/31.5;
@@ -78,7 +78,8 @@ set ( gca, 'xdir', 'reverse' )
 
 %%  scan trough tracks
 figure();
-for i = 1:nn
+for j = 1:length(cand)
+    i = cand(j);
     pos = find(Tracks(i).Time<endingt);  %time window cutoff (the later time points are less correct...)
     x_smooth = smooth(Tracks(i).Path(pos,1), filt,'sgolay',poly_degree);
     y_smooth = smooth(Tracks(i).Path(pos,2), filt,'sgolay',poly_degree);
@@ -97,6 +98,21 @@ for i = 1:nn
     plot(Tracks(i).SmoothSpeed); 
     pause();
 end
+
+%% example tracks
+cand_list = [94,65,87]; %[9,31,32,65,87,92,94];%[32,87,94]; % 102722 droplet data
+figure();
+imagesc(M','XData',[0 size(M,2)*pix2mm],'YData',[0 size(M,1)*pix2mm]); hold on;
+for ll = 1:length(cand_list)
+    i = cand_list(ll);
+    x_smooth = smooth(Tracks(i).Path(:,1), filt,'sgolay',poly_degree);
+    y_smooth = smooth(Tracks(i).Path(:,2), filt,'sgolay',poly_degree);
+    plot(x_smooth*pix2mm, y_smooth*pix2mm,'k','LineWidth',2); hold on
+    plot(x_smooth(1)*pix2mm, y_smooth(1)*pix2mm,'g.', 'MarkerSize',15)
+    plot(x_smooth(end)*pix2mm, y_smooth(end)*pix2mm,'r.', 'MarkerSize',15)
+%     title(num2str(ll));pause();
+end
+axis([20,100 -10,100]); set(gca,'YDir','normal')
 
 %% panel c
 i = 1; %picking an example

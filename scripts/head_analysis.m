@@ -38,7 +38,7 @@ Fs = 30;  %sample rate
 L = length(d_theta);
 Y = fft(d_theta);
 f = Fs*(0:(L/2))/L;
-plot(f,P1) 
+plot(f,Y) 
 title('head swing spectrum')
 xlabel('f (Hz)')
 ylabel('|P1(f)|')

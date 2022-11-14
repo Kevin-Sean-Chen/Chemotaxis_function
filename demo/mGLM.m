@@ -1,11 +1,11 @@
 % mGLM
 %%% mixture GLM debugging
 %% define variables
-lt = 10000; % length of simulation / data
+lt = 50000; % length of simulation / data
 nB = 4;  % number of basis function for the kernel
 [cosBasis, tgrid, basisPeaks] = makeRaisedCosBasis(nB, [0, 10], 1.3); % basis function
 %%% true params
-beta = 2; % nonlinear parameter
+beta = 1.; % nonlinear parameter
 alpha_h = [-4:-1]*.1;  % angle history kernel coefficient
 alpha_dc = [1,4,-2,-1]*1;  % dC kernel coefficient
 alpha_dcp = [-4:-1]*.01;  % dCp kernel coefficient
@@ -17,29 +17,31 @@ kappa_wv = 10;  % weather-vaning angle variance
 K_h = fliplr(alpha_h*cosBasis');  % dth kernel
 K_dc = fliplr(alpha_dc*cosBasis');  % dC kernel
 K_dcp = fliplr(alpha_dcp*cosBasis');  % dCp kernel
-lc = 5;  %length of smoothing
+lc = 10;  %length of smoothing
 dC = conv(randn(1,lt),ones(1,lc),'same')/lc;  % dC stimulus vector
 dCp = conv(randn(1,lt),ones(1,lc),'same')/lc;  % dCp stimulus vector
 dth = zeros(1,lt);
 turns = zeros(1,lt);
 F = dth*0;
-pad = length(K_s);
+pad = length(K_h);
 for tt=pad:lt
     F(tt) = dC(tt-pad+1:tt)*K_dc' + abs(dth(tt-pad+1:tt))*K_h';  % linear filtering
     turns(tt) = choice(NL(F(tt)+base,beta));  % nonlinearity and binary choice
     dth(tt) = turns(tt)*circ_vmrnd(pi,kappa_turn,1) + (1-turns(tt))*circ_vmrnd(dCp(tt-pad+1:tt)*K_dcp',kappa_wv,1);  % angle drawn from mixture of von Mesis
 end
 
+figure; hist(dth,100)
 %% MLE inference
-lfun = @(x)nLL(x, dth, dCp, dC, cosBasis);  % objective function
+lfun = @(x)nLL(x, dth, dCp, dC, cosBasis, 0.1);  % objective function
 opts = optimset('display','iter');
 num_par = 14;
 LB = [ones(1,12)*-10, 0, 0]*1;
 UB = [ones(1,12)*10, 20, 20]*1;
-% prs0 = [alpha_h, alpha_dc, alpha_dcp, kappa_turn, kappa_wv];%
-prs0 = rand(1,num_par);
+prs0 = [alpha_h, alpha_dc, alpha_dcp, kappa_turn, kappa_wv];%
+% prs0 = rand(1,num_par);
 [x,fval,EXITFLAG,OUTPUT,LAMBDA,GRAD,HESSIAN] = fmincon(lfun,prs0,[],[],[],[],LB,UB,[],opts);  % constrained optimization
 % [x,FVAL,EXITFLAG,OUTPUT,GRAD,HESSIAN] = fminunc(lfun, prs0, opts);
+fval
 
 %% evaluation
 beta_rec = x(1);
@@ -114,5 +116,5 @@ function [NLL] = nLL(THETA, dth, dcp, dc, Basis, lambda)
     marginalP = (1-P).*VM + VM_turn.*P;
     
 %     lambda = 10;
-    NLL = -nansum(log(marginalP + 0*1e-10));  % adding slope l2 regularization
+    NLL = -nansum(log(marginalP + 1*1e-10)) + lambda*sum(K_dc.^2);  % adding slope l2 regularization
 end

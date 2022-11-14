@@ -8,7 +8,7 @@ Tracks = loadtracks(folder_names,fields_to_load);%(1:3)
 
 allt = 0; for ii = 1:length(Tracks); temp = Tracks(ii).Time; allt = allt+ temp(end)-temp(1); end  %animal-hours
 %% Chemotaxis analysis
-load('Path'); path = values;
+% load('Path'); path = values;
 
 %%%angale analysis
 bins = 1:2:10;
@@ -18,8 +18,8 @@ ns = 60;
 figure;
 
 for ii = ns
-    %trace = getfield(Tracks,{ii+5},'Path');
-    traces = path{ii};
+    traces = getfield(Tracks,{ii+5},'Path');
+%     traces = path{ii};
     subs = traces(1:bin:end,:);
     vecs = diff(subs);
 
@@ -124,7 +124,7 @@ beh = bb; % behavioral state
 win = 140;
 acs = 140;
 %%%time windows
-partt = 5; %6
+partt = 4; %6
 bin_times = [0:Mt/(partt):Mt]*60;
 trknum = zeros(1,partt);
 trknum2 = zeros(1,partt);
@@ -176,7 +176,7 @@ plot([-acs:win]*(1/14),Ker,'Linewidth',2)
 set(gca,'Fontsize',20)
 hold on
 
-BTA_max(bt) = max(Ker);
+BTA_max(bt) = max(Ker);%-min(Ker);
 
 end
 

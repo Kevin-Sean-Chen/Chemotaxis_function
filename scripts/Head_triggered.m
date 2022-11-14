@@ -58,11 +58,11 @@ endp = 20;  %ending for body-center reference
 % base = 15;  %head is from base to tip (3 or 5)
 % endp = 1;  %ending for body-center reference
 
-thr = 60;  %quite arbitrary for sudden head angle change (30 or 50 (typical head swings <30 according to data))
+thr = 2*60;  %quite arbitrary for sudden head angle change (30 or 50 (typical head swings <30 according to data))
 win = 150;
 trigs = [];  %triggering stimuli
 headyn = [];  %looking at the head dynamics
-for w = 10000:15000
+for w = 1:500
     w
     temp = Tracks(w).Centerlines;
     stim = Tracks(w).LEDPower;
@@ -74,8 +74,8 @@ for w = 10000:15000
         head_angs(t) = angles(heada,centl);
     end
     
-%     pos = find(diff(head_angs)<thr & diff(head_angs)>30);  %thresholding conditiond!!!
-    pos = find(diff(head_angs)>thr);
+    pos = find(abs(diff(head_angs))<thr & abs(diff(head_angs))>50);  %thresholding conditiond!!!
+%     pos = find(abs(diff(head_angs))>thr);
     for ii = 1:length(pos)
         if pos(ii)-win>0 && pos(ii)+win<length(head_angs)
             trigs = [trigs ; stim(pos(ii)-win:pos(ii)+win)];
@@ -84,6 +84,8 @@ for w = 10000:15000
     end
     
 end
+
+max(mean(trigs))
 
 %% triggered eigen-values!!
 moden = 2;  %the eigen-mode of interest

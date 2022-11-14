@@ -18,33 +18,39 @@ function [NLL] = nLL_kernel_hist2(THETA, dth, dcp, dc, Basis, lambda, mask)
     kappa_turn = THETA(12);   % vairance of the sharp turn von Mises
     gamma = THETA(13);        % weight for uniform angle in the turn
     
+    base_dc = 0;%THETA(14);      % baseline for dc probability
+    base_dcp = 0;%THETA(15);     % baseline for dcp probability
+    
     %%% turning decision
-    %[cosBasis, tgrid, basisPeaks] = makeRaisedCosBasis(5, [0, 10], 1.5);
     K_dc = alpha_dc * Basis';  %reconstruct with basis
     K_win = 1:length(K_dc);
     h_win = 1:length(K_dc)*1;
-    K_h = Amp_h * exp(-h_win/tau_h);  % dth kernel (make longer~)
+    K_h = Amp_h * exp(-h_win/tau_h);  % dth kernel
 %     X_dth = (convmtx(abs(dth),length(E_)));
 %     filt_dth = X_dth'*E_';
-    filt_dth = conv_kernel(abs(dth), K_h);
-    filt_dc = conv_kernel(dc, K_dc);
-    P = A_ ./ (1 + exp( -(filt_dc + filt_dth + 0))) + C_;  %sigmoid(A_,B_,dc); 
+    filt_dth = conv_kernel(abs([dth(1:end)]), K_h);  %(1:end-1), indexed for history
+    filt_dc = conv_kernel([dc(1:end)], K_dc);
+    P = A_ ./ (1 + exp( -(filt_dc + filt_dth + base_dc) )) + C_;  %sigmoid(A_,B_,dc); 
+%     P = A_ ./ (1 + exp( -(filt_dc + filt_dth + 0))) + C_;
     
     %%% weathervaning part
     d2r = pi/180;
     C = 1/(2*pi*besseli(0,kappa_wv^2));  % normalize for von Mises
     K_dcp = Amp_dcp * exp(-K_win/tau_dcp);    % dcp kernel
-    filt_dcp = conv_kernel(dcp, K_dcp);
-    VM = C * exp(kappa_wv^2*cos(( filt_dcp - dth )*d2r));  %von Mises distribution
+    filt_dcp = conv_kernel(dcp, K_dcp);  %(1:end-1)
+%     VM = C * exp(kappa_wv^2*cos(( dth(2:end) - filt_dcp - base_dcp )*d2r));  %von Mises distribution
+    VM = C * exp(kappa_wv^2*cos(( dth - filt_dcp - base_dcp )*d2r));
     
     %%% turning analge model
-    VM_turn = 1/(2*pi*besseli(0,kappa_turn^2)) * exp(kappa_turn^2*cos((dth*d2r - pi)));  %test for non-uniform turns (sharp turns)
+%     VM_turn = 1/(2*pi*besseli(0,kappa_turn^2)) * exp(kappa_turn^2*cos((dth(2:end)*d2r - pi)));  %test for non-uniform turns (sharp turns)
+    VM_turn = 1/(2*pi*besseli(0,kappa_turn^2)) * exp(kappa_turn^2*cos((dth*d2r - pi)));
     VM_turn = (1-gamma)*1/(2*pi) + gamma*VM_turn;
     
     %%% marginal probability
-    marginalP = (1-P).*VM + VM_turn.*P;
+    marginalP = (1-P(1:end)).*VM(1:end) + VM_turn(1:end).*P(1:end);  % marginal LL, indexed to match time step delay
 %     lambda = 10;
-    NLL = -nansum( mask.* ( log(marginalP + 0*1e-10) ) ) + lambda*(1*sum((K_dc - 0).^2));% + 0.1*sum((E_ - 0).^2) + 0*C_^2);  % adding slope l2 regularization
+    NLL = -nansum( mask(1:end).* ( log(marginalP + 0*1e-10) ) ) + lambda*(1*sum((K_dc - 0).^2));% + 0.1*sum((E_ - 0).^2) + 0*C_^2);  % adding slope l2 regularization
+%     NLL = -nansum( mask.* ( log(marginalP + 0*1e-10) ) ) + lambda*(1*sum((K_dc - 0).^2));%
 end
 
 % def nLL(THETA, dth,dcp,dc):
