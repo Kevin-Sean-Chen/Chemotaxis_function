@@ -117,7 +117,7 @@ for c = 1:length(Tracks) %length(Paths)
     alldcp = [alldcp dCp];
     alldC = [alldC dCs];
     alldis = [alldis dds];  %displacement (effective velocity)
-    trials(1) = NaN;
+    trials(1) = NaN; trials(end) = NaN;
     alltrials = [alltrials trials];
     allxys = [allxys xys];
     

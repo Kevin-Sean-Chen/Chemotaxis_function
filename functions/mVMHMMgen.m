@@ -37,7 +37,7 @@ for rep = 1:REP
 %initialize tracks
 tracks = zeros(T,2);
 % tracks(1,:) = [size(M,2)*1/2 + randn()*200, randn()*200 + size(M,1)*1/2]*0. + 1.*[size(M,2)*rand(), size(M,1)*5/8];%origin; %initial position
-temp = Tracks(rep).Path; tracks(1,:) = temp(1,:);  %data intials
+temp = Data(rep).xy'; tracks(1,:) = temp(1,:);  %data intials
 tracks(2,:) = tracks(1,:)+randn(1,2)*vm*dt;%origin+randn(1,2)*vm*dt;
 ths = zeros(1,T);  ths(1:3) = randn(1,3)*360; %initial angle
 dxy = randn(1,2);  %change in each step
@@ -56,7 +56,7 @@ dthv = zeros(1,length(xx_h));
 %latent state dynamics
 kt = simulate(mc, lt);  % integer states
 % kt(kt==1)=0; kt(kt==2)=1; kt(kt==0)=2; %swapping state numbers
-% kt(1:5000) = 2; %test for different initial conditions!
+% kt(1:1000) = 2; %test for different initial conditions!
 
 for t = 2:T
     

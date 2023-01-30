@@ -46,7 +46,7 @@ pix2mm = 1/31.5;
 CM = ['k','w','y'];%jet(stateK);  % See the help for COLORMAP to see other choices.
 figure;
 imagesc(M,'XData',[0 size(M,2)*pix2mm],'YData',[0 size(M,1)*pix2mm]); hold on
-for kk = nStates:-1:1 %1:nStates %
+for kk = 1:nStates %nStates:-1:1 %
     pos = find(bb==kk);
 %     plot(allxys(1,pos)*pix2mm, allxys(2,pos)*pix2mm,'.')%,'color',CM(kk))
     plot(allxys(1,pos)*pix2mm, allxys(2,pos)*pix2mm,'.','color',CM(kk))
@@ -94,6 +94,7 @@ nai = [-23962, -2833, -2714];
 ave = [-27120, -1807, 850];
 
 hBar = bar([app;nai;ave]);
+ctr = zeros(3,3);
 for k1 = 1:3
     ctr(k1,:) = bsxfun(@plus, hBar(k1).XData, hBar(k1).XOffset');     
     ydt(k1,:) = hBar(k1).YData;                    

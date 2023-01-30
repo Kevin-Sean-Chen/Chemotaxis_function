@@ -99,6 +99,7 @@ for ii = 1:ntracks
     
     pos = find(dds>dis_thr); %remove sharp jumps
     trials(pos) = nan;
+    trials(1) = nan; trials(end) = nan;
     
     % store as structure
     Data(ii).dth = angs; %angle change

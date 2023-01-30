@@ -1,15 +1,15 @@
-%% mVM_EM
+%% mVM_EM_pop
 %% load some test data
-wind = 1:60000;
+% assuming we have conditioned tracks and analysis in the structure 'Data' and concatenated data all...
+% tracks
+ntracks = length(Data);
+% concatenated data vectors
+wind = 1:length(allas);
 yy = allas(wind);
 xx = [alldC(wind); 
       alldcp(wind)];
-
 mask = true(1,length(yy));
-mask(isnan(alltrials(wind))) = false;%
-
-%%% for LL0 control
-% yy = yy(randperm(length(yy)));
+mask(isnan(alltrials(wind))) = false;
 
 %% Observation and input
 % Set parameters: transition matrix and emission matrix
@@ -26,9 +26,7 @@ G = gamrnd(alpha_full*ones(nStates) + alpha_diag*eye(nStates),1); % sample gamma
 A0 = G./repmat(sum(G,2),1,nStates); % normalize so rows sum to 1
 % A0 = [0.99,0.01; 0.01,0.99];
 
-% sticky priors
-alpha = 1.;  % Dirichlet shape parameter as a prior
-kappa = 3;  % upweighting self-transition for stickiness
+alpha = 10.;  % Dirichlet shape parameter as a prior
 
 % basis function
 nB = 4;
@@ -46,7 +44,7 @@ wts0(1,:,2) = [10,  randn(1,nB)*10, -50, 25, -10, 25, 20,.5];
 % Build struct for initial params
 mmhat = struct('A',A0,'wts',wts0,'loglifun',loglifun,'basis',cosBasis,'lambda',.0);
 
-%% Set up variables for EM
+%% Set up variables for EM with tracks-based likelihood
 maxiter = 50;
 EMdisplay = 2;
 logpTrace = zeros(maxiter,1); % trace of log-likelihood
@@ -56,33 +54,32 @@ jj = 1; % counter
 
 while (jj <= maxiter) && (dlogp>1e-3)
     
-    % --- run E step  -------
-    [logp,gams,xisum] = runFB_GLMHMM(mmhat,xx,yy,mask); % run forward-backward
-    logpTrace(jj) = logp;
-   
-    % --- run M step  -------
+    gams = [];
+    xisum = zeros(nStates,nStates);
+    %%% load tracks
+    for k = 1:ntracks
+        
+        % load track observation
+        y_k = Data(k).dth;
+        x_k = [Data(k).dc;
+              Data(k).dcp];
+        mask_k = Data(k).mask;
+        mask_k(isnan(mask_k)) = 0;
+        
+        % --- run E-step ---
+        [logp,gams_k,xisum_k] = runFB_GLMHMM(mmhat,x_k,y_k,mask_k); % run forward-backward
+        logpTrace(jj) = logpTrace(jj) + logp;
+        
+        % append or adding
+        gams = [gams gams_k];
+        xisum = xisum + xisum_k;
+    end
     
-    % Update transition matrix (with stickiness)
-    unormedA = kappa*eye(nStates) + (alpha-1)*ones(nStates,nStates) + xisum;
-    mmhat.A = unormedA ./ sum(unormedA,2);
-%     mmhat.A = (alpha-1 + xisum) ./ (nStates*(alpha-1) + sum(xisum,2)); % normalize each row to sum to 1
-    
-    %%% sticky one
-%     expected_joints = sum([np.sum(Ezzp1, axis=0) for _, Ezzp1, _ in expectations]) + 1e-16
-%     expected_joints += self.kappa * np.eye(self.K) + (self.alpha-1) * np.ones((self.K, self.K))
-%     P = (expected_joints / expected_joints.sum(axis=1, keepdims=True)) + 1e-16
-    
-    %%% place-holder for input-driven transitions
-    % logp = logp0;
-    % logp = logp + w'*u;
-    % logp = logp - logsumexp(logp);
-    % obj = sum(xis.*logp);l  %(xis is xisum before summation)
-    % mmhat = runMstep_trans(mmhat, xx, yy, gams, xis, mask);  % write
-    % another function for optimization of driven transition
-    
+    % --- run M-step ---
+    % Update transition matrix
+    mmhat.A = (alpha-1 + xisum) ./ (nStates*(alpha-1) + sum(xisum,2)); % normalize each row to sum to 1
     % Update model params
     mmhat = runMstep_mVM(mmhat, xx, yy, gams, mask);
-    %mmhat.Mstepfun(mmhat,xx(:,mask),yy(:,mask),gams(:,mask));
     
     % ---  Display progress ----
     if mod(jj,EMdisplay)==0
