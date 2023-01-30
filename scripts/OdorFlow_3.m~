@@ -16,9 +16,9 @@ Tracks = loadtracks(folder_names,fields_to_load);
 Cmap = load('/projects/LEIFER/Kevin/Data_odor_flow_equ/Landscape_low.mat');
 Fcon = load('/projects/LEIFER/Kevin/Data_odor_flow_equ/OdorFx_low.mat');
 
-% Fcon = load('/projects/LEIFER/Kevin/Data_odor_flow_equ/OdorFx_cone_low.mat');
-% Cmap = load('/projects/LEIFER/Kevin/Data_odor_flow_equ/Landscape_cone_low.mat');
-% 
+Fcon = load('/projects/LEIFER/Kevin/Data_odor_flow_equ/OdorFx_cone_low.mat');
+Cmap = load('/projects/LEIFER/Kevin/Data_odor_flow_equ/Landscape_cone_low.mat');
+
 % Fcon = load('/projects/LEIFER/Kevin/Data_odor_flow_equ/OdorFx_cone_110mM.mat');
 % Cmap = load('/projects/LEIFER/Kevin/Data_odor_flow_equ/Landscape_cone_110mM.mat');
 
@@ -32,11 +32,11 @@ filt = 7;  %window the path (has to be odd because it is +/- points around the c
 fr = 1/14;  %1/14 seconds between each frame  (~0.0714 second for each frame)
 nn = length(Tracks); %number of worms selected
 mint = 60*1.; %minimum time in seconds
-minx = 100;  %minimum displacement (in terms of pixels)
+minx = 100*1.;  %minimum displacement (in terms of pixels)
 endingt = 60*30;  %only taking the first few minutes
 pix2mm = 1/31.5;
 targ_track = 7;
-conc_thre = 0.8*max(max(M));
+conc_thre = 1.0*max(max(M));
 
 figure();
 imagesc(M,'XData',[0 size(M,2)*pix2mm],'YData',[0 size(M,1)*pix2mm]);
@@ -100,21 +100,22 @@ for j = 1:length(cand)
 end
 
 %% example tracks
-list = [9,31,32,65,87,92,94];%[32,87,94];%
+cand_list = [94,65,87]; %[9,31,32,65,87,92,94];%[32,87,94]; % 102722 droplet data
 figure();
-imagesc(M,'XData',[0 size(M,2)*pix2mm],'YData',[0 size(M,1)*pix2mm]); hold on;
-for ll = 1:length(list)
-    i = list(ll);
+imagesc(M','XData',[0 size(M,2)*pix2mm],'YData',[0 size(M,1)*pix2mm]); hold on;
+for ll = 1:length(cand_list)
+    i = cand_list(ll);
     x_smooth = smooth(Tracks(i).Path(:,1), filt,'sgolay',poly_degree);
     y_smooth = smooth(Tracks(i).Path(:,2), filt,'sgolay',poly_degree);
-    plot(x_smooth*pix2mm, y_smooth*pix2mm,'k');
+    plot(x_smooth*pix2mm, y_smooth*pix2mm,'k','LineWidth',2); hold on
     plot(x_smooth(1)*pix2mm, y_smooth(1)*pix2mm,'g.', 'MarkerSize',15)
     plot(x_smooth(end)*pix2mm, y_smooth(end)*pix2mm,'r.', 'MarkerSize',15)
-    title(num2str(ll));pause();
+%     title(num2str(ll));pause();
 end
+axis([20,100 -10,100]); set(gca,'YDir','normal')
 
 %% panel c
-i = 1; %picking an example
+i = 7; %picking an example
 wind = 1100:2650;
 %850:2600;
 %9000:9840;  %time widow to show
@@ -263,6 +264,7 @@ grad = angs*1;
 for pp = 1:length(vec_i)-1
     angs(pp) = angles(vec_i(pp,:)/norm(vec_i(pp,:)),vec_i(pp+1,:)/norm(vec_i(pp+1,:)));
     grad(pp) = angles(vec_i(pp,:)/norm(vec_i(pp,:)), grad_i(pp,:)/norm(grad_i(pp,:)));%dot(vec_i(pp,:), grad_i(pp,:));%
+%     grad(pp) = angles(vec_i(pp,:)/norm(vec_i(pp,:)), [1,0]);  % mock x-axis flow direction
 end
 
 % subplot(121); plot(grad); hold on; plot(angs); hold off;
@@ -308,6 +310,7 @@ fixlen = 1;  %we only compute a 2d vector when it moves forward this much
 [fx,fy] = gradient((conv2(M,ones(100,100),'same')/10000),1);  %prepare 2D gradient field
 all_grad = [];
 all_angs = [];
+all_amps = [];  % condition on gradient amplitude
 
 figure()
 for nn = 1:length(Tracks)
@@ -345,14 +348,18 @@ end
 
 angs = zeros(1, length(vec_i)-1);
 grad = angs*1;
+amps = angs*1;
 for pp = 1:length(vec_i)-1
     angs(pp) = angles(vec_i(pp+1,:)/norm(vec_i(pp+1,:)),vec_i(pp,:)/norm(vec_i(pp,:))) / (norm(vec_i(pp,:))*pix2mm); %/fixlen;% / ((sped_i(pp)+sped_i(pp+1))/2);%   %
 %     grad(pp) = dot(vec_i(pp,:), grad_i(pp,:));%
-    grad(pp) = angles(vec_i(pp,:)/norm(vec_i(pp,:)), grad_i(pp,:)/norm(grad_i(pp,:)))*norm(grad_i(pp,:));
+    grad(pp) = angles(vec_i(pp,:)/norm(vec_i(pp,:)), grad_i(pp,:)/norm(grad_i(pp,:))) *norm(grad_i(pp,:));
+    grad(pp) = angles(vec_i(pp,:)/norm(vec_i(pp,:)), [1,0]) *norm(grad_i(pp,:));  % mock x-axis flow direction
+    amps(pp) = norm(grad_i(pp,:));
     end
 
 all_grad = [all_grad  grad];
 all_angs = [all_angs  angs];
+all_amps = [all_amps  amps];
 nn
 
 end
@@ -366,19 +373,30 @@ end
     end
 end
 
+%% conditions
 % pos = find(all_grad==0 | all_grad==0);
 % all_grad(pos) = [];
 % all_angs(pos) = [];
+
+pos = find(all_amps<0.01);
+all_grad(pos) = [];
+all_angs(pos) = [];
+
 %% WV!
 nbs = linspace(-150,150,18);%
+thr = std(all_grad)
 figure()
 pos_0 = find((all_grad)<-10);
 pos_60 = find(abs(all_grad)<10);
 pos_120 = find((all_grad)>10);
 
 % pos_0 = find((all_grad)>-110 & all_grad<-70);
-% pos_60 = find(abs(all_grad)<50);
+% pos_60 = find(abs(all_grad)<20);
 % pos_120 = find((all_grad)>70 & all_grad<110);
+
+% pos_0 = find((all_grad)>-120 & all_grad<-60);
+% pos_60 = find(abs(all_grad)<60);
+% pos_120 = find((all_grad)>60 & all_grad<120);
 
 % pos_0 = find((all_grad)>0.1);
 % pos_60 = find((all_grad)<0.1 & all_grad>0);
@@ -411,7 +429,85 @@ med = mean((aa/sum(aa) / max(aa/sum(aa))).*bb);
 plot([med,med],[0,1])
 y = skewness(all_angs(pos_120))
 
-%% 
+%% analysis loop --- for WV (based on spatial distance not time)
+nn = 1;
+filt = 5* 14;  % time duration
+fixlenx = 1* 1/pix2mm;  % spatial length
+[fx,fy] = gradient((conv2(M,ones(100,100),'same')/10000),1);  %prepare 2D gradient field
+all_grad = [];
+all_angs = [];
+all_amps = [];  % condition on gradient amplitude
+
+figure()
+% loop for tracks
+for nn = 1:length(Tracks)
+    
+    % unpack kenematics
+    if isempty(find(cand==nn))==0
+    speeds = Tracks(nn).SmoothSpeed;
+    paths = Tracks(nn).Path;
+    angspeed_i = Tracks(nn).AngSpeed;
+    runs = Tracks(nn).Runs;
+
+    % loop for runs
+    for rr = 1:size(runs,1)
+        vec_i = [];    % 2d vectors with adaptive sampling rate
+        grad_i = [];   % at this location, what was the gradient direction
+        amps_i = [];   % record gradient amplitude
+        
+        path_i = paths(runs(rr,1):runs(rr,2),:); 
+        speed_i = speeds(runs(rr,1):runs(rr,2)); 
+        x_smooth = smooth(path_i(:,1), filt,'sgolay',poly_degree);
+        y_smooth = smooth(path_i(:,2), filt,'sgolay',poly_degree);
+        path_i = [x_smooth   y_smooth];  
+        
+        % while loop for relevant vectors calculation
+        ii = 1;
+        pos_temp = path_i(1,:);  %initial location
+        while ii < length(speed_i)-1
+            % checking for fixed displacements
+            current_loca = path_i(ii,:);
+            future_locs = path_i(ii:end,:);
+            dists = sum((current_loca - future_locs).^2,2).^0.5;  % future distances
+            pos = find(dists > fixlenx);  % find distance that is larger than the threshold
+            if isempty(pos) ~= 1  % record if there is any
+                nexti = pos(1);  % the closest one
+                % record
+                grad_i = [grad_i; [fx(floor(path_i(ii,2)),floor(path_i(ii,1))), fy(floor(path_i(ii,2)),floor(path_i(ii,1)))] ];  %gradident direction at this location
+%                 ii = ii + nexti;
+                vec_i = [vec_i; path_i(ii+nexti-1,:)-pos_temp];  %compute dispacement vector
+                pos_temp = path_i(ii,:);  %update postion
+                ii = ii + filt; % 1
+            else
+                ii = ii + filt;
+            end
+        end
+
+        % for loop for angle calculations
+        if length(vec_i) > 2
+            angs = zeros(1, length(vec_i)-1);
+            grad = angs*1;
+            amps = angs*1;
+            for pp = 1:length(vec_i)-1
+                angs(pp) = angles(vec_i(pp+1,:)/norm(vec_i(pp+1,:)),vec_i(pp,:)/norm(vec_i(pp,:))) / (norm(vec_i(pp,:))*pix2mm); %/fixlen;% / ((sped_i(pp)+sped_i(pp+1))/2);%   %
+            %     grad(pp) = dot(vec_i(pp,:), grad_i(pp,:));%
+                grad(pp) = angles(vec_i(pp,:)/norm(vec_i(pp,:)), grad_i(pp,:)/norm(grad_i(pp,:))); % *norm(grad_i(pp,:));
+%                 grad(pp) = angles(vec_i(pp,:)/norm(vec_i(pp,:)), [1,0]); % *norm(grad_i(pp,:));  % mock x-axis flow direction
+                amps(pp) = norm(grad_i(pp,:));
+            end
+    
+        end
+
+    all_grad = [all_grad  grad];
+    all_angs = [all_angs  angs];
+    all_amps = [all_amps  amps];
+    nn
+
+    end
+    end
+end
+
+%% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% analysis loop --- for debug with angular velocity
 bin = 14;  %compute every this many elements (0.5s for 14 hz sampling)
 [fx,fy] = gradient((M),1);%gradient(fliplr((Z)),1); %prepare 2D gradient field

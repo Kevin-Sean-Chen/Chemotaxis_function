@@ -93,7 +93,7 @@ for c = 1:length(Tracks) %length(Paths)
 %         dCs(dd) = (log(M(floor(subs(dd-l_window,2)), floor(subs(dd-l_window,1)))) - log(M(floor(subs(dd,2)), floor(subs(dd,1)))))*fr2sec;
         
         %%% check displacement
-        dds(dd) = norm(subs(dd,1)-subs(dd-0,1), subs(dd,2)-subs(dd-0,2));
+        dds(dd) = norm(subs(dd,1)-subs(dd-1,1), subs(dd,2)-subs(dd-1,2));
         %norm(vecs(dd,:));
         
         %%% record location in 2D\
@@ -256,13 +256,25 @@ alldCs = [];
 alldCps = [];
 allths = [];
 
-REP = 50;
+REP = 100;
 T = 5000;
 dt = 1.;
 % trackss = zeros(REP,T,2);
 trackss = {};
 
-%%
+%% simulations
+clear simdata
+simdata(length(REP)) = struct();
+
+%%% gather time series
+simdata(1).dth = []; %angle change
+simdata(1).dcp = [];  %perpendicular dC
+simdata(1).dc = [];  %tangential dC
+simdata(1).dis = [];  %displacements
+simdata(1).mask = [];  %mark for tracks
+simdata(1).xy = [];  %all track location in 2D
+simdata(1).theta = [];  %local angles
+
 figure;
 imagesc((M)); hold on;
 % M = fliplr(M);
@@ -274,7 +286,7 @@ vm = 0.2*32*(bin/14);  %should be adjusted with the velocity statistics~~ this i
 vs = .2;
 tracks = zeros(T,2);
 % tracks(1,:) = [size(M,2)*1/2 + randn()*200, randn()*200 + size(M,1)*1/2]*1. + 0.*[size(M,2)*rand(), size(M,1)*5/8];%origin; %initial position
-temp = Tracks(rep).Path; tracks(1,:) = temp(1,:);  %data intials
+temp = Tracks(randi(length(Tracks))).Path; tracks(1,:) = temp(1,:);  %data intials
 tracks(2,:) = tracks(1,:)+randn(1,2)*vm*dt;%origin+randn(1,2)*vm*dt;
 ths = zeros(1,T);  ths(1:3) = randn(1,3)*360; %initial angle
 dxy = randn(1,2);  %change in each step
@@ -374,6 +386,13 @@ alldCs = [alldCs dcs];
 alldCps = [alldCps dcps];
 allths = [allths ths];
 
+% store as structure
+    simdata(rep).dth = dths; %angle change
+    simdata(rep).dcp = dcps;  %perpendicular dC
+    simdata(rep).dc = dcs;  %tangential dC
+    simdata(rep).xy = tracks';  %all track location in 2D
+    simdata(rep).theta = ths;  %local angles
+
 % trackss(rep,:,:) = tracks;
 trackss{rep} = tracks;
 
@@ -386,6 +405,30 @@ alldths(pos) = [];
 alldCs(pos) = [];
 alldCps(pos) = [];
 allths(pos) = [];
+
+%% logP distribution
+%%%
+% using the mixture of VM model for navigation, we simulated with MLE paramerer and check the distribution of predictive logP
+%%%
+LLs = zeros(1,REP);  % tracks used for fitting
+for ii = 1:REP
+    LLs(ii) = nLL_kernel_hist2(x, simdata(ii).dth, simdata(ii).dcp, simdata(ii).dc, cosBasis, 1., ones(1,length(simdata(ii).dth))) / length(simdata(ii).dth);
+end
+normV = [(LLs-min(LLs))./(max(LLs)-min(LLs))]';
+% blue to red. 
+C = [normV normV normV];%[normV zeros(size(normV)) 1-normV];
+
+figure();
+imagesc(M); hold on;
+for ii = 1:length(LLs) %10:60 %200:300
+    plot(simdata(ii).xy(1,:),simdata(ii).xy(2,:), 'Color', C(ii,:)); 
+    hold on
+%     plot(Data_fit(ii).xy(1,1),Data_fit(ii).xy(2,1),'g.', 'MarkerSize',15)
+%     plot(Data_fit(ii).xy(1,end),Data_fit(ii).xy(2,end),'r.', 'MarkerSize',15)
+end
+
+figure;
+hist(LLs)
 
 %% Check statistics
 figure()

@@ -1,7 +1,7 @@
 %Negative Log-likelihood for chemotaxis with kernels
-function [NLL] = nLL_kernel_hist2(THETA, dth, dcp, dc, Basis, lambda, mask)
+function [NLL] = nLL_kernel_hist2(THETA, dth, dcp, dc, Basis, masklambda)
 
-    if nargin < 6
+    if nargin < 7
         lambda = 50;
     end
 
@@ -18,8 +18,8 @@ function [NLL] = nLL_kernel_hist2(THETA, dth, dcp, dc, Basis, lambda, mask)
     kappa_turn = THETA(12);   % vairance of the sharp turn von Mises
     gamma = THETA(13);        % weight for uniform angle in the turn
     
-    base_dc = THETA(14);      % baseline for dc probability
-    base_dcp = THETA(15);     % baseline for dcp probability
+    base_dc = 0;%THETA(14);      % baseline for dc probability
+    base_dcp = 0;%THETA(15);     % baseline for dcp probability
     
     %%% turning decision
     K_dc = alpha_dc * Basis';  %reconstruct with basis
@@ -28,8 +28,8 @@ function [NLL] = nLL_kernel_hist2(THETA, dth, dcp, dc, Basis, lambda, mask)
     K_h = Amp_h * exp(-h_win/tau_h);  % dth kernel
 %     X_dth = (convmtx(abs(dth),length(E_)));
 %     filt_dth = X_dth'*E_';
-    filt_dth = conv_kernel(abs(dth(1:end-1)), K_h);  %(1:end-1), indexed for history
-    filt_dc = conv_kernel(dc(1:end-1), K_dc);
+    filt_dth = conv_kernel(abs([dth(1:end)]), K_h);  %(1:end-1), indexed for history
+    filt_dc = conv_kernel([dc(1:end)], K_dc);
     P = A_ ./ (1 + exp( -(filt_dc + filt_dth + base_dc) )) + C_;  %sigmoid(A_,B_,dc); 
 %     P = A_ ./ (1 + exp( -(filt_dc + filt_dth + 0))) + C_;
     
@@ -39,7 +39,7 @@ function [NLL] = nLL_kernel_hist2(THETA, dth, dcp, dc, Basis, lambda, mask)
     K_dcp = Amp_dcp * exp(-K_win/tau_dcp);    % dcp kernel
     filt_dcp = conv_kernel(dcp, K_dcp);  %(1:end-1)
 %     VM = C * exp(kappa_wv^2*cos(( dth(2:end) - filt_dcp - base_dcp )*d2r));  %von Mises distribution
-    VM = C * exp(kappa_wv^2*cos(( dth - filt_dcp )*d2r));
+    VM = C * exp(kappa_wv^2*cos(( dth - filt_dcp - base_dcp )*d2r));
     
     %%% turning analge model
 %     VM_turn = 1/(2*pi*besseli(0,kappa_turn^2)) * exp(kappa_turn^2*cos((dth(2:end)*d2r - pi)));  %test for non-uniform turns (sharp turns)
@@ -47,10 +47,10 @@ function [NLL] = nLL_kernel_hist2(THETA, dth, dcp, dc, Basis, lambda, mask)
     VM_turn = (1-gamma)*1/(2*pi) + gamma*VM_turn;
     
     %%% marginal probability
-    marginalP = (1-P).*VM(1:end-1) + VM_turn(2:end).*P;  % marginal LL, indexed to match time step delay
+    marginalP = (1-P(1:end)).*VM(1:end) + VM_turn(1:end).*P(1:end);  % marginal LL, indexed to match time step delay
 %     lambda = 10;
-%     NLL = -nansum( mask(1:end-1).* ( log(marginalP + 1*1e-10) ) ) + lambda*(1*sum((K_dc - 0).^2));% + 0.1*sum((E_ - 0).^2) + 0*C_^2);  % adding slope l2 regularization
-    NLL = -nansum( mask(1:end-1).* ( log(marginalP + 1*1e-10) ) ) + lambda*(1*sum((K_dc - 0).^2));%
+    NLL = -nansum( mask(1:end).* ( log(marginalP + 0*1e-10) ) ) + lambda*(1*sum((K_dc - 0).^2));% + 0.1*sum((E_ - 0).^2) + 0*C_^2);  % adding slope l2 regularization
+%     NLL = -nansum( mask.* ( log(marginalP + 0*1e-10) ) ) + lambda*(1*sum((K_dc - 0).^2));%
 end
 
 % def nLL(THETA, dth,dcp,dc):
