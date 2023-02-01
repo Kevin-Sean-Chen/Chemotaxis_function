@@ -60,6 +60,6 @@ function [logli] = logli_mVM(mm, xx, yy, mask)
 
         %%% marginal probability
         marginalP = (1-P).*VM + VM_turn.*P;
-        logli(:,k) = ( mask.* ( log(marginalP + 1*1e-10) ) ) + lambda/lt*(1*sum((K_dc - 0).^2));% + 0.1*sum((E_ - 0).^2) + 0*C_^2);  % adding slope l2 regularization
+        logli(:,k) = ( mask.* ( log(marginalP + 1*1e-10) ) ) + lambda(k)/lt*(1*sum((K_dc - 0).^2));% + 0.1*sum((E_ - 0).^2) + 0*C_^2);  % adding slope l2 regularization
     end
 end

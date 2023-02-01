@@ -27,8 +27,8 @@ A0 = G./repmat(sum(G,2),1,nStates); % normalize so rows sum to 1
 % A0 = [0.99,0.01; 0.01,0.99];
 
 % sticky priors
-alpha = 1.;  % Dirichlet shape parameter as a prior
-kappa = 3;  % upweighting self-transition for stickiness
+alpha = 2.;  % Dirichlet shape parameter as a prior
+kappa = 4.;  % upweighting self-transition for stickiness
 
 % basis function
 nB = 4;
@@ -44,7 +44,7 @@ wts0(1,:,2) = [10,  randn(1,nB)*10, -50, 25, -10, 25, 20,.5];
 
 
 % Build struct for initial params
-mmhat = struct('A',A0,'wts',wts0,'loglifun',loglifun,'basis',cosBasis,'lambda',.0);
+mmhat = struct('A',A0,'wts',wts0,'loglifun',loglifun,'basis',cosBasis,'lambda',[.0, 0]);
 
 %% Set up variables for EM
 maxiter = 50;
@@ -63,7 +63,8 @@ while (jj <= maxiter) && (dlogp>1e-3)
     % --- run M step  -------
     
     % Update transition matrix (with stickiness)
-    unormedA = kappa*eye(nStates) + (alpha-1)*ones(nStates,nStates) + xisum;
+    normed_xisum = xisum ./ sum(xisum,2);
+    unormedA = kappa*eye(nStates) + (alpha-1)*ones(nStates,nStates) + normed_xisum;
     mmhat.A = unormedA ./ sum(unormedA,2);
 %     mmhat.A = (alpha-1 + xisum) ./ (nStates*(alpha-1) + sum(xisum,2)); % normalize each row to sum to 1
     

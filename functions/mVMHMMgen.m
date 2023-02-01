@@ -56,7 +56,7 @@ dthv = zeros(1,length(xx_h));
 %latent state dynamics
 kt = simulate(mc, lt);  % integer states
 % kt(kt==1)=0; kt(kt==2)=1; kt(kt==0)=2; %swapping state numbers
-% kt(1:1000) = 2; %test for different initial conditions!
+% kt(1:end) = 2; %test for different initial conditions!
 
 for t = 2:T
     

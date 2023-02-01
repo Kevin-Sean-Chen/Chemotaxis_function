@@ -43,7 +43,7 @@ prs0 = [10, randn(1,nB)*10, 10, 25, 10, 25, 5, 1.] ;
 % [x,fval] = fmincon(lfun,prs0,[],[],[],[],LB,UB,[],opts);
 
 for jj = 1:nStates
-    lfun = @(x)nll_mVM(x, dth, dcp, dc, gamnrm(jj,:), Basis, lambda, mask);
+    lfun = @(x)nll_mVM(x, dth, dcp, dc, gamnrm(jj,:), Basis, lambda(jj), mask);
 %     prs0 = prs0 + prs0.*randn(1,length(UB))*0.5;
     prs0 = mm.wts(:,:,jj); %+ mm.wts(:,:,jj).*(2*(rand(1,length(UB))-0.5))*0.5;  %from last time!
     [x,fval,EXITFLAG,OUTPUT,LAMBDA,GRAD,HESSIAN] = fmincon(lfun,prs0,[],[],[],[],LB,UB,[],opts);

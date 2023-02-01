@@ -2,7 +2,7 @@
 
 %% emission analysis
 %%% load state condition
-stateK = 1;
+stateK = 2;
 x = squeeze(mmhat.wts(:,:,stateK));
 [aa,bb] = max( gams ,[], 1 );
 pos = find(bb==stateK);
@@ -25,8 +25,8 @@ subplot(2,2,3)
 K_dcp_rec = Amp*exp(-xx/tau);
 filt_dcp = conv_kernel(dcp_K, K_dcp_rec);%conv(dcp_fit, fliplr(Amp*exp(-xx/tau)), 'same');
 [aa,bb] = hist(-(ang_K - filt_dcp)*pi/180 , 500);
-bar( bb, 1/(2*pi*besseli(0,K_^2)) * exp(K_^2*cos( bb )) , 100); hold on
-bar( bb, 1/(2*pi*besseli(0,K2_^2)) * exp(K2_^2*cos( bb-pi ))*(gamma) + (1-gamma)/(2*pi) , 100,'r');
+bar( bb, 1/(2*pi*besseli(0,K_^1)) * exp(K_^1*cos( bb )) , 100); hold on
+bar( bb, 1/(2*pi*besseli(0,K2_^1)) * exp(K2_^1*cos( bb-pi ))*(gamma) + (1-gamma)/(2*pi) , 100,'r');
 title('von Mises for \delta C^{\perp}')
 xlim([-pi, pi])
 subplot(2,2,4)
@@ -46,7 +46,7 @@ pix2mm = 1/31.5;
 CM = ['k','w','y'];%jet(stateK);  % See the help for COLORMAP to see other choices.
 figure;
 imagesc(M,'XData',[0 size(M,2)*pix2mm],'YData',[0 size(M,1)*pix2mm]); hold on
-for kk = 1:nStates %nStates:-1:1 %
+for kk = nStates:-1:1 %1:nStates %
     pos = find(bb==kk);
 %     plot(allxys(1,pos)*pix2mm, allxys(2,pos)*pix2mm,'.')%,'color',CM(kk))
     plot(allxys(1,pos)*pix2mm, allxys(2,pos)*pix2mm,'.','color',CM(kk))
