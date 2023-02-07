@@ -1,6 +1,6 @@
 %% mVM_EM
 %% load some test data
-wind = 1:60000;
+wind = 1:130000;
 yy = allas(wind);
 xx = [alldC(wind); 
       alldcp(wind)];
@@ -27,8 +27,8 @@ A0 = G./repmat(sum(G,2),1,nStates); % normalize so rows sum to 1
 % A0 = [0.99,0.01; 0.01,0.99];
 
 % sticky priors
-alpha = 2.;  % Dirichlet shape parameter as a prior
-kappa = 4.;  % upweighting self-transition for stickiness
+alpha = 1.;  % Dirichlet shape parameter as a prior
+kappa = .0;  % upweighting self-transition for stickiness
 
 % basis function
 nB = 4;

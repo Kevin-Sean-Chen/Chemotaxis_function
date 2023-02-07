@@ -110,7 +110,7 @@ for ii = 1:ntracks
     Data(ii).xy = xys;  %all track location in 2D
     Data(ii).theta = ang_loc;  %local angles
     Data(ii).Basis = cosBasis;
-    Data(ii).lambda = 1.;
+    Data(ii).lambda = .1;
     
 end
 
@@ -126,7 +126,7 @@ end
 
 %% test with stats-model for kernels
 drange = randperm(length(Data));%[1:length(Data)]; %
-Data_fit = Data(drange(1:200));  %Data(1:100); %
+Data_fit = Data(drange(1:100));  %Data(1:100); %
 lfun = @(x)pop_nLL(x, Data_fit);
 
 opts = optimset('display','iter');

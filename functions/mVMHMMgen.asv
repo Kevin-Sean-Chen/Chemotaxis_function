@@ -22,6 +22,7 @@ alldths = [];
 alldCs = [];
 alldCps = [];
 allths = [];
+allstate = [];
 trackss = {};
 T = lt;
 dt = 1.;
@@ -37,7 +38,7 @@ for rep = 1:REP
 %initialize tracks
 tracks = zeros(T,2);
 % tracks(1,:) = [size(M,2)*1/2 + randn()*200, randn()*200 + size(M,1)*1/2]*0. + 1.*[size(M,2)*rand(), size(M,1)*5/8];%origin; %initial position
-temp = Tracks(rep).Path; tracks(1,:) = temp(1,:);  %data intials
+temp = Data(rep).xy'; tracks(1,:) = temp(1,:);  %data intials
 tracks(2,:) = tracks(1,:)+randn(1,2)*vm*dt;%origin+randn(1,2)*vm*dt;
 ths = zeros(1,T);  ths(1:3) = randn(1,3)*360; %initial angle
 dxy = randn(1,2);  %change in each step
@@ -55,8 +56,8 @@ dthv = zeros(1,length(xx_h));
 
 %latent state dynamics
 kt = simulate(mc, lt);  % integer states
-kt(kt==1)=0; kt(kt==2)
-% kt(1:5000) = 2; %test for different initial conditions!
+% kt(kt==1)=0; kt(kt==2)=1; kt(kt==0)=2; %swapping state numbers
+% kt(1:end) = 2; %test for different initial conditions!
 
 for t = 2:T
     
@@ -139,6 +140,7 @@ alldths = [alldths dths];
 alldCs = [alldCs dcs];
 alldCps = [alldCps dcps];
 allths = [allths ths];
+allstate = [allstate kt(1:length(ths))];
 
 trackss{rep} = tracks;
 
@@ -151,6 +153,24 @@ alldths(pos) = [];
 alldCs(pos) = [];
 alldCps(pos) = [];
 allths(pos) = [];
+allstate(pos) = [];
+
+
+%% analyze dwell time distribution
+bins = 30;
+rescale_t = 5/14;
+max_dt = max(max([dwell_times(allstate,1) , dwell_times(allstate,2)]));
+bin_edges = linspace(0,bins,1).*max_dt;
+figure;
+H2 = histogram(dwell_times(allstate,2), bin_edges,'Normalization', 'pdf');
+H1 = histogram(dwell_times(allstate,1), bin_edges,'Normalization', 'pdf'); hold on
+
+figure;
+aa = H1.BinEdges(1:end-1)*rescale_t;  bb = H1.Values 
+bar(aa,bb);
+hold on
+aa = H2.BinEdges(1:end-1)*rescale_t;  bb = H2.Values 
+bar(aa,bb);
 
 %% wts2params
 function [Khat] = wts2params(x,cosBasis)

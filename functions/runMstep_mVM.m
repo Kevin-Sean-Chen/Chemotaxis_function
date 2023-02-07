@@ -33,10 +33,10 @@ nB = size(Basis,2);
 % [x,fval] = fminunc(lfun,randn(1,10));  %random initiation
 % [x,fval,exitflag,output,grad,hessian] = fminunc(lfun,[500, 0.0, randn(1,6), -1, 100]+randn(1,10)*0.);  %a closer to a reasonable value
 
-opts = optimset('display','iter');
+opts = optimset('display','final');%'iter');
 % opts.Algorithm = 'sqp';
 LB = [1e-0, ones(1,nB)*-inf, -inf, 1e-0, -inf, 1e-1, 1e-0, 0.1];
-UB = [30, ones(1,nB)*inf, inf, 100, inf, 100, 20, 1];
+UB = [100, ones(1,nB)*inf, inf, 100, inf, 100, 20, 1];
 % prs0 = rand(1,10);
 prs0 = [10, randn(1,nB)*10, 10, 25, 10, 25, 5, 1.] ;
 % prs0 = [9.9763  -0.5343  -0.0776   0.1238  -0.0529   0.5335   7.7254  367.3817  0.1990  1.0000  0.1000]; %single mGLM
@@ -81,7 +81,7 @@ function [nll] = nll_mVM(THETA, dth, dcp, dc, gams, Basis, lambda, mask)
     C = 1/(2*pi*besseli(0,kappa_wv^2));  % normalize for von Mises
     K_dcp = Amp_dcp * exp(-K_win/tau_dcp);    % dcp kernel
     filt_dcp = conv_kernel(dcp, K_dcp);
-    VM = C * exp(kappa_wv^2*cos(( dth -filt_dcp )*d2r));  %von Mises distribution
+    VM = C * exp(kappa_wv^2*cos(wrapTo180( dth -filt_dcp )*d2r));  %von Mises distribution
 
     %%% turning analge model
     VM_turn = 1/(2*pi*besseli(0,kappa_turn^2)) * exp(kappa_turn^2*cos((dth*d2r - pi)));  %test for non-uniform turns (sharp turns)

@@ -22,6 +22,7 @@ alldths = [];
 alldCs = [];
 alldCps = [];
 allths = [];
+allstate = [];
 trackss = {};
 T = lt;
 dt = 1.;
@@ -139,6 +140,7 @@ alldths = [alldths dths];
 alldCs = [alldCs dcs];
 alldCps = [alldCps dcps];
 allths = [allths ths];
+allstate = [allstate kt(1:length(ths))];
 
 trackss{rep} = tracks;
 
@@ -151,6 +153,24 @@ alldths(pos) = [];
 alldCs(pos) = [];
 alldCps(pos) = [];
 allths(pos) = [];
+allstate(pos) = [];
+
+
+%% analyze dwell time distribution
+bins = 50;
+rescale_t = 5/14;
+max_dt = max(max([dwell_times(allstate,1) , dwell_times(allstate,2)]));
+bin_edges = linspace(0,1,bins).*max_dt;
+figure;
+H2 = histogram(dwell_times(allstate,2), bin_edges,'Normalization', 'pdf');hold on
+H1 = histogram(dwell_times(allstate,1), bin_edges,'Normalization', 'pdf'); 
+
+% figure;
+% aa = H1.BinEdges(1:end-1)*rescale_t;  bb = H1.Values;
+% bar(aa,bb/sum(bb));
+% hold on
+% aa = H2.BinEdges(1:end-1)*rescale_t;  bb = H2.Values;
+% bar(aa,bb/sum(bb));
 
 %% wts2params
 function [Khat] = wts2params(x,cosBasis)

@@ -6,7 +6,7 @@ function [NLL] = nLL_kernel_hist2(THETA, dth, dcp, dc, Basis, lambda, mask)
     end
 
     %%% Assume we parameterize in such way first
-    kappa_wv = THETA(1);      % variance of von Mises
+    kappa_wv = THETA(1)^0.5;      % variance of von Mises
     A_ = THETA(2);            % max turn probability
     alpha_dc = THETA(3:6);    % kernel for dC transitional concentration difference (weights on kerenl basis)
     C_ = THETA(7);            % baseline turning rate
@@ -15,7 +15,7 @@ function [NLL] = nLL_kernel_hist2(THETA, dth, dcp, dc, Basis, lambda, mask)
     Amp_h = THETA(10);        % amplitude of turning history kernel
     tau_h = THETA(11);        % time scale for dth history kernel
 %     sb = THETA(12);         % baseline in the nonlinear function
-    kappa_turn = THETA(12);   % vairance of the sharp turn von Mises
+    kappa_turn = THETA(12)^0.5;   % vairance of the sharp turn von Mises
     gamma = THETA(13);        % weight for uniform angle in the turn
     
     base_dc = 0;%THETA(14);      % baseline for dc probability

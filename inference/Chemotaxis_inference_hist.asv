@@ -117,7 +117,7 @@ for c = 1:length(Tracks) %length(Paths)
     alldcp = [alldcp dCp];
     alldC = [alldC dCs];
     alldis = [alldis dds];  %displacement (effective velocity)
-    trials(1) = NaN;
+    trials(1) = NaN; trials(end) = NaN;
     alltrials = [alltrials trials];
     allxys = [allxys xys];
     
@@ -160,7 +160,7 @@ lfun = @(x)nLL_kernel_hist2(x, ang_fit, dcp_fit, ddc_fit, cosBasis, 1., trials_f
 opts = optimset('display','iter');
 % opts.Algorithm = 'sqp';
 LB = [1e-0, 1e-5, ones(1,nB)*-inf, 0 -inf, 1e-0, -inf, 1e-1, 1e-0*2, 0.1];%    -inf -inf];
-UB = [20, 1., ones(1,nB)*inf, 0.1, inf, 50, inf, 100, 20, 1];%    inf inf];
+UB = [100, 1., ones(1,nB)*inf, 0.1, inf, 50, inf, 100, 20, 1];%    inf inf];
 % prs0 = rand(1,10);
 prs0 = [5, 0.01, randn(1,nB)*10, 0.01, 10, 25, 10, 25, 5, 1.];%    0 0] 
 prs0 = prs0 + prs0.*randn(1,length(UB))*0.1;
@@ -206,9 +206,9 @@ title('\delta C kernel')
 subplot(2,2,3)
 K_dcp_rec = Amp*exp(-xx/tau);
 filt_dcp = conv_kernel(dcp_fit, K_dcp_rec);%conv(dcp_fit, fliplr(Amp*exp(-xx/tau)), 'same');
-[aa,bb] = hist(-(ang_fit - filt_dcp - base_dcp)*pi/180 , 500);
-bar( bb, 1/(2*pi*besseli(0,K_^2)) * exp(K_^2*cos( bb )) , 100); hold on
-bar( bb, 1/(2*pi*besseli(0,K2_^2)) * exp(K2_^2*cos( bb-pi ))*(gamma) + (1-gamma)/(2*pi) , 100,'r');
+[aa,bb] = hist(-(ang_fit - filt_dcp - base_dcp)*pi/180 , 1000);
+bar( bb, 1/(2*pi*besseli(0,K_^1)) * exp(K_^1*cos( bb )) , 30); hold on
+bar( bb, 1/(2*pi*besseli(0,K2_^1)) * exp(K2_^1*cos( bb-pi ))*(gamma) + (1-gamma)/(2*pi) , 30,'r');
 title('von Mises for \delta C^{\perp}')
 subplot(2,2,4)
 K_dc_rec = B_*cosBasis';
@@ -217,13 +217,31 @@ xx_h = 1:length(xx)*1;
 K_h_rec = Amp_h*exp(-xx_h/tau_h);
 filt_dth = conv_kernel(abs(ang_fit), K_h_rec);
 dc_dth = filt_ddc + 1*filt_dth;
-Pturns = A_ ./ (1 + exp( -(dc_dth + base_dc) )) + C_; %+sb
+Pturns = A_*.2 ./ (1 + exp( (dc_dth + base_dc) )) + C_; %+sb
 plot(dc_dth/length(K_dcp_rec) , Pturns,'o')
 title('Logistic for \delta C')
 
 %%% printing
 disp(['K_=',num2str(K_),' K2_',num2str(K2_),'beta',num2str(sum(B_)),'alpha',num2str(Amp)])
 
+%% joint density
+n_brw = sum(Pturns);
+n_wv = sum(1-Pturns);
+p_z = n_brw + n_wv;
+p_brw = n_brw/p_z;
+p_wv = n_wv/p_z;
+
+[aa,bb] = hist(-(ang_fit - filt_dcp - base_dcp)*pi/180 , 1000);
+n_vm_wv = 1/(2*pi*besseli(0,K_^1)) * exp(K_^1*cos( bb )); 
+n_vm_brw = 1/(2*pi*besseli(0,K2_^1)) * exp(K2_^1*cos( bb-pi ))*(gamma) + (1-gamma)/(2*pi);
+
+figure
+bar( bb, n_vm_wv/sum(n_vm_wv)*p_wv , 30); hold on
+bar( bb, n_vm_brw/sum(n_vm_brw)*p_brw , 30,'r');
+
+[aa,bb] = hist(allas*pi/180,1000);
+figure;
+bar(bb,aa/sum(aa),50)
 %% autocorr check
 [acf,lags] = autocorr(abs(allas),100); %(allang_loc,100);
 f = fit(lags',acf','exp1');
@@ -240,9 +258,9 @@ figure; plot(diag(real(D)),'-o')
 % reconstruct parameters 
 % kappa = ((1/K_)^2*(180/pi)^1)^0.5;
 % kappa2 = ((1/K2_)^2*(180/pi)^1)^0.5;
-kappa = ((K_)^2)^1;
-kappa2 = ((K2_)^2)^1;
-if kappa2<0.05; kappa2=0; end  %simplify calculation
+kappa = ((K_)^.5)^1;
+kappa2 = ((K2_)^.5)^1;
+if kappa2<0.05; kappa2=0.1; end  %simplify calculation
 A = A_*1;
 Kdcp = Amp*exp(-xx/tau);
 Kdth = Amp_h*exp(-xx_h/tau_h);
@@ -256,8 +274,8 @@ alldCs = [];
 alldCps = [];
 allths = [];
 
-REP = 100;
-T = 5000;
+REP = 50;
+T = 2000;
 dt = 1.;
 % trackss = zeros(REP,T,2);
 trackss = {};
@@ -285,8 +303,13 @@ for rep = 1:REP
 vm = 0.2*32*(bin/14);  %should be adjusted with the velocity statistics~~ this is approximately 0.2mm X 
 vs = .2;
 tracks = zeros(T,2);
-% tracks(1,:) = [size(M,2)*1/2 + randn()*200, randn()*200 + size(M,1)*1/2]*1. + 0.*[size(M,2)*rand(), size(M,1)*5/8];%origin; %initial position
-temp = Tracks(randi(length(Tracks))).Path; tracks(1,:) = temp(1,:);  %data intials
+%%% from middle
+tracks(1,:) = [size(M,2)*1/2 + randn()*300, randn()*300 + size(M,1)*1/2]*1. + 0.*[size(M,2)*rand(), size(M,1)*5/8];%origin; %initial position
+%%% from random track
+% temp = Tracks(randi(length(Tracks))).Path; tracks(1,:) = temp(1,:);  %data intials
+%%% from collected structure
+% temp = Data(rep).xy'; tracks(1,:) = temp(1,:);  % initial data point
+
 tracks(2,:) = tracks(1,:)+randn(1,2)*vm*dt;%origin+randn(1,2)*vm*dt;
 ths = zeros(1,T);  ths(1:3) = randn(1,3)*360; %initial angle
 dxy = randn(1,2);  %change in each step
@@ -398,7 +421,7 @@ trackss{rep} = tracks;
 
 end
 
-set(gcf,'color','w'); set( gca, 'xdir', 'reverse' )
+set(gcf,'color','w'); %set( gca, 'xdir', 'reverse' )
 
 pos = find(alldths==0 | alldCs==0 | alldCps==0 | allths==0);
 alldths(pos) = [];

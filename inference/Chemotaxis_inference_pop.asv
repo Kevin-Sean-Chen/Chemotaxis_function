@@ -99,6 +99,7 @@ for ii = 1:ntracks
     
     pos = find(dds>dis_thr); %remove sharp jumps
     trials(pos) = nan;
+    trials(1) = nan; trials(end) = nan;
     
     % store as structure
     Data(ii).dth = angs; %angle change
@@ -125,7 +126,7 @@ end
 
 %% test with stats-model for kernels
 drange = randperm(length(Data));%[1:length(Data)]; %
-Data_fit = Data(1:100); %Data(drange(1:end));
+Data_fit = Data(1:100); %Data(drange(1:50));  %
 lfun = @(x)pop_nLL(x, Data_fit);
 
 opts = optimset('display','iter');

@@ -52,7 +52,7 @@ function [logli] = logli_mVM(mm, xx, yy, mask)
         C = 1/(2*pi*besseli(0,kappa_wv^2));  % normalize for von Mises
         K_dcp = Amp_dcp * exp(-K_win/tau_dcp);    % dcp kernel
         filt_dcp = conv_kernel(dcp, K_dcp);
-        VM = C * exp(kappa_wv^2*cos(( dth - filt_dcp )*d2r));  %von Mises distribution
+        VM = C * exp(kappa_wv^2*cos(wrapTo180( dth - filt_dcp )*d2r));  %von Mises distribution
 
         %%% turning analge model
         VM_turn = 1/(2*pi*besseli(0,kappa_turn^2)) * exp(kappa_turn^2*cos((dth*d2r - pi)));  %test for non-uniform turns (sharp turns)
