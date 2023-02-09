@@ -57,7 +57,7 @@ dthv = zeros(1,length(xx_h));
 %latent state dynamics
 kt = simulate(mc, lt);  % integer states
 % kt(kt==1)=0; kt(kt==2)=1; kt(kt==0)=2; %swapping state numbers
-% kt(1:end) = 2; %test for different initial conditions!
+kt(1:300) = 1; %test for different initial conditions!
 
 for t = 2:T
     
@@ -159,7 +159,7 @@ allstate(pos) = [];
 %% analyze dwell time distribution
 bins = 50;
 rescale_t = 5/14;
-max_dt = max(max([dwell_times(allstate,1) , dwell_times(allstate,2)]));
+max_dt = max(max([dwell_times(allstate,1)' , dwell_times(allstate,2)']));
 bin_edges = linspace(0,1,bins).*max_dt;
 figure;
 H2 = histogram(dwell_times(allstate,2), bin_edges,'Normalization', 'pdf');hold on

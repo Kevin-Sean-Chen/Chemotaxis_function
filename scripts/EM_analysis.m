@@ -35,7 +35,7 @@ filt_ddc = conv_kernel(ddc_K, K_dc_rec);
 xx_h = 1:length(xx)*1;
 K_h_rec = Amp_h*exp(-xx_h/tau_h);
 filt_dth = conv_kernel(abs(ang_K), K_h_rec);
-dc_dth = filt_ddc + 0*filt_dth;
+dc_dth = filt_ddc + 1*filt_dth;
 Pturns = 1 ./ (1 + exp( (dc_dth)) + 0) + 0; %+sb
 plot(dc_dth/length(K_dcp_rec) , Pturns,'o')
 title('Logistic for \delta C')
