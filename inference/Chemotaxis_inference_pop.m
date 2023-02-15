@@ -126,14 +126,14 @@ end
 
 %% test with stats-model for kernels
 drange = randperm(length(Data));%[1:length(Data)]; %
-Data_fit = Data(drange(1:100));  %Data(1:100); %
+Data_fit = Data(drange(1:50));  %Data(1:100); %
 lfun = @(x)pop_nLL(x, Data_fit);
 
 opts = optimset('display','iter');
 % opts.Algorithm = 'sqp';
 LB = [1e-0, 1e-1, ones(1,nB)*-inf, 0 -inf, 1e-0, -inf, 1e-1, 0.1, 0.1,];% -inf, -inf];
-UB = [20, 1., ones(1,nB)*inf, 0.1, inf, 50, inf, 100, 20, 1];%, inf, inf];
-prs0 = [5, 0.1, randn(1,nB)*10, 0.01, 10, 25, 10, 25, 5, 1.];%, 0, 0];
+UB = [200, 1., ones(1,nB)*inf, 0.1, inf, 50, inf, 100, 20, 1];%, inf, inf];
+prs0 = [50, 0.1, randn(1,nB)*10, 0.01, 10, 25, 10, 25, 5, 1.];%, 0, 0];
 prs0 = prs0 + prs0.*randn(1,length(UB))*0.2;
 % [x,fval] = fmincon(lfun,prs0,[],[],[],[],LB,UB,[],opts);
 [x,fval,EXITFLAG,OUTPUT,LAMBDA,GRAD,HESSIAN] = fmincon(lfun,prs0,[],[],[],[],LB,UB,[],opts);
@@ -167,8 +167,8 @@ subplot(2,2,3)
 K_dcp_rec = Amp*exp(-xx/tau);
 filt_dcp = conv_kernel(dcp_fit, K_dcp_rec);%conv(dcp_fit, fliplr(Amp*exp(-xx/tau)), 'same');
 [aa,bb] = hist((ang_fit - filt_dcp - base_dcp)*pi/180 , 500);
-bar( bb, 1/(2*pi*besseli(0,K_^2)) * exp(K_^2*cos( bb )) , 100); hold on
-bar( bb, 1/(2*pi*besseli(0,K2_^2)) * exp(K2_^2*cos( bb-pi ))*(gamma) + (1-gamma)/(2*pi) , 100,'r');
+bar( bb, 1/(2*pi*besseli(0,K_^1)) * exp(K_^1*cos( bb )) , 100); hold on
+bar( bb, 1/(2*pi*besseli(0,K2_^1)) * exp(K2_^1*cos( bb-pi ))*(gamma) + (1-gamma)/(2*pi) , 100,'r');
 title('von Mises for \delta C^{\perp}')
 subplot(2,2,4)
 K_dc_rec = B_*cosBasis';
@@ -188,6 +188,8 @@ disp(['K_=',num2str(K_),' K2_',num2str(K2_),'beta',num2str(sum(B_)),'alpha',num2
 LLs = zeros(1,length(Data_fit));  % tracks used for fitting
 for ii = 1:length(LLs)
     LLs(ii) = pop_nLL(x, Data_fit(ii))/length(Data_fit(ii).dth);
+    %%% test with ration!
+%     LLs(ii) = (pop_nLL(x_ave, Data_fit(ii))) / (pop_nLL(x, Data_fit(ii)));
 end
 normV = [(LLs-min(LLs))./(max(LLs)-min(LLs))]';
 % blue to red. 
@@ -195,11 +197,13 @@ C = [normV normV normV];%[normV zeros(size(normV)) 1-normV];
 
 figure();
 imagesc(M); hold on;
-for ii = 1:100%length(LLs) %10:60 %200:300
+delta_C = LLs*0;
+for ii = 1:length(LLs) %10:60 %200:300
     plot(Data_fit(ii).xy(1,:),Data_fit(ii).xy(2,:), 'Color', C(ii,:)); 
     hold on
-%     plot(Data_fit(ii).xy(1,1),Data_fit(ii).xy(2,1),'g.', 'MarkerSize',15)
-%     plot(Data_fit(ii).xy(1,end),Data_fit(ii).xy(2,end),'r.', 'MarkerSize',15)
+    plot(Data_fit(ii).xy(1,1),Data_fit(ii).xy(2,1),'g.', 'MarkerSize',15)
+    plot(Data_fit(ii).xy(1,end),Data_fit(ii).xy(2,end),'r.', 'MarkerSize',15)
+    delta_C(ii) = M(floor(Data_fit(ii).xy(2,end)),floor(Data_fit(ii).xy(1,end))) - M(floor(Data_fit(ii).xy(2,1)),floor(Data_fit(ii).xy(1,1)));
 end
 
 %% subset of tracks

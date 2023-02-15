@@ -46,7 +46,7 @@ pix2mm = 1/31.5;
 CM = ['k','w','y'];%jet(stateK);  % See the help for COLORMAP to see other choices.
 figure;
 imagesc(M,'XData',[0 size(M,2)*pix2mm],'YData',[0 size(M,1)*pix2mm]); hold on
-for kk = nStates:-1:1 %1:nStates %
+for kk = 1:nStates %nStates:-1:1 %
     pos = find(bb==kk);
 %     plot(allxys(1,pos)*pix2mm, allxys(2,pos)*pix2mm,'.')%,'color',CM(kk))
     plot(allxys(1,pos)*pix2mm, allxys(2,pos)*pix2mm,'.','color',CM(kk))
@@ -55,6 +55,28 @@ end
 xlabel('x (mm)'); ylabel('y (mm)'); h = colorbar();  ylabel(h, 'ppm');
 set(gca,'Fontsize',20); set(gcf,'color','w');
 % set ( gca, 'xdir', 'reverse' )
+
+%% track based analysis
+pix2mm = 1/31.5;
+CM = ['k','w','y'];
+figure;
+imagesc(M,'XData',[0 size(M,2)*pix2mm],'YData',[0 size(M,1)*pix2mm]); hold on
+for kk = 1:nStates
+for tr = 1:length(Data)
+    [xt,yt,mt] = data2xy(Data(tr));
+    [logp_test,gams_t,xisum_test] = runFB_GLMHMM(mmhat,xt,yt);
+    [aa,bb] = max( gams_t ,[], 1 );  
+    pos = find(bb==kk);
+    xys = Data(tr).xy;
+    plot(xys(1,pos)*pix2mm, xys(2,pos)*pix2mm,'.','color',CM(kk))
+    hold on
+    plot(xys(1,1)*pix2mm, xys(2,1)*pix2mm,'g.')
+    plot(xys(1,end)*pix2mm, xys(2,end)*pix2mm,'r.')
+
+end
+end
+xlabel('x (mm)'); ylabel('y (mm)'); h = colorbar();  ylabel(h, 'ppm');
+set(gca,'Fontsize',20); set(gcf,'color','w');
 
 %% time series
 % wind = 1:5000;

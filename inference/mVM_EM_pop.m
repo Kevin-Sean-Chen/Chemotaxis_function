@@ -35,7 +35,7 @@ A0 = G./repmat(sum(G,2),1,nStates); % normalize so rows sum to 1
 % A0 = [0.99,0.01; 0.01,0.99];
 
 alpha = 1.;  % Dirichlet shape parameter as a prior
-kappa = 0.5;  % upweighting self-transition for stickiness
+kappa = 0.;  % upweighting self-transition for stickiness
 
 % basis function
 nB = 4;
@@ -51,7 +51,7 @@ wts0(1,:,2) = [10,  randn(1,nB)*10, -50, 25, -10, 25, 20,.5];
 
 
 % Build struct for initial params
-mmhat = struct('A',A0,'wts',wts0,'loglifun',loglifun,'basis',cosBasis,'lambda',[0.1,.0]);
+mmhat = struct('A',A0,'wts',wts0,'loglifun',loglifun,'basis',cosBasis,'lambda',[0.,.1]);
 
 %% Set up variables for EM with tracks-based likelihood
 maxiter = 50;

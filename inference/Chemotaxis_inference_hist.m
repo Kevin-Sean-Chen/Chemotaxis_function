@@ -153,14 +153,14 @@ ang_fit = allas(1:100000);
 dcp_fit = alldcp(1:100000);
 ddc_fit = (alldC(1:100000));
 trials_fit = alltrials(1:100000);
-lfun = @(x)nLL_kernel_hist2(x, ang_fit, dcp_fit, ddc_fit, cosBasis, 1., trials_fit);
+lfun = @(x)nLL_kernel_hist2(x, ang_fit, dcp_fit, ddc_fit, cosBasis, 10., trials_fit);
 % [x,fval] = fminunc(lfun,randn(1,10));  %random initiation
 % [x,fval,exitflag,output,grad,hessian] = fminunc(lfun,[500, 0.0, randn(1,6), -1, 100]+randn(1,10)*0.);  %a closer to a reasonable value
 
 opts = optimset('display','iter');
 % opts.Algorithm = 'sqp';
 LB = [1e-0, 1e-5, ones(1,nB)*-inf, 0 -inf, 1e-0, -inf, 1e-1, 1e-0*2, 0.1];%    -inf -inf];
-UB = [100, 1., ones(1,nB)*inf, 0.1, inf, 50, inf, 100, 20, 1];%    inf inf];
+UB = [200, 1., ones(1,nB)*inf, 0.1, inf, 50, inf, 100, 20, 1];%    inf inf];
 % prs0 = rand(1,10);
 prs0 = [5, 0.01, randn(1,nB)*10, 0.01, 10, 25, 10, 25, 5, 1.];%    0 0] 
 prs0 = prs0 + prs0.*randn(1,length(UB))*0.1;
@@ -191,7 +191,7 @@ figure()
 plot(prs_rep(:,:)','-o')
 
 %% sufficient statistics
-K_ = x(1); A_ = x(2); B_ = x(3:6); C_ = x(7); Amp = x(8); tau = x(9); Amp_h = x(10); tau_h = x(11); K2_ = x(12);  gamma = x(13);% base_dc = x(14); base_dcp = x(15);
+K_ = x(1); A_ = x(2)*.1; B_ = x(3:6); C_ = x(7); Amp = x(8); tau = x(9); Amp_h = x(10); tau_h = x(11); K2_ = x(12);  gamma = x(13);% base_dc = x(14); base_dcp = x(15);
 
 figure
 subplot(2,2,1)
@@ -217,7 +217,7 @@ xx_h = 1:length(xx)*1;
 K_h_rec = Amp_h*exp(-xx_h/tau_h);
 filt_dth = conv_kernel(abs(ang_fit), K_h_rec);
 dc_dth = filt_ddc + 1*filt_dth;
-Pturns = A_*.2 ./ (1 + exp( (dc_dth + base_dc) )) + C_; %+sb
+Pturns = A_ ./ (1 + exp( (dc_dth + base_dc) )) + C_; %+sb
 plot(dc_dth/length(K_dcp_rec) , Pturns,'o')
 title('Logistic for \delta C')
 
