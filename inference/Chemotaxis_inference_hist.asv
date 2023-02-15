@@ -56,7 +56,7 @@ for c = 1:length(Tracks) %length(Paths)
     temp1(:,2) = smooth(temp.SmoothY, filt,'sgolay',poly_degree); %smooth(temp(1:round(length(temp)/1),2), filt,'sgolay',poly_degree);
     subs = temp1(1:bin:end,:);
     vecs = diff(subs);
-    vecs = [vecs(1,:); vecs];   % compensating for the size change/time shift after taking difference 
+    vecs = [vecs; vecs(end,:)];   % compensating for the size change/time shift after taking difference 
     angs = zeros(1,size(vecs,1));    
     ang_loc = zeros(1,size(vecs,1));
 
@@ -75,7 +75,7 @@ for c = 1:length(Tracks) %length(Paths)
         ang_loc(dd) = angles([1,0],vecs(dd,:)/norm(vecs(dd,:)));
         
         %%% perpendicular concentration change
-        perp_dir = [-vecs(dd-0,2), vecs(dd-0,1)];
+        perp_dir = [-vecs(dd-0,2), vecs(dd-l_window,1)];
         perp_dir = perp_dir/norm(perp_dir)*perp_dist;
 %         dCp(dd) = Fcon(subs(dd-l_window,1)+perp_dir(1)*1., subs(dd-l_window,2)+perp_dir(2)*1)...
 %              - Fcon(subs(dd-l_window,1)-perp_dir(1)*1, subs(dd-l_window,2)-perp_dir(2)*1);
@@ -93,11 +93,11 @@ for c = 1:length(Tracks) %length(Paths)
 %         dCs(dd) = (log(M(floor(subs(dd-l_window,2)), floor(subs(dd-l_window,1)))) - log(M(floor(subs(dd,2)), floor(subs(dd,1)))))*fr2sec;
         
         %%% check displacement
-        dds(dd) = norm(subs(dd,1)-subs(dd-1,1), subs(dd,2)-subs(dd-1,2));
+        dds(dd) = norm(subs(dd,1)-subs(dd-l_window,1), subs(dd,2)-subs(dd-l_window,2));
         %norm(vecs(dd,:));
         
         %%% record location in 2D\
-        xys(:,dd) = subs(dd-l_window,:)';
+        xys(:,dd) = subs(dd-0,:)';
 %         dd
 %         dds(dd)
 %         pause();
@@ -153,16 +153,16 @@ ang_fit = allas(1:100000);
 dcp_fit = alldcp(1:100000);
 ddc_fit = (alldC(1:100000));
 trials_fit = alltrials(1:100000);
-lfun = @(x)nLL_kernel_hist2(x, ang_fit, dcp_fit, ddc_fit, cosBasis, 10., trials_fit);
+lfun = @(x)nLL_kernel_hist2(x, ang_fit, dcp_fit, ddc_fit, cosBasis, .1, trials_fit);
 % [x,fval] = fminunc(lfun,randn(1,10));  %random initiation
 % [x,fval,exitflag,output,grad,hessian] = fminunc(lfun,[500, 0.0, randn(1,6), -1, 100]+randn(1,10)*0.);  %a closer to a reasonable value
 
 opts = optimset('display','iter');
 % opts.Algorithm = 'sqp';
-LB = [1e-0, 1e-5, ones(1,nB)*-inf, 0 -inf, 1e-0, -inf, 1e-1, 1e-0*2, 0.1];%    -inf -inf];
-UB = [200, 1., ones(1,nB)*inf, 0.1, inf, 50, inf, 100, 20, 1];%    inf inf];
+LB = [1e-0, 1e-5, ones(1,nB)*-inf, 0 -inf, 1e-0, -inf, 1e-1, 1e-0*2, 0.1    -inf -180];
+UB = [200, 1., ones(1,nB)*inf, 0.1, inf, 50, inf, 100, 20, 1    inf 180];
 % prs0 = rand(1,10);
-prs0 = [5, 0.01, randn(1,nB)*10, 0.01, 10, 25, 10, 25, 5, 1.];%    0 0] 
+prs0 = [5, 0.01, randn(1,nB)*10, 0.01, 10, 25, 10, 25, 5, 1.    0 10]; 
 prs0 = prs0 + prs0.*randn(1,length(UB))*0.1;
 % [x,fval] = fmincon(lfun,prs0,[],[],[],[],LB,UB,[],opts);
 [x,fval,EXITFLAG,OUTPUT,LAMBDA,GRAD,HESSIAN] = fmincon(lfun,prs0,[],[],[],[],LB,UB,[],opts);
@@ -191,11 +191,11 @@ figure()
 plot(prs_rep(:,:)','-o')
 
 %% sufficient statistics
-K_ = x(1); A_ = x(2)*; B_ = x(3:6); C_ = x(7); Amp = x(8); tau = x(9); Amp_h = x(10); tau_h = x(11); K2_ = x(12);  gamma = x(13);% base_dc = x(14); base_dcp = x(15);
+K_ = x(1); A_ = x(2)*1; B_ = x(3:6); C_ = x(7); Amp = x(8); tau = x(9); Amp_h = x(10); tau_h = x(11); K2_ = x(12);  gamma = x(13); base_dc = x(14); base_dcp = x(15);
 
 figure
 subplot(2,2,1)
-xx = 1:length(cosBasis);
+xx = 0:length(cosBasis)-1;
 yyaxis left; plot(Amp*exp(-xx/tau)); hold on
 yyaxis right; plot(Amp_h*exp(-xx/tau_h))
 title('\delta C^{\perp}, \delta \theta kernel')
@@ -206,7 +206,7 @@ title('\delta C kernel')
 subplot(2,2,3)
 K_dcp_rec = Amp*exp(-xx/tau);
 filt_dcp = conv_kernel(dcp_fit, K_dcp_rec);%conv(dcp_fit, fliplr(Amp*exp(-xx/tau)), 'same');
-[aa,bb] = hist(-(ang_fit - filt_dcp - base_dcp)*pi/180 , 1000);
+[aa,bb] = hist((ang_fit - filt_dcp - base_dcp*1)*pi/180 , 1000);
 bar( bb, 1/(2*pi*besseli(0,K_^1)) * exp(K_^1*cos( bb )) , 30); hold on
 bar( bb, 1/(2*pi*besseli(0,K2_^1)) * exp(K2_^1*cos( bb-pi ))*(gamma) + (1-gamma)/(2*pi) , 30,'r');
 title('von Mises for \delta C^{\perp}')
@@ -217,7 +217,7 @@ xx_h = 1:length(xx)*1;
 K_h_rec = Amp_h*exp(-xx_h/tau_h);
 filt_dth = conv_kernel(abs(ang_fit), K_h_rec);
 dc_dth = filt_ddc + 1*filt_dth;
-Pturns = A_ ./ (1 + exp( (dc_dth + base_dc) )) + C_; %+sb
+Pturns = (A_-C_)./ (1 + exp( -(dc_dth + base_dc) )) + C_; %+sb
 plot(dc_dth/length(K_dcp_rec) , Pturns,'o')
 title('Logistic for \delta C')
 
@@ -343,8 +343,8 @@ for t = 2:T
     dCpv = [(M(yil,xil) - M(yir,xir))/ 1 ,  dCpv];
     dCpv = dCpv(1:end-1);
     
-    wv = (1*sum(Kdcp.*dCpv) + base_dcp*0) + (vmrand(0,kappa))*180/pi;%kappa^1*randn;%length(wind)
-    P_event = A / (1+exp( -(sum(Kddc.*dCv)*1. + 1*(sum(Kdth.*abs(dthv)*180/pi)) *dt + 0*base_dc)+0) ) + Pturn_base;%length(wind)
+    wv = (-1*sum(Kdcp.*dCpv) + base_dcp*1)*1 + (vmrand(0,kappa))*180/pi;%kappa^1*randn;%length(wind)
+    P_event = (A-Pturn_base) / (1+exp( -(sum(Kddc.*dCv)*1. + (sum(Kdth.*abs(dthv)*1)) *dt + 1*base_dc)+0) ) + Pturn_base;%length(wind)
     if rand < P_event*1
         beta = 1;
     else

@@ -126,14 +126,14 @@ end
 
 %% test with stats-model for kernels
 drange = randperm(length(Data));%[1:length(Data)]; %
-Data_fit = Data(drange(1:50));  %Data(1:100); %
+Data_fit = Data(drange(1:100));  %Data(1:100); %
 lfun = @(x)pop_nLL(x, Data_fit);
 
 opts = optimset('display','iter');
 % opts.Algorithm = 'sqp';
-LB = [1e-0, 1e-1, ones(1,nB)*-inf, 0 -inf, 1e-0, -inf, 1e-1, 0.1, 0.1,];% -inf, -inf];
-UB = [200, 1., ones(1,nB)*inf, 0.1, inf, 50, inf, 100, 20, 1];%, inf, inf];
-prs0 = [50, 0.1, randn(1,nB)*10, 0.01, 10, 25, 10, 25, 5, 1.];%, 0, 0];
+LB = [1e-0, 1e-1, ones(1,nB)*-inf, 0 -inf, 1e-0, -inf, 1e-1, 0., 0., -inf, -180];
+UB = [200, 1., ones(1,nB)*inf, 0.1, inf, 50, inf, 100, 20, 1, inf, 180];
+prs0 = [50, 0.1, randn(1,nB)*10, 0.01, 10, 25, 10, 25, 5, 1., 0, 10];
 prs0 = prs0 + prs0.*randn(1,length(UB))*0.2;
 % [x,fval] = fmincon(lfun,prs0,[],[],[],[],LB,UB,[],opts);
 [x,fval,EXITFLAG,OUTPUT,LAMBDA,GRAD,HESSIAN] = fmincon(lfun,prs0,[],[],[],[],LB,UB,[],opts);
@@ -144,8 +144,8 @@ normedLL
 
 %% summary statistics
 % inferred parameters
-K_ = x(1); A_ = x(2); B_ = x(3:6); C_ = x(7); Amp = x(8); tau = x(9); Amp_h = x(10); tau_h = x(11); K2_ = x(12);  gamma = x(13); %base_dc = x(14); base_dcp = x(15);
-base_dc = 0;  base_dcp = 0;
+K_ = x(1); A_ = x(2); B_ = x(3:6); C_ = x(7); Amp = x(8); tau = x(9); Amp_h = x(10); tau_h = x(11); K2_ = x(12);  gamma = x(13); base_dc = x(14); base_dcp = x(15);
+% base_dc = 0;  base_dcp = 0;
 
 % unwrap data
 id = 1;
@@ -177,7 +177,7 @@ xx_h = 1:length(xx)*1;
 K_h_rec = Amp_h*exp(-xx_h/tau_h);
 filt_dth = conv_kernel(abs(ang_fit), K_h_rec);
 dc_dth = filt_ddc + 1*filt_dth;
-Pturns = A_ ./ (1 + exp( -(dc_dth + base_dc))) + C_; %+sb
+Pturns = (A_-C_) ./ (1 + exp( -(dc_dth + base_dc))) + C_; %+sb
 plot(dc_dth/length(K_dcp_rec) , Pturns,'o')
 title('Logistic for \delta C')
 

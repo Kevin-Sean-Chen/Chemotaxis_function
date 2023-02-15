@@ -126,13 +126,13 @@ end
 
 %% test with stats-model for kernels
 drange = randperm(length(Data));%[1:length(Data)]; %
-Data_fit = Data(drange(1:100));  %Data(1:100); %
+Data_fit = Data(drange(1:50));  %Data(1:100); %
 lfun = @(x)pop_nLL(x, Data_fit);
 
 opts = optimset('display','iter');
 % opts.Algorithm = 'sqp';
-LB = [1e-0, 1e-1, ones(1,nB)*-inf, 0 -inf, 1e-0, -inf, 1e-1, 0.1, 0.1,];% -inf, -inf];
-UB = [100, 1., ones(1,nB)*inf, 0.1, inf, 50, inf, 100, 20, 1];%, inf, inf];
+LB = [1e-0, 1e-1, ones(1,nB)*-inf, 0 -inf, 1e-0, -inf, 1e-1, 0.1, 0.1, -inf, -inf];
+UB = [200, 1., ones(1,nB)*inf, 0.1, inf, 50, inf, 100, 20, 1];%, inf, inf];
 prs0 = [50, 0.1, randn(1,nB)*10, 0.01, 10, 25, 10, 25, 5, 1.];%, 0, 0];
 prs0 = prs0 + prs0.*randn(1,length(UB))*0.2;
 % [x,fval] = fmincon(lfun,prs0,[],[],[],[],LB,UB,[],opts);
@@ -144,7 +144,7 @@ normedLL
 
 %% summary statistics
 % inferred parameters
-K_ = x(1); A_ = x(2); B_ = x(3:6); C_ = x(7); Amp = x(8); tau = x(9); Amp_h = x(10); tau_h = x(11); K2_ = x(12);  gamma = x(13); %base_dc = x(14); base_dcp = x(15);
+K_ = x(1); A_ = x(2); B_ = x(3:6); C_ = x(7); Amp = x(8); tau = x(9); Amp_h = x(10); tau_h = x(11); K2_ = x(12);  gamma = x(13); base_dc = x(14); base_dcp = x(15);
 base_dc = 0;  base_dcp = 0;
 
 % unwrap data
@@ -187,9 +187,9 @@ disp(['K_=',num2str(K_),' K2_',num2str(K2_),'beta',num2str(sum(B_)),'alpha',num2
 %% color code with track LL
 LLs = zeros(1,length(Data_fit));  % tracks used for fitting
 for ii = 1:length(LLs)
-%     LLs(ii) = pop_nLL(x, Data_fit(ii))/length(Data_fit(ii).dth);
+    LLs(ii) = pop_nLL(x, Data_fit(ii))/length(Data_fit(ii).dth);
     %%% test with ration!
-    LLs(ii) = (pop_nLL(x_ave, Data_fit(ii))) / (pop_nLL(x, Data_fit(ii)));
+%     LLs(ii) = (pop_nLL(x_ave, Data_fit(ii))) / (pop_nLL(x, Data_fit(ii)));
 end
 normV = [(LLs-min(LLs))./(max(LLs)-min(LLs))]';
 % blue to red. 
