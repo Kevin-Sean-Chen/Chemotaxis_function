@@ -61,7 +61,5 @@ title('Markov Chain Auto Correlation')
 
 %% Corner plot of parameters
 figure
-ecornerplot(m_bound,'ks',true,'color',[.6 .35 .3])
-
-%%% save('/projects/LEIFER/Kevin/Data_learn/N2/..._mcmc.mat','m'
+ecornerplot(m,'ks',true,'color',[.6 .35 .3])
 

@@ -166,7 +166,7 @@ prs0 = [5, 0.01, randn(1,nB)*10, 0.01, 10, 25, 10, 25, 5, 1.    0 10];
 prs0 = prs0 + prs0.*randn(1,length(UB))*0.1;
 % [x,fval] = fmincon(lfun,prs0,[],[],[],[],LB,UB,[],opts);
 [x,fval,EXITFLAG,OUTPUT,LAMBDA,GRAD,HESSIAN] = fmincon(lfun,prs0,[],[],[],[],LB,UB,[],opts);
-x
+x_MLE = x
 fval
 % K_ = x(1); A_ = x(2); B_ = x(3:6); C_ = x(7)/1; Amp = x(8); tau = x(9); Amp_h = x(10); tau_h = x(11); sb = x(12); K2_ = x(13);  gamma = x(14);
 
@@ -304,9 +304,9 @@ vm = 0.2*32*(bin/14);  %should be adjusted with the velocity statistics~~ this i
 vs = .2;
 tracks = zeros(T,2);
 %%% from middle
-tracks(1,:) = [size(M,2)*1/2 + randn()*300, randn()*300 + size(M,1)*1/2]*1. + 0.*[size(M,2)*rand(), size(M,1)*5/8];%origin; %initial position
+% tracks(1,:) = [size(M,2)*1/2 + randn()*300, randn()*300 + size(M,1)*1/2]*1. + 0.*[size(M,2)*rand(), size(M,1)*5/8];%origin; %initial position
 %%% from random track
-% temp = Tracks(randi(length(Tracks))).Path; tracks(1,:) = temp(1,:);  %data intials
+temp = Tracks(randi(length(Tracks))).Path; tracks(1,:) = temp(1,:);  %data intials
 %%% from collected structure
 % temp = Data(rep).xy'; tracks(1,:) = temp(1,:);  % initial data point
 

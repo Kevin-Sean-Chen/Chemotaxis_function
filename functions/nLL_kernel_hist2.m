@@ -5,7 +5,7 @@ function [NLL] = nLL_kernel_hist2(THETA, dth, dcp, dc, Basis, lambda, mask)
         lambda = 0;
         mask = ones(1,length(dth));
     end
-
+% mask = ones(1,length(dth));
     %%% Assume we parameterize in such way first
     kappa_wv = THETA(1)^0.5;      % variance of von Mises
     A_ = THETA(2);            % max turn probability
@@ -23,7 +23,11 @@ function [NLL] = nLL_kernel_hist2(THETA, dth, dcp, dc, Basis, lambda, mask)
     base_dcp = THETA(15);     % baseline for dcp probability
     
     %%% turning decision
-    K_dc = alpha_dc * Basis';  %reconstruct with basis
+    try
+        K_dc = alpha_dc * Basis';  %reconstruct with basis
+    catch
+        K_dc = alpha_dc' * Basis';
+    end
     K_win = 0:length(K_dc)-1;
     h_win = 0:length(K_dc)-1;
     K_h = Amp_h * exp(-h_win/tau_h);  % dth kernel

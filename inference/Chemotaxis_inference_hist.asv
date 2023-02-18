@@ -75,7 +75,7 @@ for c = 1:length(Tracks) %length(Paths)
         ang_loc(dd) = angles([1,0],vecs(dd,:)/norm(vecs(dd,:)));
         
         %%% perpendicular concentration change
-        perp_dir = [-vecs(dd-0,2), vecs(dd-l_window,1)];
+        perp_dir = [-vecs(dd-0,2), vecs(dd-0,1)];
         perp_dir = perp_dir/norm(perp_dir)*perp_dist;
 %         dCp(dd) = Fcon(subs(dd-l_window,1)+perp_dir(1)*1., subs(dd-l_window,2)+perp_dir(2)*1)...
 %              - Fcon(subs(dd-l_window,1)-perp_dir(1)*1, subs(dd-l_window,2)-perp_dir(2)*1);
@@ -166,7 +166,7 @@ prs0 = [5, 0.01, randn(1,nB)*10, 0.01, 10, 25, 10, 25, 5, 1.    0 10];
 prs0 = prs0 + prs0.*randn(1,length(UB))*0.1;
 % [x,fval] = fmincon(lfun,prs0,[],[],[],[],LB,UB,[],opts);
 [x,fval,EXITFLAG,OUTPUT,LAMBDA,GRAD,HESSIAN] = fmincon(lfun,prs0,[],[],[],[],LB,UB,[],opts);
-x
+x_MLE
 fval
 % K_ = x(1); A_ = x(2); B_ = x(3:6); C_ = x(7)/1; Amp = x(8); tau = x(9); Amp_h = x(10); tau_h = x(11); sb = x(12); K2_ = x(13);  gamma = x(14);
 
@@ -343,8 +343,8 @@ for t = 2:T
     dCpv = [(M(yil,xil) - M(yir,xir))/ 1 ,  dCpv];
     dCpv = dCpv(1:end-1);
     
-    wv = (-1*sum(Kdcp.*dCpv) + base_dcp*1)*1 + (vmrand(0,kappa))*180/pi;%kappa^1*randn;%length(wind)
-    P_event = (A-Pturn_base) / (1+exp( -(sum(Kddc.*dCv)*1. + (sum(Kdth.*abs(dthv)*1)) *dt + 1*base_dc)+0) ) + Pturn_base;%length(wind)
+    wv = (1*sum(Kdcp.*dCpv) + base_dcp*1)*1 + (vmrand(0,kappa))*180/pi;%kappa^1*randn;%length(wind)
+    P_event = (A - Pturn_base) / (1+exp( -(sum(Kddc.*dCv)*1. + (sum(Kdth.*abs(dthv)*1)) *dt + 1*base_dc)+0) ) + Pturn_base;%length(wind)
     if rand < P_event*1
         beta = 1;
     else

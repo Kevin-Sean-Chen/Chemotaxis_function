@@ -1,4 +1,4 @@
-function [logpp] = logPrior_mVM(THETA):
+function [logpp] = logPrior_mVM(THETA, Basis, lambda)
 %%%
 % log-prior of parameters for the parameters for mixture of von-Mises
 % distribution, used for mcmc sampling for posterior
@@ -27,10 +27,13 @@ function [logpp] = logPrior_mVM(THETA):
     base_dcp = THETA(15);     % baseline for dcp probability
 
 % bounded parameters
-logp_bounds = (kappa_wv>0)&&(kappa_wv<200) && (kappa_turn>0)&&(kappa_turn<200) && (A_>0)&&(A_<1) && (C_>0)&&(C_<.1) && (tau_h>0)&&(tau_dcp>0) && (gamma>0)&&(gamma<1);
+logp_bounds = (kappa_wv>0)&&(kappa_wv<200) && (kappa_turn>0)&&(kappa_turn<200) && (A_+C_>0)&&(A_+C_<1) && (C_>0)&&(C_<.5) && (tau_h>0)&&(tau_dcp>0) && (gamma>0)&&(gamma<1);
+if logp_bounds==0
+    logp_bounds = -inf;
+end
 % kernel parameters
-K_dc = alpha_dc * Basis';
-logp_kernel = sum((sum(K_dc))^2);
+K_dc = alpha_dc' * Basis';
+logp_kernel = -sum((sum(K_dc))^2)*lambda;
 
 logpp = logp_bounds + logp_kernel;
 end
