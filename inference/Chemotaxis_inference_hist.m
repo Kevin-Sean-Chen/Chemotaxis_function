@@ -44,6 +44,7 @@ alldis = [];  %displacements
 alltrials = [];  %mark for tracks
 allxys = [];  %all track location in 2D
 allang_loc = [];
+alldeltaC = [];  % finial-initial concentration
 
 for c = 1:length(Tracks) %length(Paths)
     
@@ -120,6 +121,8 @@ for c = 1:length(Tracks) %length(Paths)
     trials(1) = NaN; trials(end) = NaN;
     alltrials = [alltrials trials];
     allxys = [allxys xys];
+    
+    alldeltaC = [alldeltaC (dCs(end)-dCs(2))];
     
     end
 end

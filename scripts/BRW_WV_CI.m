@@ -24,10 +24,29 @@ Fcon = load('/projects/LEIFER/Kevin/Data_odor_flow_equ/20220113_GWN_app+_MEK110m
 
 Fcon = Fcon.F;
 
+%% looping files and conditions
+% Tracks = loadtracks(folder_names{1},fields_to_load);
+temp = load('/projects/LEIFER/Kevin/Data_learn/N2/data_analysis/learn_folders.mat');
+folder_all = {temp.folder_app, temp.folder_nai, temp.folder_ave};
+BWC = zeros(length(folder_names), 3);
+BWCs = cell(1,3);
+cols = ['b','k','r'];
+figure
+for cc = 1:3
+    folder_names = folder_all{cc};
+    for ff = 1:length(folder_names)
+        Tracks = loadtracks(folder_names{ff},fields_to_load);
+        [ci_, brw_index, wv_index] = compute_index(Tracks, M);
+        BWC(ff,:) = [ci_, brw_index, wv_index];
+    end
+    plot(BWC',cols(cc)); hold on
+    BWCs{cc} = BWC;
+end
+
 %% test with RBW and WV index vs. CI (biased-random walk, weathervaning, and chemotaxis index)
 % chemotaxis = struct('brw','wv','ci');
 dC_window = 14*5;  %time window for dC measurement for turns
-time_wind = 60*15;  %first few minutes
+time_wind = 60*20;  %first few minutes
 
 % initializing counts
 run_up = 0;  %recording for runs
@@ -135,6 +154,7 @@ set(gca,'xtick',[1:3],'xticklabel',names,'FontSize',20)
 set(gcf,'color','w');
 
 %% bar plot
+app_ = BWCs{1}'; nai_ = BWCs{2}'; ave_ = BWCs{3}';
 figure
 m_ap = mean(app_');
 m_na = mean(nai_');
@@ -150,10 +170,12 @@ for k1 = 1:3
 end
 % set(hBar, {'DisplayName'}, {'App','Naive','Ave'}')
 hold on
-errorbar(ctr, ydt, [s_ap;s_na;s_av]', '.r')                  
+% errorbar(ctr, ydt, [s_ap;s_na;s_av]', '.r')  
+errorbar(ctr, ydt, [m_ap;m_na;m_av]'*0,[s_ap;s_na;s_av]', '.k')         
 hold off
 ylabel('Index')
 % set(gca,'linewidth',2,'FontSize',20)
+names = {'CI'; 'BRW'; 'WV'};
 set(gca,'xticklabel',names,'FontSize',20)
 set(gcf,'color','w');
 legend([hBar(1), hBar(2),hBar(3)], 'Appetitive','Naive','Aversive')

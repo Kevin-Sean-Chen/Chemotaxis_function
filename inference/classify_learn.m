@@ -26,13 +26,13 @@ Loss = kfoldLoss(CVMdl)
 %% 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % classify with dC
-datal = 100000;
-test = load('/projects/LEIFER/Kevin/Data_learn/N2/data_analysis/app_dc.mat');
-dc_app = test.alldC(1:datal);
-test = load('/projects/LEIFER/Kevin/Data_learn/N2/data_analysis/nai_dc.mat');
-dc_nai = test.alldC(1:datal);
-test = load('/projects/LEIFER/Kevin/Data_learn/N2/data_analysis/ave_dc.mat');
-dc_ave = test.alldC(1:datal);
+datal = 200; %200 or 100000
+test = load('/projects/LEIFER/Kevin/Data_learn/N2/data_analysis/app_ddc.mat');  % _dc or _ddc
+dc_app = test.alldeltaC(1:datal);  %alldC or alldeltaC
+test = load('/projects/LEIFER/Kevin/Data_learn/N2/data_analysis/nai_ddc.mat');
+dc_nai = test.alldeltaC(1:datal);
+test = load('/projects/LEIFER/Kevin/Data_learn/N2/data_analysis/ave_ddc.mat');
+dc_ave = test.alldeltaC(1:datal);
 
 labels = [make_label(datal,'app')', make_label(datal,'nai')', make_label(datal,'ave')']';
 mss = [dc_app  dc_nai  dc_ave]';
@@ -44,10 +44,12 @@ Loss = kfoldLoss(CVMdl)
 
 %%
 figure;
-fname = {'K_{dC^{^\perp}}','K_{dC}','\Delta C','random'}; 
-bar([1,2,3,4],[0.09,0.2984,0.57,2/3])
+fname = {'K_{dC^{^\perp}}','K_{dC}','\Delta C','C','random'}; 
+bar([1:length(fname)],[0.09,0.2984,0.50,0.57,2/3])
 set(gca, 'XTick', 1:length(fname),'XTickLabel',fname);
 ylabel('cross-validation loss')
+xlim([.5,length(fname)+.5])
+ylim([0, 2/3+0.05])
 %%
 function labels= make_label(ns, label)
     labels = cell(ns,1);
