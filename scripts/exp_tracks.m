@@ -85,4 +85,58 @@ end
 
 xlabel('x (mm)'); ylabel('y (mm)'); h = colorbar();  ylabel(h, 'ppm');
 set(gca,'Fontsize',20); set(gcf,'color','w');
+
 %%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% example time series, after running Data structure
+id = 5;
+wind = [650:1780];
+
+n = length(wind);
+temp = [n:-1:1]*230/n;
+ccd = uint8(zeros(4,n));
+% ccd = [uint8(jet(n)*255) uint8(zeros(n,1))]';
+for i=1:n
+    ccd(:,i) = uint8(temp(i));
+end
+time_x = [1:n]*5/14;
+
+figure;
+imagesc(M,'XData',[0 size(M,2)*pix2mm],'YData',[0 size(M,1)*pix2mm]); hold on
+p = plot(Data(id).xy(1,wind)*pix2mm, Data(id).xy(2,wind)*pix2mm, 'LineWidth',2)
+set(p.Edge, 'ColorBinding','interpolated', 'ColorData',ccd)
+plot(Data(id).xy(1,wind(1))*pix2mm, Data(id).xy(2,wind(1))*pix2mm, 'g.','MarkerSize',15)
+plot(Data(id).xy(1,wind(end))*pix2mm, Data(id).xy(2,wind(end))*pix2mm, 'r.','MarkerSize',15)
+
+figure;
+subplot(311)
+p = plot(time_x,Data(id).dcp(wind), 'LineWidth',2)
+set(p.Edge, 'ColorBinding','interpolated', 'ColorData',ccd)
+ylabel('dC^{\perp}')
+subplot(312)
+p = plot(time_x,Data(id).dc(wind), 'LineWidth',2)
+set(p.Edge, 'ColorBinding','interpolated', 'ColorData',ccd)
+ylabel('dC')
+subplot(313)
+p = plot(time_x,Data(id).dth(wind), 'LineWidth',2)
+hold on
+plot(time_x(turn_pos), ones(1,length(turn_pos))*-200,'k*')
+set(p.Edge, 'ColorBinding','interpolated', 'ColorData',ccd)
+ylabel('d\theta')
+
+
+%% convolutions and model
+% with MLE parameter vecotr x and unpack kernels, visualize turning probability
+ddc_exp = Data(id).dcp(wind);
+ang_exp = Data(id).dth(wind);
+
+filt_ddc = conv_kernel(ddc_exp, K_dc_rec);
+xx_h = 1:length(xx)*1;
+K_h_rec = Amp_h*exp(-xx_h/(tau_h*1));
+filt_dth = conv_kernel(abs(ang_exp), K_h_rec);
+dc_dth = filt_ddc + 1*filt_dth;
+Pturns = (A_-C_) ./ (1 + exp( -(dc_dth + base_dc))) + C_;
+
+figure;
+plot(Pturns)
+turn_pos = find(Pturns>0.5);

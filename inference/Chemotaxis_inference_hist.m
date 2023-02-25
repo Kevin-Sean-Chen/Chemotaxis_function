@@ -136,7 +136,7 @@ alltrials(pos) = [];
 allxys(:,pos) = [];
 
 %%  test with mask
-pos = find(alldis<0.2);
+pos = find(alldis<0.5);
 alltrials(pos) = NaN;
 
 %%
@@ -162,10 +162,10 @@ lfun = @(x)nLL_kernel_hist2(x, ang_fit, dcp_fit, ddc_fit, cosBasis, .1, trials_f
 
 opts = optimset('display','iter');
 % opts.Algorithm = 'sqp';
-LB = [1e-0, 1e-5, ones(1,nB)*-inf, 0 -inf, 1e-0, -inf, 1e-1, 1e-0*2, 0.1    -inf -180];
+LB = [1e-0, 1e-5, ones(1,nB)*-inf, 0.0 -inf, 1e-0, -inf, 1e-1, 1e-0*10, 0.1    -inf -180];
 UB = [200, 1., ones(1,nB)*inf, 0.1, inf, 50, inf, 100, 20, 1    inf 180];
 % prs0 = rand(1,10);
-prs0 = [5, 0.01, randn(1,nB)*10, 0.01, 10, 25, 10, 25, 5, 1.    0 10]; 
+prs0 = [50, 0.1, randn(1,nB)*10, 0.01, -10, 25, 10, 25, 5, 1.    -5 -5]; 
 prs0 = prs0 + prs0.*randn(1,length(UB))*0.1;
 % [x,fval] = fmincon(lfun,prs0,[],[],[],[],LB,UB,[],opts);
 [x,fval,EXITFLAG,OUTPUT,LAMBDA,GRAD,HESSIAN] = fmincon(lfun,prs0,[],[],[],[],LB,UB,[],opts);
@@ -195,6 +195,7 @@ plot(prs_rep(:,:)','-o')
 
 %% sufficient statistics
 K_ = x(1); A_ = x(2)*1; B_ = x(3:6); C_ = x(7); Amp = x(8); tau = x(9); Amp_h = x(10); tau_h = x(11); K2_ = x(12);  gamma = x(13); base_dc = x(14); base_dcp = x(15);
+% base_dc = 0; base_dcp = 0;
 
 figure
 subplot(2,2,1)
@@ -234,17 +235,20 @@ p_z = n_brw + n_wv;
 p_brw = n_brw/p_z;
 p_wv = n_wv/p_z;
 
-[aa,bb] = hist(-(ang_fit - filt_dcp - base_dcp)*pi/180 , 1000);
+[aa,bb] = hist(allas*pi/180,500);
+figure;
+H = bar(bb,aa/sum(aa),30);
+x_data = H.XData;  y_data = H.YData
+
+[aa,bb] = hist(-(ang_fit - filt_dcp - base_dcp)*pi/180 , 500);
 n_vm_wv = 1/(2*pi*besseli(0,K_^1)) * exp(K_^1*cos( bb )); 
 n_vm_brw = 1/(2*pi*besseli(0,K2_^1)) * exp(K2_^1*cos( bb-pi ))*(gamma) + (1-gamma)/(2*pi);
 
 figure
-bar( bb, n_vm_wv/sum(n_vm_wv)*p_wv , 30); hold on
-bar( bb, n_vm_brw/sum(n_vm_brw)*p_brw , 30,'r');
+bar( bb, n_vm_wv/sum(n_vm_wv)*p_wv , 3); hold on
+bar( bb, n_vm_brw/sum(n_vm_brw)*p_brw , 3,'r');
+plot(x_data, y_data, '--')
 
-[aa,bb] = hist(allas*pi/180,1000);
-figure;
-bar(bb,aa/sum(aa),50)
 %% autocorr check
 [acf,lags] = autocorr(abs(allas),100); %(allang_loc,100);
 f = fit(lags',acf','exp1');
@@ -258,16 +262,16 @@ plfun = @(x)-nLL_kernel_hist2(x, ang_fit, dcp_fit, ddc_fit, cosBasis, 1, trials_
 figure; plot(diag(real(D)),'-o')
 
 %% Generative model, with inferred parameters~
-% reconstruct parameters 
+% reconstruct parameters '
 % kappa = ((1/K_)^2*(180/pi)^1)^0.5;
 % kappa2 = ((1/K2_)^2*(180/pi)^1)^0.5;
 kappa = ((K_)^1)^1;
 kappa2 = ((K2_)^1)^1;
 if kappa2<0.05; kappa2=0.1; end  %simplify calculation
 A = A_*1;
-Kdcp = Amp*exp(-xx/tau);
-Kdth = Amp_h*exp(-xx_h/tau_h);
-Kddc = B_ * cosBasis';
+Kdcp = Amp*exp(-xx/tau)*14/5;
+Kdth = Amp_h*exp(-xx_h/tau_h)*14/5;
+Kddc = B_ * cosBasis'*14/5;
 Pturn_base = C_;
 wind = size(cosBasis,1);
 
@@ -277,8 +281,8 @@ alldCs = [];
 alldCps = [];
 allths = [];
 
-REP = 50;
-T = 5000;
+REP = 20;
+T = floor(15*60*14/5);%2000;
 dt = 1.;
 % trackss = zeros(REP,T,2);
 trackss = {};
@@ -307,9 +311,9 @@ vm = 0.2*32*(bin/14);  %should be adjusted with the velocity statistics~~ this i
 vs = .2;
 tracks = zeros(T,2);
 %%% from middle
-% tracks(1,:) = [size(M,2)*1/2 + randn()*300, randn()*300 + size(M,1)*1/2]*1. + 0.*[size(M,2)*rand(), size(M,1)*5/8];%origin; %initial position
+tracks(1,:) = [size(M,2)*1/2 + randn()*200, randn()*200 + size(M,1)*1/2]*1. + 0.*[size(M,2)*rand(), size(M,1)*5/8];%origin; %initial position
 %%% from random track
-temp = Tracks(randi(length(Tracks))).Path; tracks(1,:) = temp(1,:);  %data intials
+% temp = Tracks(randi(length(Tracks))).Path; tracks(1,:) = temp(1,:);  %data intials
 %%% from collected structure
 % temp = Data(rep).xy'; tracks(1,:) = temp(1,:);  % initial data point
 
@@ -484,8 +488,8 @@ xlabel('d\theta'); ylabel('P(d\theta)')
 
 %%
 figure();
-[dcp_data_a,dcp_data_b] = hist(real((alldcp(1:9000))),30);
-[dcp_model_a,dcp_model_b] = hist(real((alldCps)),30);
+[dcp_data_a,dcp_data_b] = hist(real((alldC(1:100000))),30);
+[dcp_model_a,dcp_model_b] = hist(real((alldCs(:))),30);
 bar(dcp_data_b, dcp_data_a/sum(dcp_data_a));
 hold on
 bar(dcp_model_b, dcp_model_a/sum(dcp_model_a),'FaceAlpha',0.5);
