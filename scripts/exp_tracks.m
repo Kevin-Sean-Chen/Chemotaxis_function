@@ -111,17 +111,17 @@ plot(Data(id).xy(1,wind(end))*pix2mm, Data(id).xy(2,wind(end))*pix2mm, 'r.','Mar
 figure;
 subplot(311)
 p = plot(time_x,Data(id).dcp(wind), 'LineWidth',2)
-set(p.Edge, 'ColorBinding','interpolated', 'ColorData',ccd)
+% set(p.Edge, 'ColorBinding','interpolated', 'ColorData',ccd)
 ylabel('dC^{\perp}')
 subplot(312)
 p = plot(time_x,Data(id).dc(wind), 'LineWidth',2)
-set(p.Edge, 'ColorBinding','interpolated', 'ColorData',ccd)
+% set(p.Edge, 'ColorBinding','interpolated', 'ColorData',ccd)
 ylabel('dC')
 subplot(313)
 p = plot(time_x,Data(id).dth(wind), 'LineWidth',2)
 hold on
 plot(time_x(turn_pos), ones(1,length(turn_pos))*-200,'k*')
-set(p.Edge, 'ColorBinding','interpolated', 'ColorData',ccd)
+% set(p.Edge, 'ColorBinding','interpolated', 'ColorData',ccd)
 ylabel('d\theta')
 
 
