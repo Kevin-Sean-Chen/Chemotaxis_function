@@ -118,7 +118,7 @@ for c = 1:length(Tracks) %length(Paths)
     alldcp = [alldcp dCp];
     alldC = [alldC dCs];
     alldis = [alldis dds];  %displacement (effective velocity)
-    trials(1) = NaN; trials(end) = NaN;
+    trials(1:35) = NaN; trials(end-35:end) = NaN;
     alltrials = [alltrials trials];
     allxys = [allxys xys];
     
@@ -152,20 +152,20 @@ alltrials(pos) = NaN;
 %% test with stats-model for kernels
 nB = 4;
 [cosBasis, tgrid, basisPeaks] = makeRaisedCosBasis(nB, [0, 8], 1.3);
-ang_fit = allas(1:100000);
-dcp_fit = alldcp(1:100000);
-ddc_fit = (alldC(1:100000));
-trials_fit = alltrials(1:100000);
+ang_fit = allas(1:end);
+dcp_fit = alldcp(1:end);
+ddc_fit = (alldC(1:end));
+trials_fit = alltrials(1:end);
 lfun = @(x)nLL_kernel_hist2(x, ang_fit, dcp_fit, ddc_fit, cosBasis, .1, trials_fit);
 % [x,fval] = fminunc(lfun,randn(1,10));  %random initiation
 % [x,fval,exitflag,output,grad,hessian] = fminunc(lfun,[500, 0.0, randn(1,6), -1, 100]+randn(1,10)*0.);  %a closer to a reasonable value
 
 opts = optimset('display','iter');
 % opts.Algorithm = 'sqp';
-LB = [1e-0, 1e-5, ones(1,nB)*-inf, 0.0 -inf, 1e-0, -inf, 1e-1, 1e-0*10, 0.1    -inf -180];
-UB = [200, 1., ones(1,nB)*inf, 0.1, inf, 50, inf, 100, 20, 1    inf 180];
+LB = [1e-0, 1e-5, ones(1,nB)*-inf, 0.0 -inf, 1e-0, -inf, 1e-1, 1e-0*10, 0.1    -inf -10];
+UB = [200, 1., ones(1,nB)*inf, 0.1, inf, 50, inf, 100, 20, 1    inf 10];
 % prs0 = rand(1,10);
-prs0 = [50, 0.1, randn(1,nB)*10, 0.01, -10, 25, 10, 25, 5, 1.    -5 -5]; 
+prs0 = [50, 0.5, randn(1,nB)*10, 0.01, -10, 25, 10, 25, 5, 1.    -5 2]; 
 prs0 = prs0 + prs0.*randn(1,length(UB))*0.1;
 % [x,fval] = fmincon(lfun,prs0,[],[],[],[],LB,UB,[],opts);
 [x,fval,EXITFLAG,OUTPUT,LAMBDA,GRAD,HESSIAN] = fmincon(lfun,prs0,[],[],[],[],LB,UB,[],opts);
@@ -173,39 +173,63 @@ x_MLE = x
 fval
 % K_ = x(1); A_ = x(2); B_ = x(3:6); C_ = x(7)/1; Amp = x(8); tau = x(9); Amp_h = x(10); tau_h = x(11); sb = x(12); K2_ = x(13);  gamma = x(14);
 
-%% test parameter distribution
-repeats = 10;
-prs_rep = zeros(length(prs0), repeats);
-for rr =1:repeats
-    % load observation
-    ang_fit = allas(1:end-1);
-    dcp_fit = alldcp(1:end-1);
-    ddc_fit = (alldC(1:end-1));
-    lfun = @(x)nLL_kernel_hist(x,ang_fit, dcp_fit, ddc_fit, cosBasis);
-    % fitting
-    prs0 = [1, 0.1, randn(1,nB), 0.01, -1, 100, -1, 100, 1];  %initialization 
-    prs0 = prs0+prs0.*randn(1,length(prs0))*.5;  %perturbation
-    [x,fval] = fmincon(lfun,prs0,[],[],[],[],LB,UB,[]); 
-    
-    prs_rep(:,rr) = x;
-end
+%% test with stats-model for kernels, adding history of WV angles (for 54.5 strain with biased turns)
+nB = 4;
+[cosBasis, tgrid, basisPeaks] = makeRaisedCosBasis(nB, [0, 8], 1.3);
+ang_fit = allas(1:end);
+dcp_fit = alldcp(1:end);
+ddc_fit = (alldC(1:end));
+trials_fit = alltrials(1:end);
+lfun = @(x)nLL_kernel_hist3(x, ang_fit, dcp_fit, ddc_fit, cosBasis, .1, trials_fit);
+% [x,fval] = fminunc(lfun,randn(1,10));  %random initiation
+% [x,fval,exitflag,output,grad,hessian] = fminunc(lfun,[500, 0.0, randn(1,6), -1, 100]+randn(1,10)*0.);  %a closer to a reasonable value
 
-figure()
-plot(prs_rep(:,:)','-o')
+opts = optimset('display','iter');
+% opts.Algorithm = 'sqp';
+LB = [1e-0, 1e-5, ones(1,nB)*-inf, 0.0 -inf, 1e-0, -inf, 1e-1, 1e-0*10, 0.1    -inf -10  -10 .1];
+UB = [200, 1., ones(1,nB)*inf, 0.1, inf, 50, inf, 100, 20, 1    inf 10  10 200];
+% prs0 = rand(1,10);
+prs0 = [50, 0.5, randn(1,nB)*1, 0.01, -1, 25, 1, 25, 5, 1.    -5 2 .1 1]; 
+prs0 = prs0 + prs0.*randn(1,length(UB))*0.1;
+% [x,fval] = fmincon(lfun,prs0,[],[],[],[],LB,UB,[],opts);
+[x,fval,EXITFLAG,OUTPUT,LAMBDA,GRAD,HESSIAN] = fmincon(lfun,prs0,[],[],[],[],LB,UB,[],opts);
+x_MLE = x
+fval
+
+%% test parameter distribution
+% repeats = 10;
+% prs_rep = zeros(length(prs0), repeats);
+% for rr =1:repeats
+%     % load observation
+%     ang_fit = allas(1:end-1);
+%     dcp_fit = alldcp(1:end-1);
+%     ddc_fit = (alldC(1:end-1));
+%     lfun = @(x)nLL_kernel_hist(x,ang_fit, dcp_fit, ddc_fit, cosBasis);
+%     % fitting
+%     prs0 = [1, 0.1, randn(1,nB), 0.01, -1, 100, -1, 100, 1];  %initialization 
+%     prs0 = prs0+prs0.*randn(1,length(prs0))*.5;  %perturbation
+%     [x,fval] = fmincon(lfun,prs0,[],[],[],[],LB,UB,[]); 
+%     
+%     prs_rep(:,rr) = x;
+% end
+% 
+% figure()
+% plot(prs_rep(:,:)','-o')
 
 %% sufficient statistics
-K_ = x(1); A_ = x(2)*1; B_ = x(3:6); C_ = x(7); Amp = x(8); tau = x(9); Amp_h = x(10); tau_h = x(11); K2_ = x(12);  gamma = x(13); base_dc = x(14); base_dcp = x(15);
+K_ = x(1); A_ = x(2)*1; B_ = x(3:6); C_ = x(7); Amp = x(8); tau = x(9); Amp_h = x(10); tau_h = x(11); K2_ = x(12);  gamma = x(13); base_dc = x(14); base_dcp = x(15); Amp_h_wv=x(16);tau_h_wv=x(17);
 % base_dc = 0; base_dcp = 0;
 
 figure
 subplot(2,2,1)
 xx = 0:length(cosBasis)-1;
 yyaxis left; plot(Amp*exp(-xx/tau)); hold on
-yyaxis right; plot(Amp_h*exp(-xx/tau_h))
+yyaxis right; plot(Amp_h_wv*exp(-xx/tau_h_wv))
 title('\delta C^{\perp}, \delta \theta kernel')
 subplot(2,2,2)
-plot(B_ * cosBasis')
-title('\delta C kernel')
+yyaxis left; plot(B_ * cosBasis'); hold on
+yyaxis right; plot(Amp_h*exp(-xx/tau_h))
+title('\delta C, \delta \theta kernel')
 
 subplot(2,2,3)
 K_dcp_rec = Amp*exp(-xx/tau);
@@ -272,6 +296,7 @@ A = A_*1;
 Kdcp = Amp*exp(-xx/tau)*14/5;
 Kdth = Amp_h*exp(-xx_h/tau_h)*14/5;
 Kddc = B_ * cosBasis'*14/5;
+Kdth_wv = Amp_h_wv*exp(-xx_h/tau_h_wv);%.1*exp(-xx_h/50);%
 Pturn_base = C_;
 wind = size(cosBasis,1);
 
@@ -282,7 +307,7 @@ alldCps = [];
 allths = [];
 
 REP = 20;
-T = floor(15*60*14/5);%2000;
+T = floor(10*60*14/5);%2000;
 dt = 1.;
 % trackss = zeros(REP,T,2);
 trackss = {};
@@ -311,7 +336,7 @@ vm = 0.2*32*(bin/14);  %should be adjusted with the velocity statistics~~ this i
 vs = .2;
 tracks = zeros(T,2);
 %%% from middle
-tracks(1,:) = [size(M,2)*1/2 + randn()*200, randn()*200 + size(M,1)*1/2]*1. + 0.*[size(M,2)*rand(), size(M,1)*5/8];%origin; %initial position
+tracks(1,:) = [size(M,2)*1/2 + randn()*300, randn()*300 + size(M,1)*1/2]*1. + 0.*[size(M,2)*rand(), size(M,1)*5/8];%origin; %initial position
 %%% from random track
 % temp = Tracks(randi(length(Tracks))).Path; tracks(1,:) = temp(1,:);  %data intials
 %%% from collected structure
@@ -350,7 +375,7 @@ for t = 2:T
     dCpv = [(M(yil,xil) - M(yir,xir))/ 1 ,  dCpv];
     dCpv = dCpv(1:end-1);
     
-    wv = (1*sum(Kdcp.*dCpv) + base_dcp*1)*1 + (vmrand(0,kappa))*180/pi;%kappa^1*randn;%length(wind)
+    wv = (1*sum(Kdcp.*dCpv) + base_dcp*1 + sum(Kdth_wv.*(dthv)))*1 + (vmrand(0,kappa))*180/pi;%kappa^1*randn;%length(wind)
     P_event = (A - Pturn_base) / (1+exp( -(sum(Kddc.*dCv)*1. + (sum(Kdth.*abs(dthv)*1)) *dt + 1*base_dc)+0) ) + Pturn_base;%length(wind)
     if rand < P_event*1
         beta = 1;
@@ -371,18 +396,18 @@ for t = 2:T
     dth = wrapToPi(dth*pi/180)*180/pi;
     
     %%% angular or turning history
-    dthv = [dth*pi/180 , dthv]; %[dth  beta];%
+    dthv = [dth*pi/pi , dthv]; %[dth  beta];%
     dthv = dthv(1:end-1);
     
     dths(t) = dth;
     dcs(t) = dCv(1);
     dcps(t) = dCpv(1);
     
-    vv = vm+vs*randn;
-%     vv = alldis(randi(length(alldis)));
-%     if vv<1
-%         vv = 1;
-%     end
+%     vv = vm+vs*randn;
+    vv = alldis(randi(length(alldis)));
+    if vv<1
+        vv = 1;
+    end
     ths(t) = ths(t-1)+dth*dt;
 %     if ths(t)>180; ths(t) = ths(t)-180; end;  if ths(t)<-180; ths(t) = ths(t)+360; end  %within -180~180 degree range
     e1 = [1,0];
