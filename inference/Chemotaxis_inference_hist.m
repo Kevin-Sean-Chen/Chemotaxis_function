@@ -152,20 +152,21 @@ alltrials(pos) = NaN;
 %% test with stats-model for kernels
 nB = 4;
 [cosBasis, tgrid, basisPeaks] = makeRaisedCosBasis(nB, [0, 8], 1.3);
-ang_fit = allas(1:end);
-dcp_fit = alldcp(1:end);
-ddc_fit = (alldC(1:end));
-trials_fit = alltrials(1:end);
+ang_fit = allas(1:100000);
+dcp_fit = alldcp(1:100000);
+ddc_fit = (alldC(1:100000));
+trials_fit = alltrials(1:100000);
 lfun = @(x)nLL_kernel_hist2(x, ang_fit, dcp_fit, ddc_fit, cosBasis, .1, trials_fit);
+% lfun = @(x)nLL_randomwalk(x, ang_fit, dcp_fit, ddc_fit, cosBasis, .1, trials_fit);  % negative control
 % [x,fval] = fminunc(lfun,randn(1,10));  %random initiation
 % [x,fval,exitflag,output,grad,hessian] = fminunc(lfun,[500, 0.0, randn(1,6), -1, 100]+randn(1,10)*0.);  %a closer to a reasonable value
 
 opts = optimset('display','iter');
 % opts.Algorithm = 'sqp';
-LB = [1e-0, 1e-5, ones(1,nB)*-inf, 0.0 -inf, 1e-0, -inf, 1e-1, 1e-0*10, 0.1    -inf -10];
-UB = [200, 1., ones(1,nB)*inf, 0.1, inf, 50, inf, 100, 20, 1    inf 10];
+LB = [1e-0, 1e-5, ones(1,nB)*-inf, 0.0 -inf, 1e-0, -inf, 1e-1, 1e-0*10, 0.1    -inf -5];
+UB = [200, 1., ones(1,nB)*inf, 0.1, inf, 50, inf, 100, 20, 1    inf 5];
 % prs0 = rand(1,10);
-prs0 = [50, 0.5, randn(1,nB)*10, 0.01, -10, 25, 10, 25, 5, 1.    -5 2]; 
+prs0 = [50, 0.5, randn(1,nB)*10, 0.01, -10, 25, 10, 25, 5, 1.    0 0]; 
 prs0 = prs0 + prs0.*randn(1,length(UB))*0.1;
 % [x,fval] = fmincon(lfun,prs0,[],[],[],[],LB,UB,[],opts);
 [x,fval,EXITFLAG,OUTPUT,LAMBDA,GRAD,HESSIAN] = fmincon(lfun,prs0,[],[],[],[],LB,UB,[],opts);
@@ -176,25 +177,29 @@ fval
 %% test with stats-model for kernels, adding history of WV angles (for 54.5 strain with biased turns)
 nB = 4;
 [cosBasis, tgrid, basisPeaks] = makeRaisedCosBasis(nB, [0, 8], 1.3);
-ang_fit = allas(1:end);
-dcp_fit = alldcp(1:end);
-ddc_fit = (alldC(1:end));
-trials_fit = alltrials(1:end);
+ang_fit = allas(1:100000);
+dcp_fit = alldcp(1:100000);
+ddc_fit = (alldC(1:100000));
+trials_fit = alltrials(1:100000);
 lfun = @(x)nLL_kernel_hist3(x, ang_fit, dcp_fit, ddc_fit, cosBasis, .1, trials_fit);
 % [x,fval] = fminunc(lfun,randn(1,10));  %random initiation
 % [x,fval,exitflag,output,grad,hessian] = fminunc(lfun,[500, 0.0, randn(1,6), -1, 100]+randn(1,10)*0.);  %a closer to a reasonable value
 
 opts = optimset('display','iter');
 % opts.Algorithm = 'sqp';
-LB = [1e-0, 1e-5, ones(1,nB)*-inf, 0.0 -inf, 1e-0, -inf, 1e-1, 1e-0*10, 0.1    -inf -10  -10 .1];
-UB = [200, 1., ones(1,nB)*inf, 0.1, inf, 50, inf, 100, 20, 1    inf 10  10 200];
+LB = [1e-0, 1e-5, ones(1,nB)*-inf, 0.0 -inf, 1e-0, -inf, 1e-1, 1e-0*10, 0.1    -inf 2  -10 .1];
+UB = [200, 1., ones(1,nB)*inf, 0.1, inf, 50, inf, 100, 20, 1    inf 4  10 200];
 % prs0 = rand(1,10);
-prs0 = [50, 0.5, randn(1,nB)*1, 0.01, -1, 25, 1, 25, 5, 1.    -5 2 .1 1]; 
+prs0 = [50, 0.5, randn(1,nB)*1, 0.01, -1, 25, 1, 25, 5, 1.    -5 3 .1 1]; 
 prs0 = prs0 + prs0.*randn(1,length(UB))*0.1;
 % [x,fval] = fmincon(lfun,prs0,[],[],[],[],LB,UB,[],opts);
 [x,fval,EXITFLAG,OUTPUT,LAMBDA,GRAD,HESSIAN] = fmincon(lfun,prs0,[],[],[],[],LB,UB,[],opts);
 x_MLE = x
 fval
+
+% K_ = x(1); A_ = x(2); B_ = x(3:6); C_ = x(7)/1; Amp = x(8); tau = x(9);
+% Amp_h = x(10); tau_h = x(11); K2_ = x(13);  gamma = x(13); base_dc=x(14);
+% base_dcp=x(15); Amp_h_wv = x(16); tau_h_wv = x(17);
 
 %% test parameter distribution
 % repeats = 10;
@@ -217,7 +222,8 @@ fval
 % plot(prs_rep(:,:)','-o')
 
 %% sufficient statistics
-K_ = x(1); A_ = x(2)*1; B_ = x(3:6); C_ = x(7); Amp = x(8); tau = x(9); Amp_h = x(10); tau_h = x(11); K2_ = x(12);  gamma = x(13); base_dc = x(14); base_dcp = x(15); Amp_h_wv=x(16);tau_h_wv=x(17);
+K_ = x(1); A_ = x(2)*1; B_ = x(3:6); C_ = x(7); Amp = x(8); tau = x(9); Amp_h = x(10); tau_h = x(11); K2_ = x(12);  gamma = x(13); base_dc = x(14); base_dcp = x(15); 
+% Amp_h_wv=x(16); tau_h_wv=x(17);
 % base_dc = 0; base_dcp = 0;
 
 figure
@@ -307,7 +313,7 @@ alldCps = [];
 allths = [];
 
 REP = 20;
-T = floor(10*60*14/5);%2000;
+T = floor(20*60*14/5);%2000;
 dt = 1.;
 % trackss = zeros(REP,T,2);
 trackss = {};
@@ -375,7 +381,7 @@ for t = 2:T
     dCpv = [(M(yil,xil) - M(yir,xir))/ 1 ,  dCpv];
     dCpv = dCpv(1:end-1);
     
-    wv = (1*sum(Kdcp.*dCpv) + base_dcp*1 + sum(Kdth_wv.*(dthv)))*1 + (vmrand(0,kappa))*180/pi;%kappa^1*randn;%length(wind)
+    wv = (1*sum(Kdcp.*dCpv) + base_dcp*1 + sum(Kdth_wv.*(dthv))*1) + (vmrand(0,kappa))*180/pi;%kappa^1*randn;%length(wind)
     P_event = (A - Pturn_base) / (1+exp( -(sum(Kddc.*dCv)*1. + (sum(Kdth.*abs(dthv)*1)) *dt + 1*base_dc)+0) ) + Pturn_base;%length(wind)
     if rand < P_event*1
         beta = 1;
