@@ -118,7 +118,7 @@ for c = 1:length(Tracks) %length(Paths)
     alldcp = [alldcp dCp];
     alldC = [alldC dCs];
     alldis = [alldis dds];  %displacement (effective velocity)
-    trials(1:35) = NaN; trials(end-35:end) = NaN;
+%     trials(1:35) = NaN; trials(end-35:end) = NaN;
     alltrials = [alltrials trials];
     allxys = [allxys xys];
     
@@ -152,10 +152,10 @@ alltrials(pos) = NaN;
 %% test with stats-model for kernels
 nB = 4;
 [cosBasis, tgrid, basisPeaks] = makeRaisedCosBasis(nB, [0, 8], 1.3);
-ang_fit = allas(1:100000);
-dcp_fit = alldcp(1:100000);
-ddc_fit = (alldC(1:100000));
-trials_fit = alltrials(1:100000);
+ang_fit = allas(end-100000:end);
+dcp_fit = alldcp(end-100000:end);
+ddc_fit = (alldC(end-100000:end));
+trials_fit = alltrials(end-100000:end);
 lfun = @(x)nLL_kernel_hist2(x, ang_fit, dcp_fit, ddc_fit, cosBasis, .1, trials_fit);
 % lfun = @(x)nLL_randomwalk(x, ang_fit, dcp_fit, ddc_fit, cosBasis, .1, trials_fit);  % negative control
 % [x,fval] = fminunc(lfun,randn(1,10));  %random initiation
@@ -163,10 +163,10 @@ lfun = @(x)nLL_kernel_hist2(x, ang_fit, dcp_fit, ddc_fit, cosBasis, .1, trials_f
 
 opts = optimset('display','iter');
 % opts.Algorithm = 'sqp';
-LB = [1e-0, 1e-5, ones(1,nB)*-inf, 0.0 -inf, 1e-0, -inf, 1e-1, 1e-0*10, 0.1    -inf -5];
-UB = [200, 1., ones(1,nB)*inf, 0.1, inf, 50, inf, 100, 20, 1    inf 5];
+LB = [1e-0, 1e-5, ones(1,nB)*-inf, 0.0 -inf, 1e-0, -inf, 1e-1, 1e-0*10, 0.1];%    -inf -5];
+UB = [200, 1., ones(1,nB)*inf, 0.1, inf, 50, inf, 100, 20, 1];%    inf 5];
 % prs0 = rand(1,10);
-prs0 = [50, 0.5, randn(1,nB)*10, 0.01, -10, 25, 10, 25, 5, 1.    0 0]; 
+prs0 = [50, 0.5, randn(1,nB)*10, 0.01, -10, 25, 10, 25, 5, 1.];%    0 0]; 
 prs0 = prs0 + prs0.*randn(1,length(UB))*0.1;
 % [x,fval] = fmincon(lfun,prs0,[],[],[],[],LB,UB,[],opts);
 [x,fval,EXITFLAG,OUTPUT,LAMBDA,GRAD,HESSIAN] = fmincon(lfun,prs0,[],[],[],[],LB,UB,[],opts);
@@ -222,9 +222,11 @@ fval
 % plot(prs_rep(:,:)','-o')
 
 %% sufficient statistics
-K_ = x(1); A_ = x(2)*1; B_ = x(3:6); C_ = x(7); Amp = x(8); tau = x(9); Amp_h = x(10); tau_h = x(11); K2_ = x(12);  gamma = x(13); base_dc = x(14); base_dcp = x(15); 
+K_ = x(1); A_ = x(2)*1; B_ = x(3:6); C_ = x(7); Amp = x(8); tau = x(9); Amp_h = x(10); tau_h = x(11); K2_ = x(12);  gamma = x(13);
+% base_dc = x(14); base_dcp = x(15); 
 % Amp_h_wv=x(16); tau_h_wv=x(17);
-% base_dc = 0; base_dcp = 0;
+base_dc = 0; base_dcp = 0;
+Amp_h_wv=0; tau_h_wv=1;
 
 figure
 subplot(2,2,1)

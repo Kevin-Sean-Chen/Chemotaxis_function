@@ -55,12 +55,12 @@ xlim([.5,length(fname)+.5])
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % classify with log-likelihood!
 % load mle parameters
-mle_params = zeros(3,15);
-test = load('/projects/LEIFER/Kevin/Data_learn/app2_param.mat');
+mle_params = zeros(3,13);
+test = load('/projects/LEIFER/Kevin/Data_learn/app_param_new.mat');
 mle_params(1,:) = test.x;
-test = load('/projects/LEIFER/Kevin/Data_learn/nai5_param.mat');
+test = load('/projects/LEIFER/Kevin/Data_learn/nai_param_new.mat');
 mle_params(2,:) = test.x;
-test = load('/projects/LEIFER/Kevin/Data_learn/ave2_param.mat');
+test = load('/projects/LEIFER/Kevin/Data_learn/ave_param_new.mat');
 mle_params(3,:) = test.x;
 
 % load data files
@@ -69,7 +69,7 @@ datas = {'/projects/LEIFER/Kevin/Data_learn/N2/data_analysis/Data_app.mat',...
          '/projects/LEIFER/Kevin/Data_learn/N2/data_analysis/Data_ave.mat'};
      
 % CV settings
-rep = 10;  % repeat cross-validations
+rep = 20;  % repeat cross-validations
 scal = 5;  % data length portions
 cv_class = zeros(rep,scal);  % repeats x data length
 datals = cv_class*1;  % record actual data length
@@ -77,7 +77,7 @@ cv_perf = zeros(3,scal);  % record performance (%) across repeats
 
 for dd = 1:3
     load(datas{dd})
-    Datai = Data(50:end);  % load Data structure
+    Datai = Data(1:end);  % load Data structure
     scal_vec = fliplr(floor(.5./[1:scal].*length(Datai)));  % scaled data length
     data_select_vec = [1:length(Datai)];  % select from track ID
 for rr = 1:rep
@@ -102,10 +102,11 @@ plot(datals(:)*5/14/60/60,cv_class(:),'o')
 xlabel('data length (hour)')
 ylabel('class')
 
+rtime = mean(datals)*5/14/60/60;
 figure;
-plot(cv_perf','-o')
+plot(rtime, cv_perf','-o')
 hold on
-plot(mean(cv_perf),'k-o')
+plot(rtime, mean(cv_perf),'k-o')
 
 %%
 function predict_lambda = argmaxLL(data, mle_params,Basis)
@@ -114,7 +115,7 @@ function predict_lambda = argmaxLL(data, mle_params,Basis)
     ddc_fit = xx(1,:);  % dc concatentated
     lls = zeros(1,3);  % three conditions
     for c = 1:3
-        lls(c) = -nLL_kernel_hist2(mle_params(c,:), ang_fit, dcp_fit, ddc_fit, Basis, .0, trials_fit);
+        lls(c) = -nLL_kernel_hist2(mle_params(c,:), ang_fit, dcp_fit, ddc_fit, Basis, .0, trials_fit) / length(xx);  % normalize by length?
     end
 %     lls
     predict_lambda = argmax(lls);
