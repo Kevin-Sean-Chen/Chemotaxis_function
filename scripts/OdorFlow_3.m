@@ -22,6 +22,8 @@ Fcon = load('/projects/LEIFER/Kevin/Data_odor_flow_equ/OdorFx_low.mat');
 % Fcon = load('/projects/LEIFER/Kevin/Data_odor_flow_equ/OdorFx_cone_110mM.mat');
 % Cmap = load('/projects/LEIFER/Kevin/Data_odor_flow_equ/Landscape_cone_110mM.mat');
 
+% Cmap = load('/projects/LEIFER/Kevin/Publications/Chen_flow_2022/Landscape_cone_agar.mat');
+
 Fcon = Fcon.F;
 M = Cmap.vq1;
 M = fliplr(flipud(M));  %flipped camera
@@ -31,18 +33,20 @@ poly_degree = 3;  %polynomial fitting for moving window
 filt = 7;  %window the path (has to be odd because it is +/- points around the center)
 fr = 1/14;  %1/14 seconds between each frame  (~0.0714 second for each frame)
 nn = length(Tracks); %number of worms selected
-mint = 60*3.; %minimum time in seconds
-minx = 100*3.;  %minimum displacement (in terms of pixels)
+mint = 60*2.;%.85; %minimum time in seconds
+minx = 100*1.;  %minimum displacement (in terms of pixels) %3 for app?
 endingt = 60*30;  %only taking the first few minutes
 pix2mm = 1/31.5;
 targ_track = 7;
-conc_thre = 1.0*max(max(M));
+conc_thre = .9*max(max(M));
 
 figure();
 imagesc(M,'XData',[0 size(M,2)*pix2mm],'YData',[0 size(M,1)*pix2mm]);
+% colormap(gray)
 hold on
 cand = [];  %index of tracks as candidates for analysis
 alldists = [];
+% ttt= 0;
 for i = 1:nn
     if Tracks(i).Time(end)-Tracks(i).Time(1) > mint  %time cutoff
         displace = mean((Tracks(i).Path(:,1)-mean(Tracks(i).Path(:,1))).^2 + (Tracks(i).Path(:,2)-mean(Tracks(i).Path(:,2))).^2); %pixel displacement
@@ -54,10 +58,11 @@ for i = 1:nn
                 x_smooth = smooth(Tracks(i).Path(:,1), filt,'sgolay',poly_degree);
                 y_smooth = smooth(Tracks(i).Path(:,2), filt,'sgolay',poly_degree);
                     if M(floor(y_smooth(1)), floor(x_smooth(1))) < conc_thre
-                plot(x_smooth*pix2mm, y_smooth*pix2mm,'k','LineWidth',1); hold on;
+                plot(x_smooth*pix2mm, y_smooth*pix2mm,'w','LineWidth',1); hold on;
                 plot(x_smooth(1)*pix2mm, y_smooth(1)*pix2mm,'g.', 'MarkerSize',15)
                 plot(x_smooth(end)*pix2mm, y_smooth(end)*pix2mm,'r.', 'MarkerSize',15)
                 cand = [cand i];
+%                 ttt = ttt+ (Tracks(i).Time(end)-Tracks(i).Time(1));
                     end
             end
         end
@@ -68,13 +73,13 @@ hold on
 pos = find(Tracks(targ_track).Time<endingt);
 x_smooth = smooth(Tracks(targ_track).Path(pos,1), filt,'sgolay',poly_degree);
 y_smooth = smooth(Tracks(targ_track).Path(pos,2), filt,'sgolay',poly_degree);
-plot(x_smooth*pix2mm, y_smooth*pix2mm,'W','LineWidth',1); hold on;
+% plot(x_smooth*pix2mm, y_smooth*pix2mm,'W','LineWidth',1); hold on;
 plot(x_smooth(1)*pix2mm, y_smooth(1)*pix2mm,'g.', 'MarkerSize',15)
 plot(x_smooth(end)*pix2mm, y_smooth(end)*pix2mm,'r.', 'MarkerSize',15)
 
 xlabel('x (mm)'); ylabel('y (mm)'); h = colorbar();  ylabel(h, 'ppm');
 set(gca,'Fontsize',20); set(gcf,'color','w');
-set ( gca, 'xdir', 'reverse' )
+% set ( gca, 'xdir', 'reverse' )
 
 %%  scan trough tracks
 figure();
@@ -172,7 +177,7 @@ xlabel('time (s)')
 ylabel('angular veolocity')
 
 %% show individual d_C and d_theta data
-track = Tracks(7).Path(1:end,:);
+track = Tracks(244).Path(1:end,:);
 bin = 7;
 x_smooth = smooth(track(:,1), filt,'sgolay',poly_degree);
 y_smooth = smooth(track(:,2), filt,'sgolay',poly_degree);
@@ -232,7 +237,8 @@ quiver(x_,y_,px,py)
 nn = 1;
 fixlen = 14;  %we only compute a 2d vector when it moves forward this much
 % [fx,fy] = gradient((M),1:3000,1:2500);%gradient(fliplr((Z)),1);
-[fx,fy] = gradient((conv2(M,ones(100,100),'same')/10000),1);  %prepare 2D gradient field
+n_smooth = 50;
+[fx,fy] = gradient((conv2(M,ones(n_smooth,n_smooth),'same')/n_smooth^2),1);  %prepare 2D gradient field
 all_grad = [];
 all_angs = [];
 
@@ -307,7 +313,8 @@ nn = 1;
 filt = 14*2;
 fixlen = 1;  %we only compute a 2d vector when it moves forward this much
 % [fx,fy] = gradient(fliplr((Z)),1);
-[fx,fy] = gradient((conv2(M,ones(100,100),'same')/10000),1);  %prepare 2D gradient field
+n_smooth = 100;
+[fx,fy] = gradient((conv2(M,ones(n_smooth,n_smooth),'same')/n_smooth^2),1);  %prepare 2D gradient field
 all_grad = [];
 all_angs = [];
 all_amps = [];  % condition on gradient amplitude
@@ -384,18 +391,22 @@ end
 
 %% WV!
 nbs = linspace(-150,150,20);%
-thr = std(all_grad)
+thr = std(all_grad)*2
 figure()
-pos_0 = find((all_grad)<-10);
-pos_60 = find(abs(all_grad)<10);
-pos_120 = find((all_grad)>10);
+pos_0 = find((all_grad)<-thr); %
+pos_60 = find(abs(all_grad)<thr);
+pos_120 = find((all_grad)>thr);
+
+% pos_0 = find((all_grad)>-135 & all_grad<-45);
+% pos_60 = find(abs(all_grad)<45);
+% pos_120 = find((all_grad)>45 & all_grad<135);
 
 % pos_0 = find((all_grad)>-110 & all_grad<-70);
 % pos_60 = find(abs(all_grad)<20);
 % pos_120 = find((all_grad)>70 & all_grad<110);
 
 % pos_0 = find((all_grad)>-120 & all_grad<-60);
-% pos_60 = find(abs(all_grad)<60);
+% pos_60 = find(abs(all_grad)<30);
 % pos_120 = find((all_grad)>60 & all_grad<120);
 
 % pos_0 = find((all_grad)>0.1);

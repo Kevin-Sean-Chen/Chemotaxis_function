@@ -19,8 +19,8 @@ function [NLL] = nLL_kernel_hist2(THETA, dth, dcp, dc, Basis, lambda, mask)
     kappa_turn = THETA(12)^0.5;   % vairance of the sharp turn von Mises
     gamma = THETA(13);        % weight for uniform angle in the turn
     
-    base_dc = THETA(14);      % baseline for dc probability
-    base_dcp = THETA(15);     % baseline for dcp probability
+    base_dc = 0;%THETA(14);      % baseline for dc probability
+    base_dcp = 0;%THETA(15);     % baseline for dcp probability
     
     %%% turning decision
     try
