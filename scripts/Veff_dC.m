@@ -155,7 +155,7 @@ for ii = bin+1:bin:length(angs)-1-bin
     %%% choice of dC measurement!!
 %     delc(ii) = ( 1 )*( norm(grad_dir) )*30;
 %     delc(ii) = (log((M(floor(path_i(ii,2)),floor(path_i(ii,1)))+norm(grad_dir)) / M(floor(path_i(ii,2)),floor(path_i(ii,1))))  / (M(floor(path_i(ii,2)),floor(path_i(ii,1)))))*30;
-    delc(ii) = (((M(floor(path_i(ii,2)),floor(path_i(ii,1)))+norm(grad_dir)) - M(floor(path_i(ii,2)),floor(path_i(ii,1)))) ) * pix2mm;
+    delc(ii) = (((M(floor(path_i(ii,2)),floor(path_i(ii,1)))+norm(grad_dir)) - M(floor(path_i(ii,2)),floor(path_i(ii,1)))) ) / pix2mm;
 %     delc(ii) = log( (M(floor(path_i(ii+bin,2)),floor(path_i(ii+bin,1))) ) / M(floor(path_i(ii,2)),floor(path_i(ii,1))) )*30;% / norm(vec_i(ii,:));
     
 %     delc(ii) = ( abs((M(floor(path_i(ii+0,2)),floor(path_i(ii+0,1)))) - M(floor(path_i(ii-bin,2)),floor(path_i(ii-bin,1))))  ) / t_wind;
@@ -199,19 +199,19 @@ hist(dots_rand,100)
 
 %% simple slope calculation
 figure;
-bins = 6;
+bins = 7;
 H = histogram(all_delc,bins);
-bb = H.BinEdges;
+bb = H.BinEdges - H.BinWidth;
 % bb = [0,bb,max(all_delc)];
 muv = zeros(1,bins);
 epsv = zeros(2,bins);
 
 for bi = 2:bins+1%+2
     pos = find(all_delc>bb(bi-1) & all_delc<bb(bi));
-    muv(bi-1) = median(all_effv(pos)); %mean(all_effv(pos));
+    muv(bi-1) = mean(all_effv(pos));median(all_effv(pos)); %
     epsv(:,bi-1) = quantile(all_effv(pos),[.25 .75],2);  %std(all_effv(pos));%
 end
-bb = bb+H.BinWidth/2*1;
+bb = bb+H.BinWidth*.5;
 figure()
 plot(all_delc,all_effv,'.','color', [.7 .7 .7])
 hold on; errorbar(bb(1:end-1), muv, 0+epsv(1,:) ,0+epsv(2,:),  'k', 'Linewidth',1) %+mean(diff(bb(1:end-1)))/1
@@ -225,6 +225,9 @@ mu_null = median(dots_rand);
 hold on
 errorbar(0 , mu_null, 0+eps_null(1), 0 + eps_null(2),'b','Linewidth',1)
 
+%% t-test
+bi=2;
+pos = find(all_delc>bb(bi-1) & all_delc<bb(bi));  temp= all_effv(pos); [h,p,ci,stats] = ttest(temp)
 %% adaptive binning
 figure;
 bins = 7;
