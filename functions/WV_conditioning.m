@@ -93,7 +93,7 @@ all_amps = all_amps_;
 % all_grad(pos) = [];
 % all_angs(pos) = [];
 
-pos = find(abs(all_amps)<0.04);%nanstd(all_amps)+nanmean(all_amps));% | abs(all_angs)>1000);  %find(abs(all_angs)>200); %
+pos = find(abs(all_amps)<nanstd(all_amps)+nanmean(all_amps));%0.04);% | abs(all_angs)>1000);  %find(abs(all_angs)>200); %
 all_grad(pos) = NaN;
 all_angs(pos) = NaN;
 
@@ -164,7 +164,7 @@ all_angs(pos) = NaN;
 %%
 figure
 bins = 7;
-downsamp = 5;
+downsamp = 3;
 H = histogram(all_grad, bins);
 bb = H.BinEdges;
 % bb(end) = bb(end) + 0*H.BinWidth;

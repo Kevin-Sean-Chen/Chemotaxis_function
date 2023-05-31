@@ -1,4 +1,4 @@
-function [xx,yy,mask] = data2xy(Data)
+function [xx,yy,mask, time] = data2xy(Data)
 %%%
 % Input Data structure that contains all tracks and the corresponding
 % fields. This function extracts the relevant fields and concatenates it
@@ -15,6 +15,7 @@ allas = extractfield(Data, 'dth');
 alldC = extractfield(Data, 'dc');
 alldcp = extractfield(Data, 'dcp');
 alltrials = extractfield(Data, 'mask');
+time = extractfield(Data, 'time');
 
 % make vectors
 yy = allas;

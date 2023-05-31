@@ -1,11 +1,23 @@
 %%EM_analysis
 
+% testing
+
+wind_test = [100000:200000];%500000:length(allas)];%max(wind):length(allas);
+offset = min(wind_test)-1;
+yy = allas(wind_test);
+xx = [alldC(wind_test); 
+      alldcp(wind_test)];
+mask = true(1,length(yy));
+mask(isnan(alltrials(wind_test))) = false;%
+[logp_test,gams_,xisum_test] = runFB_GLMHMM(mmhat,xx,yy,mask);
+[~, ~, ~, alltime] = data2xy(Data);
+
 %% emission analysis
 %%% load state condition
-stateK = 2;
+stateK = 1;
 x = squeeze(mmhat.wts(:,:,stateK));
-[aa,bb] = max( gams ,[], 1 );
-pos = find(bb==stateK);
+[aa,bb] = max( gams_ ,[], 1 );
+pos = find(bb==stateK)+offset;
 dcp_K = alldcp(pos); ddc_K = alldC(pos);  ang_K = allas(pos);
 
 %%% compute summary statistics
@@ -36,18 +48,18 @@ xx_h = 1:length(xx)*1;
 K_h_rec = Amp_h*exp(-xx_h/tau_h);
 filt_dth = conv_kernel(abs(ang_K), K_h_rec);
 dc_dth = filt_ddc + 1*filt_dth;
-Pturns = 1 ./ (1 + exp( (dc_dth)) + 0) + 0; %+sb
+Pturns = 1 ./ (1 + exp( -(dc_dth)) + 0) + 0; %+sb
 plot(dc_dth/length(K_dcp_rec) , Pturns,'o')
 title('Logistic for \delta C')
 
 %% spatial analysis
 pix2mm = 1/31.5;
-[aa,bb] = max( gams ,[], 1 );
+[aa,bb] = max( gams_ ,[], 1 );
 CM = ['k','w','y'];%jet(stateK);  % See the help for COLORMAP to see other choices.
 figure;
 imagesc(M,'XData',[0 size(M,2)*pix2mm],'YData',[0 size(M,1)*pix2mm]); hold on
 for kk = 1:nStates %nStates:-1:1 %
-    pos = find(bb==kk);
+    pos = find(bb==kk)+offset;
 %     plot(allxys(1,pos)*pix2mm, allxys(2,pos)*pix2mm,'.')%,'color',CM(kk))
     plot(allxys(1,pos)*pix2mm, allxys(2,pos)*pix2mm,'.','color',CM(kk))
     hold on
@@ -57,47 +69,70 @@ set(gca,'Fontsize',20); set(gcf,'color','w');
 % set ( gca, 'xdir', 'reverse' )
 
 %% track based analysis
-pix2mm = 1/31.5;
-CM = ['k','w','y'];
-figure;
-imagesc(M,'XData',[0 size(M,2)*pix2mm],'YData',[0 size(M,1)*pix2mm]); hold on
-for kk = 1:nStates
-for tr = 1:length(Data)
-    [xt,yt,mt] = data2xy(Data(tr));
-    [logp_test,gams_t,xisum_test] = runFB_GLMHMM(mmhat,xt,yt);
-    [aa,bb] = max( gams_t ,[], 1 );  
-    pos = find(bb==kk);
-    xys = Data(tr).xy;
-    plot(xys(1,pos)*pix2mm, xys(2,pos)*pix2mm,'.','color',CM(kk))
-    hold on
-    plot(xys(1,1)*pix2mm, xys(2,1)*pix2mm,'g.')
-    plot(xys(1,end)*pix2mm, xys(2,end)*pix2mm,'r.')
-
-end
-end
-xlabel('x (mm)'); ylabel('y (mm)'); h = colorbar();  ylabel(h, 'ppm');
-set(gca,'Fontsize',20); set(gcf,'color','w');
+% pix2mm = 1/31.5;
+% CM = ['k','w','y'];
+% figure;
+% imagesc(M,'XData',[0 size(M,2)*pix2mm],'YData',[0 size(M,1)*pix2mm]); hold on
+% for kk = 1:nStates
+% for tr = 1:length(Data)
+%     [xt,yt,mt] = data2xy(Data(tr));
+%     [logp_test,gams_t,xisum_test] = runFB_GLMHMM(mmhat,xt,yt);
+%     [aa,bb] = max( gams_t ,[], 1 );  
+%     pos = find(bb==kk);
+%     xys = Data(tr).xy;
+%     plot(xys(1,pos)*pix2mm, xys(2,pos)*pix2mm,'.','color',CM(kk))
+%     hold on
+%     plot(xys(1,1)*pix2mm, xys(2,1)*pix2mm,'g.')
+%     plot(xys(1,end)*pix2mm, xys(2,end)*pix2mm,'r.')
+% 
+% end
+% end
+% xlabel('x (mm)'); ylabel('y (mm)'); h = colorbar();  ylabel(h, 'ppm');
+% set(gca,'Fontsize',20); set(gcf,'color','w');
 
 %% time series
 % wind = 1:5000;
-figure;
-plot(allas(wind)); hold on
-plot(smooth((bb(wind)-1)*100,10))
+% figure;
+% plot(allas(wind)); hold on
+% plot(smooth((bb(wind)-1)*100,10))
 
 %% example
-wind = 800:1200;
+wind_ex = offset+(800:1200);  % 800:1200
 figure;
 subplot(211)
 yyaxis left 
-plot([1:length(wind)]*5/14, allas(wind)); ylabel('d\theta')
+plot([1:length(wind_ex)]*5/14, allas(wind_ex)); ylabel('d\theta')
 yyaxis right
-plot([1:length(wind)]*5/14, alldC(wind)); ylabel('ppm');set(gca,'Fontsize',20);
+plot([1:length(wind_ex)]*5/14, alldC(wind_ex)); ylabel('ppm');set(gca,'Fontsize',20);
 subplot(212)
 % plot([1:length(wind)]*5/14, reshape(smooth(gams(:,wind),10),2,length(wind)))
-plot([1:length(wind)]*5/14, gams(:,wind))
+plot([1:length(wind_ex)]*5/14, gams_(:,wind_ex-offset))
 ylim([-0.05,1.05])
 xlabel('time (s)'); ylabel('P(Z)')
 set(gca,'Fontsize',20); set(gcf,'color','w');
+
+%% time evolution analysis
+bins = 11;
+[aa,bb] = max( gams_ ,[], 1 );
+cnt_i = zeros(1,bins-1);
+cnt_b = cnt_i*1;
+epsv = zeros(2,bins);
+
+% tvec = linspace(0,max(alltime),bins); zz = alltime(wind_test);
+tvec = linspace(min(alldC), max(alldC), bins); zz = alldC(wind_test); 
+
+for bi = 2:bins%+2
+    pos = find(zz>tvec(bi-1) & zz<tvec(bi));
+    cnt_i(bi-1) = length(find(bb(pos)==1));  % for state occupency
+%     cnt_i(bi-1) = length(find(abs(yy(pos))>100));  % for simple turning
+    cnt_b(bi-1) = length(pos); 
+end
+EE = ( ((cnt_i-1)./(cnt_b.^2)) + (cnt_i.^2.*(cnt_b-1)./(cnt_b.^4)) ).^0.5 *1/1;
+pstatet = cnt_i./cnt_b;
+figure
+errorbar(tvec(1:end-1)+mean(diff(tvec))/2, pstatet, EE,'k-o','LineWidth',2); hold on
+% plot(tvec(1:end-1)+mean(diff(tvec))/2, pstatet, '-o')
+ylim([0.,1.])
 
 %% CV ll
 figure()

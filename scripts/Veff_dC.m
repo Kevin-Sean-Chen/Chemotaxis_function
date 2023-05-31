@@ -228,6 +228,7 @@ errorbar(0 , mu_null, 0+eps_null(1), 0 + eps_null(2),'b','Linewidth',1)
 %% t-test
 bi=2;
 pos = find(all_delc>bb(bi-1) & all_delc<bb(bi));  temp= all_effv(pos); [h,p,ci,stats] = ttest(temp)
+
 %% adaptive binning
 figure;
 bins = 7;
@@ -259,7 +260,7 @@ mu_null = mean(dots_rand);
 hold on
 errorbar(0 , mu_null, 0+eps_null(1), 0 +eps_null(2),'b','Linewidth',5)
 
-%% compare with turn rate (with hope to extact its contribution)
+%% compare with turn rate (with hope to extract its contribution)
 binp = bins+1;
 thr_p = 120;
 pos = bb;

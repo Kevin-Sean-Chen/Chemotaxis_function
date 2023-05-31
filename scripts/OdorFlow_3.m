@@ -18,7 +18,7 @@ Fcon = load('/projects/LEIFER/Kevin/Data_odor_flow_equ/OdorFx_low.mat');
 
 % Fcon = load('/projects/LEIFER/Kevin/Data_odor_flow_equ/OdorFx_cone_low.mat');
 % Cmap = load('/projects/LEIFER/Kevin/Data_odor_flow_equ/Landscape_cone_low.mat');
-
+% % 
 % Fcon = load('/projects/LEIFER/Kevin/Data_odor_flow_equ/OdorFx_cone_110mM.mat');
 % Cmap = load('/projects/LEIFER/Kevin/Data_odor_flow_equ/Landscape_cone_110mM.mat');
 
@@ -27,7 +27,7 @@ Fcon = load('/projects/LEIFER/Kevin/Data_odor_flow_equ/OdorFx_low.mat');
 Fcon = Fcon.F;
 M = Cmap.vq1;
 M = fliplr(flipud(M));  %flipped camera
-
+% M = flipud(M);
 %% pand a,b 
 poly_degree = 3;  %polynomial fitting for moving window
 filt = 7;  %window the path (has to be odd because it is +/- points around the center)
@@ -46,8 +46,9 @@ imagesc(M,'XData',[0 size(M,2)*pix2mm],'YData',[0 size(M,1)*pix2mm]);
 hold on
 cand = [];  %index of tracks as candidates for analysis
 alldists = [];
-% ttt= 0;
+ttt= 0;
 for i = 1:nn
+    ttt = ttt+ (Tracks(i).Time(end)-Tracks(i).Time(1));
     if Tracks(i).Time(end)-Tracks(i).Time(1) > mint  %time cutoff
         displace = mean((Tracks(i).Path(:,1)-mean(Tracks(i).Path(:,1))).^2 + (Tracks(i).Path(:,2)-mean(Tracks(i).Path(:,2))).^2); %pixel displacement
         alldists = [alldists displace*pix2mm^2];  %all dispacements in mm
@@ -57,7 +58,7 @@ for i = 1:nn
             if isempty(pos)~=1
                 x_smooth = smooth(Tracks(i).Path(:,1), filt,'sgolay',poly_degree);
                 y_smooth = smooth(Tracks(i).Path(:,2), filt,'sgolay',poly_degree);
-                    if M(floor(y_smooth(1)), floor(x_smooth(1))) < conc_thre
+                    if M(floor(y_smooth(1)), floor(x_smooth(1))) < conc_thre %& x_smooth(end)>100 & x_smooth(end)<2900 & y_smooth(end)>100 & y_smooth(end)<2400 
                 plot(x_smooth*pix2mm, y_smooth*pix2mm,'w','LineWidth',1); hold on;
                 plot(x_smooth(1)*pix2mm, y_smooth(1)*pix2mm,'g.', 'MarkerSize',15)
                 plot(x_smooth(end)*pix2mm, y_smooth(end)*pix2mm,'r.', 'MarkerSize',15)
@@ -235,9 +236,9 @@ quiver(x_,y_,px,py)
 
 %% analysis loop --- for BRW
 nn = 1;
-fixlen = 14;  %we only compute a 2d vector when it moves forward this much
+fixlen = 7;  %we only compute a 2d vector when it moves forward this much
 % [fx,fy] = gradient((M),1:3000,1:2500);%gradient(fliplr((Z)),1);
-n_smooth = 50;
+n_smooth = 100;
 [fx,fy] = gradient((conv2(M,ones(n_smooth,n_smooth),'same')/n_smooth^2),1);  %prepare 2D gradient field
 all_grad = [];
 all_angs = [];
@@ -310,10 +311,10 @@ set(gca,'Fontsize',20); set(gcf,'color','w');
 
 %% analysis loop --- for WV
 nn = 1;
-filt = 14*2;
+filt = 14*2; %2
 fixlen = 1;  %we only compute a 2d vector when it moves forward this much
 % [fx,fy] = gradient(fliplr((Z)),1);
-n_smooth = 100;
+n_smooth = 100;  %100
 [fx,fy] = gradient((conv2(M,ones(n_smooth,n_smooth),'same')/n_smooth^2),1);  %prepare 2D gradient field
 all_grad = [];
 all_angs = [];
@@ -340,11 +341,11 @@ for rr = 1:size(runs,1)
         path_i = [x_smooth   y_smooth];  
 %         angs = angspeed_i(runs(rr,1):runs(rr,2));  %%%directly from the pipeline
         
-ii = 2;
+ii = 1;
 pos_temp = path_i(1,:);  %initial location
 while ii<length(speed_i)
 %     delta_t = min(floor(fixlen/speed_i(ii)), floor(length(speed_i)/2));  %discrete time window to update, adpated to the velocity
-    delta_t = min(14*fixlen, floor(length(speed_i)/2));%
+    delta_t = 14*2;%min(14*fixlen, floor(length(speed_i)/2));%
     vec_i = [vec_i; path_i(ii,:)-pos_temp];  %compute dispacement vector
     grad_i = [grad_i; [fx(floor(path_i(ii,2)),floor(path_i(ii,1))), fy(floor(path_i(ii,2)),floor(path_i(ii,1)))] ];  %gradident direction at this location
     pos_temp = path_i(ii,:);  %update postion
@@ -357,12 +358,14 @@ angs = zeros(1, length(vec_i)-1);
 grad = angs*1;
 amps = angs*1;
 for pp = 1:length(vec_i)-1
-    angs(pp) = angles(vec_i(pp+1,:)/norm(vec_i(pp+1,:)),vec_i(pp,:)/norm(vec_i(pp,:))) / (norm(vec_i(pp,:))*pix2mm); %/fixlen;% / ((sped_i(pp)+sped_i(pp+1))/2);%   %
+    angs(pp) = -angles(vec_i(pp+1,:)/norm(vec_i(pp+1,:)),vec_i(pp,:)/norm(vec_i(pp,:))) / (norm(vec_i(pp,:)+vec_i(pp+1,:))*pix2mm); %/fixlen;% / ((sped_i(pp)+sped_i(pp+1))/2);%   %
+    grad(pp) = angles(vec_i(pp,:)/norm(vec_i(pp,:)), grad_i(pp,:)/norm(grad_i(pp,:)));% *norm(grad_i(pp,:)) * pix2mm;  % bearing
+    
+%     grad(pp) = sin(angles(vec_i(pp,:)/norm(vec_i(pp,:)), grad_i(pp,:)/norm(grad_i(pp,:)))) * norm(grad_i(pp,:));  % measure C^\perp
 %     grad(pp) = dot(vec_i(pp,:), grad_i(pp,:));%
-    grad(pp) = angles(vec_i(pp,:)/norm(vec_i(pp,:)), grad_i(pp,:)/norm(grad_i(pp,:))) *norm(grad_i(pp,:));
 %     grad(pp) = angles(vec_i(pp,:)/norm(vec_i(pp,:)), [1,0]);% *norm(grad_i(pp,:));  % mock x-axis flow direction
-    amps(pp) = norm(grad_i(pp,:));
-    end
+    amps(pp) = sin(angles(vec_i(pp,:)/norm(vec_i(pp,:)), grad_i(pp,:)/norm(grad_i(pp,:))))*   norm(grad_i(pp,:));
+end
 
 all_grad = [all_grad  grad];
 all_angs = [all_angs  angs];
@@ -385,21 +388,21 @@ end
 % all_grad(pos) = [];
 % all_angs(pos) = [];
 
-% pos = find(all_amps<0.01);
-% all_grad(pos) = [];
-% all_angs(pos) = [];
+pos = find(abs(all_amps)<0.02);% | abs(all_angs)>1000);  %find(abs(all_angs)>200); %
+all_grad(pos) = NaN;
+all_angs(pos) = NaN;
 
 %% WV!
-nbs = linspace(-150,150,20);%
-thr = std(all_grad)*2
+nbs = linspace(-150,150,15);%
+thr = nanstd(all_grad)*2
 figure()
-pos_0 = find((all_grad)<-thr); %
-pos_60 = find(abs(all_grad)<thr);
-pos_120 = find((all_grad)>thr);
+% pos_0 = find((all_grad)<-thr); %
+% pos_60 = find(abs(all_grad)<thr);
+% pos_120 = find((all_grad)>thr);
 
-% pos_0 = find((all_grad)>-135 & all_grad<-45);
-% pos_60 = find(abs(all_grad)<45);
-% pos_120 = find((all_grad)>45 & all_grad<135);
+pos_0 = find((all_grad)>-135 & all_grad<-45);
+pos_60 = find(abs(all_grad)<45 | abs(all_grad)>135);
+pos_120 = find((all_grad)>45 & all_grad<135);
 
 % pos_0 = find((all_grad)>-110 & all_grad<-70);
 % pos_60 = find(abs(all_grad)<20);
@@ -408,10 +411,6 @@ pos_120 = find((all_grad)>thr);
 % pos_0 = find((all_grad)>-120 & all_grad<-60);
 % pos_60 = find(abs(all_grad)<30);
 % pos_120 = find((all_grad)>60 & all_grad<120);
-
-% pos_0 = find((all_grad)>0.1);
-% pos_60 = find((all_grad)<0.1 & all_grad>0);
-% pos_120 = find((all_grad)<-0. & all_grad>-2);
 
 H1 = histogram(all_angs(pos_0), nbs, 'Normalization', 'pdf'); hold on
 H2 = histogram(all_angs(pos_60), nbs, 'Normalization', 'pdf'); hold on
@@ -439,6 +438,39 @@ plot(bb,aa/sum(aa) / 1); hold on
 med = mean((aa/sum(aa) / max(aa/sum(aa))).*bb);
 plot([med,med],[0,1])
 y = skewness(all_angs(pos_120))
+
+%% WV tuning analysis (gradient vs. curvature)
+
+pos = find(abs(all_angs)>200); %find(all_amps<0.05);
+all_grad(pos) = NaN;
+all_angs(pos) = NaN;
+
+%%
+figure
+bins = 7;
+downsamp = 60;
+H = histogram(all_grad, bins);
+bb = H.BinEdges;
+% bb(end) = bb(end) + 0*H.BinWidth;
+muv = zeros(1,bins);
+epsv = zeros(2,bins);
+
+for bi = 2:bins+1%+2
+    pos = find(all_grad>bb(bi-1) & all_grad<bb(bi));
+    temp0 = all_angs(pos);
+    temp = nanmean(reshape([temp0(:); nan(mod(-numel(temp0),downsamp),1)],downsamp,[]));
+    muv(bi-1) = nanmean(temp);%median(temp); %
+    epsv(:,bi-1) = std(temp)/sqrt(length(pos));% quantile(temp,[.25 .75],2);  %
+end
+bb = bb+H.BinWidth*0;
+figure()
+% plot(all_grad, all_angs,'.','color', [.7 .7 .7])
+hold on; errorbar(bb(1:end-1), muv, 0+epsv(1,:) ,0+epsv(2,:),  'k', 'Linewidth',1) %+mean(diff(bb(1:end-1)))/1
+% hold on; errorbar(bb(1:end-1), muv, muv-epsv(1,:) ,muv + epsv(2,:),  'k', 'Linewidth',5) %+mean(diff(bb(1:end-1)))/1
+hold on; plot(bb(1:end-1), muv, 'k-o', 'Linewidth',1); 
+%plot([min(all_delc),max(all_delc)],[0,0],'--','color', [.5 .5 .5])
+xlabel('bearing to local gradient'); ylabel('curvature (degrees/mm)'); set(gcf,'color','w'); set(gca,'FontSize',20)
+% ylim([-100,100])
 
 %% analysis loop --- for WV (based on spatial distance not time)
 nn = 1;

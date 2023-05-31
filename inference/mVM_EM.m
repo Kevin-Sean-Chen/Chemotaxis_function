@@ -1,6 +1,6 @@
 %% mVM_EM
 %% load some test data
-wind = 1:100000;
+wind = 1:100000;%500000:length(allas);
 yy = allas(wind);
 xx = [alldC(wind); 
       alldcp(wind)];
@@ -13,7 +13,7 @@ mask(isnan(alltrials(wind))) = false;%
 
 %% Observation and input
 % Set parameters: transition matrix and emission matrix
-nStates = 3; % number of latent states
+nStates = 2; % number of latent states
 nX = 11;  % number of input dimensions (i.e., dimensions of regressor)
 nY = 1;  % number of output dimensions 
 nT = length(yy); % number of time bins
@@ -28,7 +28,7 @@ A0 = G./repmat(sum(G,2),1,nStates); % normalize so rows sum to 1
 
 % sticky priors
 alpha = 1.;  % Dirichlet shape parameter as a prior
-kappa = .5;  % upweighting self-transition for stickiness
+kappa = .1;%.5;  % upweighting self-transition for stickiness
 
 % basis function
 nB = 4;
@@ -39,7 +39,7 @@ nB = 4;
 wts0 = rand(nY,nX,nStates); % parameters for the mixture-VonMesis behavioral model
 wts0(1,:,1) = [20, randn(1,nB)*10, 50, 25, 10, 25, 5, 1.]; %[20, randn(1,nB)*10, 10, 25, 10, 25, 1, 1.]; %single mGLM
 wts0(1,:,2) = [10,  randn(1,nB)*10, -50, 25, -10, 25, 20,.5];
-wts0(1,:,3) = [1,  randn(1,nB)*10, -10, 25, -10, 25, 20,.5];
+% wts0(1,:,3) = [1,  randn(1,nB)*10, -10, 25, -10, 25, 20,.5];
 %[9.9763  -0.5343  -0.0776   0.1238  -0.0529   0.5335   7.7254  367.3817  0.1990  1.0000  0.1000];
 
 

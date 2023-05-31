@@ -10,9 +10,9 @@ datas = {'/projects/LEIFER/Kevin/Data_learn/N2/data_analysis/Data_app.mat',...
      
 %% loop through K-folds, conditions, and scaling
 rep = 1;  % repetition per fold to make sure that it is the better fit
-K = 9;  % K-fold cross-validation
+K = 10;  % K-fold cross-validation
 scal = 5;  % data length portions
-min_scal = 0.7;  % 0-1, for rescaling test data
+min_scal = 0.2;  % 0-1, for rescaling test data
 cond = length(datas);  % all exp conditions
 n_params = 13;  % number of parameters in our model for now
 mle_params = zeros(K, cond, n_params); % K x c x N

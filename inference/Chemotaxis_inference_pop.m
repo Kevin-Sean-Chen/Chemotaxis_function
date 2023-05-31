@@ -41,6 +41,7 @@ Data(1).dis = [];  %displacements
 Data(1).mask = [];  %mark for tracks
 Data(1).xy = [];  %all track location in 2D
 Data(1).theta = [];  %local angles
+Data(1).time = [];  % real time in the assay
 
 ntracks = length(cand);  %where cand is candidates checked somewhere else
 for ii = 1:ntracks
@@ -51,6 +52,8 @@ for ii = 1:ntracks
     temp1(:,1) = smooth(temp.SmoothX, filt,'sgolay',poly_degree);
     temp1(:,2) = smooth(temp.SmoothY, filt,'sgolay',poly_degree);
     subs = temp1(1:bin:end,:);
+    timev = temp.Time;
+    timev = timev(1:bin:end);
     vecs = diff(subs);
 %     vecs = [vecs(1,:); vecs];   % compensating for the size change/time shift after taking difference 
     angs = zeros(1,size(vecs,1));    
@@ -96,6 +99,7 @@ for ii = 1:ntracks
     ang_loc = ang_loc(l_window+1:end);
     trials = trials((l_window+1):end);
     xys = xys(:, (l_window+1):end);
+    timev = timev((l_window+2):end);  % one index off because of the derivative
     
     pos = find(dds>dis_thr); %remove sharp jumps
     trials(pos) = nan;
@@ -111,6 +115,7 @@ for ii = 1:ntracks
     Data(ii).theta = ang_loc;  %local angles
     Data(ii).Basis = cosBasis;
     Data(ii).lambda = .1;
+    Data(ii).time = timev;
     
 end
 
