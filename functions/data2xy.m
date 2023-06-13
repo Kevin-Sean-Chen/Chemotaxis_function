@@ -9,13 +9,15 @@ function [xx,yy,mask, time] = data2xy(Data)
 %         yy as the output vector [1 x N*T]
 %         mask as a logic vector to mask transitions
 %%%
-
+    
 % extract fields
 allas = extractfield(Data, 'dth');
 alldC = extractfield(Data, 'dc');
 alldcp = extractfield(Data, 'dcp');
 alltrials = extractfield(Data, 'mask');
-time = extractfield(Data, 'time');
+if nargout > 3
+    time = extractfield(Data, 'time');
+end
 
 % make vectors
 yy = allas;

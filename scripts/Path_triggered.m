@@ -17,7 +17,7 @@ filt = 7;  %window the path (has to be odd because it is +/- points around the c
 fr = 1/14;  %1/14 seconds between each frame  (~0.0714 second for each frame)
 bin = 5;  %down-sampling
 nn = length(Tracks); %number of worms selected
-windt = 12 * (1/(bin*fr)); %time window in seconds
+windt = 14 * (1/(bin*fr)); %time window in seconds
 acst = 4 * (1/(bin*fr));  % acausal window
 trig_angs = [];
 
@@ -43,8 +43,8 @@ for ii = 1:nn
     %%% LED signal
     stim = Tracks(ii).LEDVoltages;
     stim = stim(1:bin:end);
-    pos = find(diff(stim)>.1 & diff(stim)>.1);  %0.01 1 3 thresholding to find impulse
-    pos = randi(length(stim));
+    pos = find(diff(stim)>1);% & diff(stim)>1);  %0.01 1 3 thresholding to find impulse
+    pos = randi([1,length(stim)],1,length(pos)*5);%randi(length(stim));
     if isempty(pos)~=1
         for pp = 1:length(pos)
             if (pos+windt)<length(stim) & pos-acst>1
@@ -59,4 +59,12 @@ for ii = 1:nn
 end
 
 figure;
-plot([-acst:windt]*((bin*fr)), mean(abs(trig_angs)))
+plot([-acst:windt]*((bin*fr)), mean(abs(trig_angs)) / (fr*bin))
+
+%%
+figure
+patch([0 5 5 0], [15 15, 55 55], [0.8 0.8 0.8])
+hold on
+plot([-acst:windt]*((bin*fr)), mean(abs(trig_angs)) / (fr*bin))
+xlabel('time (s)')
+ylabel('angular speed (|deg|/s)')

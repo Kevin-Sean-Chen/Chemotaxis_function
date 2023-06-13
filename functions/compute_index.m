@@ -3,6 +3,7 @@ function [ci_, brw_index, wv_index] = compute_index(Tracks, M);
 %%% parameters
 dC_window = 14*10;  %time window for dC measurement for turns
 time_wind = 60*30;  %first few minutes
+min_t = 60*3;  % minumum time window
 
 % initializing counts
 run_up = 0;  %recording for runs
@@ -20,7 +21,7 @@ for c = 1:length(Tracks)
     times = Tracks(c).Time;
     
     %%%%% conditioning tracks (in space or in time)
-    if max(times)<=time_wind
+    if max(times)<=time_wind && Tracks(c).Time(end)-Tracks(c).Time(1) > min_t
     
     %%% computing runs (biased-random walk)
     if isempty(runs)==0

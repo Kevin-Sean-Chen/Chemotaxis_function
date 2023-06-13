@@ -12,6 +12,7 @@ alpha_dcp = [-4:-1]*.01;  % dCp kernel coefficient
 base = 0;  %baseline
 kappa_turn = 5;  % turning angle variance
 kappa_wv = 10;  % weather-vaning angle variance
+gamma = 0.2;  % turning mixture parameter (weight on uniform)
 
 %% generate data
 K_h = fliplr(alpha_h*cosBasis');  % dth kernel
@@ -27,18 +28,24 @@ pad = length(K_h);
 for tt=pad:lt
     F(tt) = dC(tt-pad+1:tt)*K_dc' + abs(dth(tt-pad+1:tt))*K_h';  % linear filtering
     turns(tt) = choice(NL(F(tt)+base,beta));  % nonlinearity and binary choice
-    dth(tt) = turns(tt)*circ_vmrnd(pi,kappa_turn,1) + (1-turns(tt))*circ_vmrnd(dCp(tt-pad+1:tt)*K_dcp',kappa_wv,1);  % angle drawn from mixture of von Mesis
+    if rand<gamma
+        mix_th = circ_vmrnd(0,0.,1)-pi;
+    else
+        mix_th = circ_vmrnd(pi,kappa_turn,1);
+    end
+    dth(tt) = turns(tt)*mix_th + (1-turns(tt))*circ_vmrnd(dCp(tt-pad+1:tt)*K_dcp',kappa_wv,1);  % angle drawn from mixture of von Mesis
+          % wrapToPi((1)*circ_vmrnd(pi,kappa_turn,1)+gamma*(circ_vmrnd(0,0.,1)-pi))
 end
 
 figure; hist(dth,100)
 %% MLE inference
 lfun = @(x)nLL(x, dth, dCp, dC, cosBasis, 0.1);  % objective function
 opts = optimset('display','iter');
-num_par = 14;
-LB = [ones(1,12)*-10, 0, 0]*1;
-UB = [ones(1,12)*10, 20, 20]*1;
-prs0 = [alpha_h, alpha_dc, alpha_dcp, kappa_turn, kappa_wv];%
-% prs0 = rand(1,num_par);
+num_par = 15;
+LB = [ones(1,12)*-10, 0, 0, 0]*1;
+UB = [ones(1,12)*10, 20, 20, 1]*1;
+prs0 = [alpha_h, alpha_dc, alpha_dcp, kappa_turn, kappa_wv, gamma];%
+prs0 = prs0 + rand(1,num_par)*0.1.*prs0;
 [x,fval,EXITFLAG,OUTPUT,LAMBDA,GRAD,HESSIAN] = fmincon(lfun,prs0,[],[],[],[],LB,UB,[],opts);  % constrained optimization
 % [x,FVAL,EXITFLAG,OUTPUT,GRAD,HESSIAN] = fminunc(lfun, prs0, opts);
 fval
@@ -86,6 +93,7 @@ function [NLL] = nLL(THETA, dth, dcp, dc, Basis, lambda)
     alpha_dcp = THETA(9:12);
     kappa_turn = THETA(13)^0.5;
     kappa_wv = THETA(14)^0.5;
+    gamma = THETA(15);
     beta = 2;
     
     %%% kernel with basis
@@ -110,8 +118,8 @@ function [NLL] = nLL(THETA, dth, dcp, dc, Basis, lambda)
     
     %%% turning analge model
     VM_turn = 1/(2*pi*besseli(0,kappa_turn^2)) * exp(kappa_turn^2*cos((dth*d2r - pi)));  %test for non-uniform turns (sharp turns)
-%     gamma = 1;
-%     VM_turn = (1-gamma)*1/(2*pi) + gamma*VM_turn;
+%     gamma = .2;
+    VM_turn = gamma*1/(2*pi) + (1-gamma)*VM_turn;  %%% revisit mixture inference !!!
     
     marginalP = (1-P).*VM + VM_turn.*P;
     

@@ -5,14 +5,14 @@
 %% load tracks from each condition
 % load data files
 datas = {'/projects/LEIFER/Kevin/Data_learn/N2/data_analysis/Data_app.mat',...
-         '/projects/LEIFER/Kevin/Data_learn/N2/data_analysis/Data_nai2.mat',...
+         '/projects/LEIFER/Kevin/Data_learn/N2/data_analysis/Data_nai.mat',...
          '/projects/LEIFER/Kevin/Data_learn/N2/data_analysis/Data_ave.mat'};
      
 %% loop through K-folds, conditions, and scaling
-rep = 2;  % repetition per fold to make sure that it is the better fit
+rep = 3;  % repetition per fold to make sure that it is the better fit
 K = 10;  % K-fold cross-validation
 scal = 5;  % data length portions
-min_scal = 0.5;  % 0-1, for rescaling test data
+min_scal = 0.8;  % 0-1, for rescaling test data
 cond = length(datas);  % all exp conditions
 n_params = 13;  % number of parameters in our model for now
 mle_params = zeros(K, cond, n_params); % K x c x N
@@ -21,40 +21,57 @@ data_len = zeros(K, cond, scal); % K x c x T
 cv_perf = zeros(cond, scal);  % c x T, this is averaged over K folds
 testLL = zeros(K,cond);  % record the test LL
 
-%%% K x c x T times optimization  %%%
-for ki = 1:K  % K-fold loop
+%%% seperate indices a head of time
+ids = cell(1,3);
+for ci = 1:cond
+    load(datas{ci})  % load all Data tracks
+    data_id = 1:length(Data);  % original track ID
+    ids{ci} = crossvalind('Kfold',data_id, K);  % indices for CV
+end
+
+%%% training MLEs
+for ci = 1:cond  % C conditions
+    %%% load a given condition
+    load(datas{ci})  % load all Data tracks
+    indices = ids{ci};  % indices for CV (pre-assigned!)
     
-    for ci = 1:cond  % experimental conditions
-        load(datas{ci})  % load all Data tracks
-        data_id = 1:length(Data);  % original track ID
-        indices = crossvalind('Kfold',data_id, K);  % indices for CV
-        
-        % define train and test sets
+    for ki = 1:K  % K-fold
+        % using only training set here (flipped the indices for more testing sets)
         test_set = (indices==ki);
-        train_set = ~test_set;
-        
-        % load individual tracks and concatenation... changing this so
-        % there is more testing to scan through...
         Data_train = Data(test_set);
-        Data_test = Data(train_set);
-        
-        % training
+
+        % training, with small repetition
         x_temp = zeros(rep,n_params);
         fv_temp = zeros(1,rep);
         for ri = 1:rep   % test with repreats to find the max MLE
             [x_MLE, fval] = MLE_mGLM(Data_train);
             fv_temp(ri) = fval;
             x_temp(ri,:) = x_MLE;
-        rep;
         end
+        
+        % record MLE
         [~,pos] = min(fv_temp);
         x_MLE = x_temp(pos,:);
-        
         mle_params(ki, ci, :) = x_MLE;  % can replace this with repetition and choose best fit in the future..........
-        
+    end
+end
+
+%%% testing with MLEs
+for ci = 1:cond  % C conditions
+    %%% load a given condition
+    load(datas{ci})  % load all Data tracks
+    indices = ids{ci};  % indices for CV (pre-assigned!)
+    
+    for ki = 1:K  % K-fold
+        % using only training set here
+        test_set = (indices==ki);
+        train_set = ~test_set;
+        Data_test = Data(train_set);
+    
         % record the test LL
+        x_MLE = squeeze(mle_params(ki, ci, :))';  % recall MLE
         [xx_test, yy_test, mask_test] = data2xy(Data_test);
-        x_null = [x_MLE(1:2), zeros(1,nB),x_MLE(7),0, 1, 0, 1, x_MLE(12),x_MLE(13)];
+        x_null = [x_MLE(1:2), zeros(1,4),x_MLE(7),0, 1, 0, 1, x_MLE(12),x_MLE(13)];
         testLL(ki,ci) = -(pop_nLL(x_MLE, Data_test) - pop_nLL(x_null, Data_test)) / length(yy_test) / (5/14);
         
         % testing scaled with time
@@ -66,10 +83,10 @@ for ki = 1:K  % K-fold loop
             [xx, yy, mm] = data2xy(Data_test(samps));  % concatenate data
             data_len(ki, ci, si) = data_len(ki, ci, si) + length(yy);  % average length(?)..........
         end
-    end    
-        
+    end
 end
 
+%%% lastly, quantify performance
 for ci = 1:cond
     for si = 1:scal
         cv_perf(ci,si) = length(find(cv_class(:, ci, si)==ci))/K;
@@ -95,26 +112,28 @@ set(gcf,'color','w'); set(gca,'Fontsize',20);
 
 
 %% some post analysis for variability!
+ttl = {'appetitive','naive','aversive'};
+tt = [1:length(cosBasis)]*5/14;
 figure
+[cosBasis, tgrid, basisPeaks] = makeRaisedCosBasis(4, [0, 8], 1.3);
 for cc = 1:3
-    subplot(1,3,cc)
+    subplot(1,3,cc);
 for ii = 1:K
     temp = squeeze(mle_params(ii,cc,3:6))'*cosBasis';
-    plot(temp)
+    plot(tt,temp)
     hold on
-end
+end; title(ttl{cc})
 end
 
 figure; 
-[cosBasis, tgrid, basisPeaks] = makeRaisedCosBasis(4, [0, 8], 1.3);
 xx = 0:length(cosBasis)-1;
 for cc = 1:3
     subplot(1,3,cc)
 for ii = 1:K
-    amp = mle_params(ii,cc,8); tau = mle_params(ii,cc,9); temp = (amp*exp(-xx/tau));
-    plot(temp)
+    amp = mle_params(ii,cc,8); tau = mle_params(ii,cc,9); temp = (-amp*exp(-xx/tau));
+    plot(tt,temp)
     hold on
-end
+end; title(ttl{cc})
 end
 %%
 
@@ -183,11 +202,12 @@ function predict_lambda = argmaxLL(data, mle_params)
     ddc_fit = xx(1,:);  % dc concatentated
     lls = zeros(1,3);  % three conditions
     for c = 1:3
-%         lls(c) = -nLL_kernel_hist2(mle_params(c,:), ang_fit, dcp_fit, ddc_fit, Basis, .0, trials_fit) / length(xx);  % normalize by length?
-        mle_c = mle_params(c,:);
-        x_null = [mle_c(1:2), zeros(1,4),mle_c(7),0, 1, 0, 1, mle_c(12),mle_c(13)];
-        lls(c) = - ( nLL_kernel_hist2(mle_c, ang_fit, dcp_fit, ddc_fit, Basis, .1, trials_fit) - ...
-                     nLL_kernel_hist2(x_null, ang_fit, dcp_fit, ddc_fit, Basis, .1, trials_fit) ) / length(xx);   % gain of info compared to random walk
+        lls(c) = -nLL_kernel_hist2(mle_params(c,:), ang_fit, dcp_fit, ddc_fit, Basis, .0, trials_fit) / length(xx);  % normalize by length?
+        
+%         mle_c = mle_params(c,:);
+%         x_null = [mle_c(1:2), zeros(1,4),mle_c(7),0, 1, 0, 1, mle_c(12),mle_c(13)];
+%         lls(c) = - ( nLL_kernel_hist2(mle_c, ang_fit, dcp_fit, ddc_fit, Basis, .1, trials_fit) - ...
+%                      nLL_kernel_hist2(x_null, ang_fit, dcp_fit, ddc_fit, Basis, .1, trials_fit) ) / length(xx);   % gain of info compared to random walk
     end
 %     lls
     predict_lambda = argmax(lls);

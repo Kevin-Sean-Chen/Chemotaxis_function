@@ -7,7 +7,12 @@
 % for now, this continues from the Chemotaxis_inference script with those
 % _fit data vector ready.
 %% likelihood function
-logLike = @(x)nLL_kernel_hist2(x, ang_fit, dcp_fit, ddc_fit, cosBasis, .1, trials_fit);
+% for concatenated tracks
+% logLike = @(x)nLL_kernel_hist2(x, ang_fit, dcp_fit, ddc_fit, cosBasis, .1, trials_fit);
+
+% for Data structure
+Data_fit = Data(drange(1:100));  %Data(1:100); %
+logLike = @(x)pop_nLL(x, Data_fit);
 
 %% Prior information
 logprior = @(x)logPrior_mVM(x, cosBasis, 0.1);
@@ -38,7 +43,8 @@ mball=bsxfun(@plus,x0',ball);
 %
 tic
 % m=gwmcmc(mball,{logprior logLike},10000,'burnin',.3,'stepsize',2);
-[m, logps]=gwmcmc(mball,{logprior logLike},10000,'burnin',.3,'stepsize',2);
+% [m, logps]=gwmcmc(mball,{logprior logLike},10000,'burnin',.3,'stepsize',2);
+[m, logps] = gwmcmc(mball,{logprior logLike},10000,'ThinChain',5,'burnin',.2);
 toc
 
 %% post-analysis
@@ -47,6 +53,8 @@ toc
 check_inf = sum(squeeze(logps(1,:,:)),2);  % check if logp for prior was extremely small (out of bound)
 pos = find(check_inf<-10^10);
 m_bound = m;
+logps_clean = logps;
+logps_clean(:,pos,:) = [];
 m_bound(:,pos,:) = [];
 
 %% Auto-correlation function
