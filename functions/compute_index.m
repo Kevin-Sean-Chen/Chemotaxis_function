@@ -1,8 +1,8 @@
-function [ci_, brw_index, wv_index] = compute_index(Tracks, M);
+function [ci_, brw_index, wv_index] = compute_index(Tracks, M, T);
 
 %%% parameters
 dC_window = 14*10;  %time window for dC measurement for turns
-time_wind = 60*30;  %first few minutes
+time_wind = 60*T;  %first few minutes
 min_t = 60*3;  % minumum time window
 
 % initializing counts

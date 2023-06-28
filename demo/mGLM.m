@@ -1,7 +1,7 @@
 % mGLM
-%%% mixture GLM debugging
+%%% mixture GLM debugging with ground truth generative model
 %% define variables
-lt = 50000; % length of simulation / data
+lt = 100000; % length of simulation / data
 nB = 4;  % number of basis function for the kernel
 [cosBasis, tgrid, basisPeaks] = makeRaisedCosBasis(nB, [0, 10], 1.3); % basis function
 %%% true params
@@ -12,7 +12,8 @@ alpha_dcp = [-4:-1]*.01;  % dCp kernel coefficient
 base = 0;  %baseline
 kappa_turn = 5;  % turning angle variance
 kappa_wv = 10;  % weather-vaning angle variance
-gamma = 0.2;  % turning mixture parameter (weight on uniform)
+gamma = 0.3;  % turning mixture parameter (weight on uniform)
+A = 0.5;  % maximum turn probability
 
 %% generate data
 K_h = fliplr(alpha_h*cosBasis');  % dth kernel
@@ -25,9 +26,9 @@ dth = zeros(1,lt);
 turns = zeros(1,lt);
 F = dth*0;
 pad = length(K_h);
-for tt=pad:lt
-    F(tt) = dC(tt-pad+1:tt)*K_dc' + abs(dth(tt-pad+1:tt))*K_h';  % linear filtering
-    turns(tt) = choice(NL(F(tt)+base,beta));  % nonlinearity and binary choice
+for tt=pad+1:lt
+    F(tt) = dC(tt-pad+1:tt)*K_dc' + abs(dth(tt-pad:tt-1))*K_h';  % linear filtering
+    turns(tt) = choice(NL(F(tt)+base,A));  % nonlinearity and binary choice
     if rand<gamma
         mix_th = circ_vmrnd(0,0.,1)-pi;
     else
@@ -37,15 +38,15 @@ for tt=pad:lt
           % wrapToPi((1)*circ_vmrnd(pi,kappa_turn,1)+gamma*(circ_vmrnd(0,0.,1)-pi))
 end
 
-figure; hist(dth,100)
+figure; hist(dth,100); xlim([-pi,pi])
 %% MLE inference
-lfun = @(x)nLL(x, dth, dCp, dC, cosBasis, 0.1);  % objective function
+lfun = @(x)nLL(x, dth, dCp, dC, cosBasis, 0.5);  % objective function
 opts = optimset('display','iter');
-num_par = 15;
-LB = [ones(1,12)*-10, 0, 0, 0]*1;
-UB = [ones(1,12)*10, 20, 20, 1]*1;
-prs0 = [alpha_h, alpha_dc, alpha_dcp, kappa_turn, kappa_wv, gamma];%
-prs0 = prs0 + rand(1,num_par)*0.1.*prs0;
+LB = [ones(1,12)*-10, 0, 0, 0, 0]*1;
+UB = [ones(1,12)*10, 20, 20, 1, 1]*1;
+prs0 = [alpha_h, alpha_dc, alpha_dcp, kappa_turn, kappa_wv, gamma, A];%
+num_par = length(prs0);
+prs0 = prs0 + rand(1,num_par)*0.2.*prs0;
 [x,fval,EXITFLAG,OUTPUT,LAMBDA,GRAD,HESSIAN] = fmincon(lfun,prs0,[],[],[],[],LB,UB,[],opts);  % constrained optimization
 % [x,FVAL,EXITFLAG,OUTPUT,GRAD,HESSIAN] = fminunc(lfun, prs0, opts);
 fval
@@ -64,10 +65,29 @@ plot(K_dc_rec); hold on; plot(K_dc,'--');
 subplot(133)
 plot(K_dcp_rec); hold on; plot(K_dcp,'--');
 
+%% evaluate density
+K1 = x(13); K2 = x(14); gamma = x(15);
+filt_ddc = conv_kernel(dC, fliplr(K_dc_rec));
+filt_dth = conv_kernel(abs(dth), fliplr(K_h_rec));
+dc_dth = filt_ddc + 1*filt_dth;
+Pturns = NL(dc_dth,A); %1./ (1 + exp( -(dc_dth) )) + 0;
+n_brw = sum(Pturns)*1;
+n_wv = sum(1-Pturns);
+p_z = n_brw + n_wv;
+p_brw = n_brw/p_z;
+p_wv = n_wv/p_z;
+filt_dcp = conv_kernel(dCp, fliplr(K_dcp_rec));
+figure;
+[aa,bb] = hist((dth - filt_dcp)*1 , 1000);
+bar( bb, 1/(2*pi*besseli(0,K2)) * exp(K2*cos( bb )) * p_wv , 10); hold on
+bar( bb, (1/(2*pi*besseli(0,K1)) * exp(K1*cos( bb-pi ))*(1-gamma) + (gamma)/(2*pi)) * p_brw , 10,'r'); xlim([-pi,pi])
+title('von Mises for \delta C^{\perp}')
+
 %% functions
 %%% nonlinear function
-function [P] = NL(F,beta)
-    P = 1./(1+exp(-beta*F));
+function [P] = NL(F,A)
+    beta = 1;
+    P = A./(1+exp(-beta*F));
 end
 
 %%% stochastic choice
@@ -94,7 +114,8 @@ function [NLL] = nLL(THETA, dth, dcp, dc, Basis, lambda)
     kappa_turn = THETA(13)^0.5;
     kappa_wv = THETA(14)^0.5;
     gamma = THETA(15);
-    beta = 2;
+    beta = 1;
+    A = THETA(16);
     
     %%% kernel with basis
     K_h = (alpha_h*Basis');  % dth kernel
@@ -106,23 +127,24 @@ function [NLL] = nLL(THETA, dth, dcp, dc, Basis, lambda)
 %     padding = ones(1,floor(length(K_h)/2));
 %     filt_dth = conv([padding, abs(dth)*d2r], K_h, 'same');
 %     filt_dth = filt_dth(1:length(dth));
-    filt_dth = conv_kernel(abs(dth)*d2r,K_h);
-    filt_dc = conv_kernel(dc,K_dc);
-    P = NL(filt_dth + filt_dc, beta);
+    
+    filt_dth = conv_kernel(abs(dth(1:end-1))*d2r,K_h);
+    filt_dc = conv_kernel(dc(2:end),K_dc);
+    P = NL(filt_dth + filt_dc, A);
 %     P = 1./(1 + exp(-beta*(filt_dth + filt_dc)));
     
     %%% weathervaning part
     C = 1/(2*pi*besseli(0,kappa_wv^2));  % normalize for von Mises
-    filt_dcp = conv_kernel(dcp,K_dcp);
-    VM = C * exp(kappa_wv^2*cos(( filt_dcp - dth )*d2r));  %von Mises distribution
+    filt_dcp = conv_kernel(dcp(2:end),K_dcp);
+    VM = C * exp(kappa_wv^2*cos(( filt_dcp - dth(2:end) )*d2r));  %von Mises distribution
     
     %%% turning analge model
-    VM_turn = 1/(2*pi*besseli(0,kappa_turn^2)) * exp(kappa_turn^2*cos((dth*d2r - pi)));  %test for non-uniform turns (sharp turns)
+    VM_turn = 1/(2*pi*besseli(0,kappa_turn^2)) * exp(kappa_turn^2*cos((dth(2:end)*d2r - pi)));  %test for non-uniform turns (sharp turns)
 %     gamma = .2;
     VM_turn = gamma*1/(2*pi) + (1-gamma)*VM_turn;  %%% revisit mixture inference !!!
     
     marginalP = (1-P).*VM + VM_turn.*P;
     
 %     lambda = 10;
-    NLL = -nansum(log(marginalP + 1*1e-10)) + lambda*sum(K_dc.^2);  % adding slope l2 regularization
+    NLL = -nansum(log(marginalP + 0*1e-10)) + lambda*sum(K_dc.^2);  % adding slope l2 regularization
 end

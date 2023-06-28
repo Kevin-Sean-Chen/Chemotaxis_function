@@ -33,7 +33,7 @@ Fcon = Fcon.F;
 
 %% looping files and conditions
 % Tracks = loadtracks(folder_names{1},fields_to_load);
-temp = load('/projects/LEIFER/Kevin/Data_learn/N2/data_analysis/learn_folders3.mat');
+temp = load('/projects/LEIFER/Kevin/Data_learn/N2/data_analysis/learn_folders4.mat');
 folder_all = {temp.folder_app, temp.folder_nai, temp.folder_ave};
 % BWC = zeros(length(folder_names), 3);
 BWCs = cell(1,3);
@@ -44,7 +44,11 @@ for cc = 1:3
     BWC = zeros(length(folder_names), 3);
     for ff = 1:length(folder_names)
         Tracks = loadtracks(folder_names{ff},fields_to_load);
-        [ci_, brw_index, wv_index] = compute_index(Tracks, M);
+        if cc == 1
+            [ci_, brw_index, wv_index] = compute_index(Tracks, M, 20);
+        else
+            [ci_, brw_index, wv_index] = compute_index(Tracks, M, 20);
+        end
         BWC(ff,:) = [ci_, brw_index, wv_index];
     end
     plot(BWC',cols(cc)); hold on
@@ -53,8 +57,8 @@ end
 
 %% test with RBW and WV index vs. CI (biased-random walk, weathervaning, and chemotaxis index)
 % chemotaxis = struct('brw','wv','ci');
-dC_window = 14*5;  %time window for dC measurement for turns
-time_wind = 60*10;  %first few minutes
+dC_window = 14*10;  %time window for dC measurement for turns
+time_wind = 60*30;  %first few minutes
 
 % initializing counts
 run_up = 0;  %recording for runs
@@ -167,9 +171,9 @@ figure
 m_ap = mean(app_');
 m_na = mean(nai_');
 m_av = mean(ave_');
-s_ap = std(app_');%/sqrt(size(app_,2));
-s_na = std(nai_');%/sqrt(size(nai_,2));
-s_av = std(ave_');%/sqrt(size(ave_,2));
+s_ap = std(app_')/sqrt(size(app_,2));
+s_na = std(nai_')/sqrt(size(nai_,2));
+s_av = std(ave_')/sqrt(size(ave_,2));
 
 hBar = bar([m_ap;m_na;m_av]');
 for k1 = 1:3

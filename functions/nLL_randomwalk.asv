@@ -16,17 +16,19 @@ function [NLL] = nLL_randomwalk(THETA, dth, dcp, dc, Basis, lambda, mask)
     kappa_turn = THETA(12)^0.5;   % vairance of the sharp turn von Mises
     gamma = THETA(13);        % weight for uniform angle in the turn
     
-    %%% von Mises probability for run
+    %%% von Mises probability
     d2r = pi/180;
     C = 1/(2*pi*besseli(0,kappa^2));
     VM = C* exp(kappa^2* cos((dth-0)*d2r));
     
-    %%% von Mises and uniform for turns
     Ct = 1/(2*pi*besseli(0,kappa_turn^2));
     VM_turn = Ct* exp(kappa_turn^2* cos((dth-pi)*d2r));
     VM_turn = (1-gamma)*1/(2*pi) + gamma*VM_turn;
     
     %%% marginal probability
-    marginalP = Pturn*VM_turn + (1-Pturn)*VM;  % marginal LL, indexed to match time step delay
-    NLL = -nansum( mask.* ( log(marginalP + 1*1e-20) ) );
+    marginalP = (1-P(1:end)).*VM(1:end) + VM_turn(1:end).*P(1:end);
+    
+    %%% marginal probability
+    marginalP = Pturn/(2*pi) + (1-Pturn)*VM(2:end);  % marginal LL, indexed to match time step delay
+    NLL = -nansum( mask(2:end).* ( log(marginalP + 1*1e-20) ) );
 end

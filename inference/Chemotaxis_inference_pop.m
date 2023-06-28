@@ -24,11 +24,11 @@ Data(length(cand)) = struct();  % all tracks and chemotaxis time series
 %%% pre-processing parameters
 poly_degree = 3;  %polynomial fit for the tracks
 bin = 5;  %temporal binning  %~0.5 s
-filt = 30*1;  %filtering tracks
+filt = 14*1;  %filtering tracks
 l_window = 1;  %lag time
 perp_dist = 1;  %perpendicular vectors for C^perp measurements
 fr2sec = 1/14;
-dis_thr = 2.5*fr2sec*30;  %max or min mm/s that is reasonable
+dis_thr = 5.5*fr2sec*30;  %max or min mm/s that is reasonable
 %basis for filters
 nB = 4;
 [cosBasis, tgrid, basisPeaks] = makeRaisedCosBasis(nB, [0, 8], 1.3);
@@ -101,8 +101,8 @@ for ii = 1:ntracks
     xys = xys(:, (l_window+1):end);
     timev = timev((l_window+2):end);  % one index off because of the derivative
     
-    pos = find(dds>dis_thr); %remove sharp jumps
-    trials(pos) = nan;
+%     pos = find(dds>dis_thr); %remove sharp jumps
+%     trials(pos) = nan;
     trials(1) = nan; trials(end) = nan;
     
     % store as structure
@@ -131,14 +131,14 @@ end
 
 %% test with stats-model for kernels
 drange = randperm(length(Data));%[1:length(Data)]; %
-Data_fit = Data(drange(1:200));  %Data(1:100); %
+Data_fit = Data(drange(1:100));  %Data(1:100); %
 lfun = @(x)pop_nLL(x, Data_fit);
 
 opts = optimset('display','iter');
 % opts.Algorithm = 'sqp';
-LB = [1e-0, 1e-1, ones(1,nB)*-inf, 0 -inf, 1e-0, -inf, 1e-1, 0., 0., -inf, -180];
-UB = [200, 1., ones(1,nB)*inf, 0.1, inf, 50, inf, 100, 20, 1, inf, 180];
-prs0 = [50, 0.1, randn(1,nB)*10, 0.01, -10, 25, 10, 25, 5, 1., 0, 10];
+LB = [1e-0, 1e-1, ones(1,nB)*-inf, 0 -inf, 1e-0, -inf, 1e-1, 1., 0.05];%, -inf, -180];
+UB = [200, 1., ones(1,nB)*inf, 0.1, inf, 50, inf, 100, 20, 1.];%, inf, 180];
+prs0 = [50, 0.1, randn(1,nB)*10, 0.01, -1, 25, 1, 25, 5, 1.];%, 0, 10];
 prs0 = prs0 + prs0.*randn(1,length(UB))*0.2;
 % [x,fval] = fmincon(lfun,prs0,[],[],[],[],LB,UB,[],opts);
 [x,fval,EXITFLAG,OUTPUT,LAMBDA,GRAD,HESSIAN] = fmincon(lfun,prs0,[],[],[],[],LB,UB,[],opts);
@@ -149,7 +149,7 @@ normedLL
 
 %% summary statistics
 % inferred parameters
-K_ = x(1); A_ = x(2); B_ = x(3:6); C_ = x(7); Amp = x(8); tau = x(9); Amp_h = x(10); tau_h = x(11); K2_ = x(12);  gamma = x(13); base_dc = x(14); base_dcp = x(15);
+K_ = x(1); A_ = x(2); B_ = x(3:6); C_ = x(7); Amp = x(8); tau = x(9); Amp_h = x(10); tau_h = x(11); K2_ = x(12);  gamma = x(13); %base_dc = x(14); base_dcp = x(15);
 base_dc = 0;  base_dcp = 0;
 
 % unwrap data
@@ -160,7 +160,7 @@ ddc_fit = Data(id).dc;
 
 figure
 subplot(2,2,1)
-xx = 1:length(cosBasis);
+xx = 0:length(cosBasis)-1;
 yyaxis left; plot(Amp*exp(-xx/tau)); hold on
 yyaxis right; plot(Amp_h*exp(-xx/tau_h))
 title('\delta C^{\perp}, \delta \theta kernel')

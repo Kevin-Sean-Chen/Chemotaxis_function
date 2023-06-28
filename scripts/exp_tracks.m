@@ -29,7 +29,7 @@ poly_degree = 3;  %polynomial fitting for moving window
 filt = 7;  %window the path (has to be odd because it is +/- points around the center)
 fr = 1/14;  %1/14 seconds between each frame  (~0.0714 second for each frame)
 nn = length(Tracks); %number of worms selected
-mint = 60*10;% 5 10 %minimum time in seconds
+mint = 60*3;% 5 10 %minimum time in seconds
 minx = 450;% 450 250 500;  %minimum displacement (in terms of pixels)
 endingt = 60*30;  %only taking the first few minutes
 pix2mm = 1/31.5;
@@ -67,10 +67,12 @@ set(gca,'Fontsize',20); set(gcf,'color','w');
 % set ( gca, 'xdir', 'reverse' )
 
 %% example tracks across conditions
-cand_app = [591  593  616  642  3509 3521   3645   3649   3662  3704 3849 3855  3871];  % 10t 500x
+cand_app = [591  593  616  642  3509 3521   3645   3649   3662  3704 3849 3855  3871 4833 6763];  % 10t 500x
 cand_nai = [155  264  358   465   2389 2394 2397  2447 2482 2543   2672 2698  2708  2788 2789  2834 ];  % 5t 250x
 cand_ave = [1225 1227  1437 1494 1596 1954 2063 2102 2206 2234 2864  2918  2968 3052 3101 3119];  % 10t 450x
-cand = cand_app;
+cand = cand_ave;
+clear exp_track
+exp_track(length(cand)) = struct(); 
 figure();
 imagesc(M,'XData',[0 size(M,2)*pix2mm],'YData',[0 size(M,1)*pix2mm]);
 hold on
@@ -81,11 +83,41 @@ for j = 1:length(cand)
     plot(x_smooth*pix2mm, y_smooth*pix2mm,'k','LineWidth',1); hold on;
     plot(x_smooth(1)*pix2mm, y_smooth(1)*pix2mm,'g.', 'MarkerSize',15)
     plot(x_smooth(end)*pix2mm, y_smooth(end)*pix2mm,'r.', 'MarkerSize',15)
+    exp_track(j).x = x_smooth;
+    exp_track(j).y = y_smooth;
 end
 
 xlabel('x (mm)'); ylabel('y (mm)'); h = colorbar();  ylabel(h, 'ppm');
 set(gca,'Fontsize',20); set(gcf,'color','w');
 
+%% loading example tracks
+load('/projects/LEIFER/Kevin/Data_learn/N2/data_analysis/exp_track_app.mat')
+load('/projects/LEIFER/Kevin/Data_learn/N2/data_analysis/exp_track_nai.mat')
+load('/projects/LEIFER/Kevin/Data_learn/N2/data_analysis/exp_track_ave.mat')
+figure()
+ax1 = axes;
+imagesc(ax1,M,'XData',[0 size(M,2)*pix2mm],'YData',[0 size(M,1)*pix2mm]);
+colormap()
+hold on
+ax2 = axes;
+for ii = 1:length(exp_track)
+    xx = exp_track(ii).x';
+    yy = exp_track(ii).y';
+    ll = length(exp_track(ii).x);
+    gg = linspace(0,1,ll);
+%     plot(xx, yy, 'Color', [grayLevel grayLevel grayLevel]);
+    patch(ax2, [xx nan]*pix2mm,[yy nan]*pix2mm,[gg nan],[gg nan], 'edgecolor', 'interp','LineWidth',2); 
+    hold on
+    plot(ax2,xx(1)*pix2mm, yy(1)*pix2mm,'g.', 'MarkerSize',25)
+    plot(ax2,xx(end)*pix2mm, yy(end)*pix2mm,'r.', 'MarkerSize',25)
+end
+set(gca, 'YDir','reverse')
+ax2.Visible = 'off';
+ax2.XTick = [];
+ax2.YTick = [];
+c = gray;
+colormap(ax2,c)
+colormap(ax1)
 %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% example time series, after running Data structure

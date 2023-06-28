@@ -28,14 +28,15 @@ function [NLL] = nLL_kernel_hist2(THETA, dth, dcp, dc, Basis, lambda, mask)
     catch
         K_dc = alpha_dc' * Basis';
     end
-    K_win = 0:length(K_dc)-1;
-    h_win = 0:length(K_dc)-1;
+    K_win = 1:length(K_dc)-1;
+    h_win = 1:length(K_dc)-1;
     K_h = Amp_h * exp(-h_win/tau_h);  % dth kernel
 %     X_dth = (convmtx(abs(dth),length(E_)));
 %     filt_dth = X_dth'*E_';
-    filt_dth = conv_kernel(abs([dth(1:end-1)]), K_h);  %(1:end-1), indexed for history
+    filt_dth = conv_kernel([abs(dth(1:end-1))], K_h);  %(1:end-1), indexed for history
     filt_dc = conv_kernel([dc(2:end)], K_dc);
     P = (A_-C_)*1 ./ (1 + exp( -(filt_dc + filt_dth + base_dc) )) + C_;  %sigmoid(A_,B_,dc); 
+    P = P*14/5;  % temporal step!
 %     P = A_ ./ (1 + exp( -(filt_dc + filt_dth + 0))) + C_;
     
     %%% weathervaning part
@@ -54,7 +55,7 @@ function [NLL] = nLL_kernel_hist2(THETA, dth, dcp, dc, Basis, lambda, mask)
     %%% marginal probability
     marginalP = (1-P(1:end)).*VM(1:end) + VM_turn(1:end).*P(1:end);  % marginal LL, indexed to match time step delay
 %     lambda = 10;
-    NLL = -nansum( mask(2:end).* ( log(marginalP + 1*1e-20) ) ) + lambda*(1*sum((K_dc - 0).^2));% + 0.1*sum((E_ - 0).^2) + 0*C_^2);  % adding slope l2 regularization
+    NLL = -nansum( mask(2:end).* ( log(marginalP + 1*1e-20) ) ) + 1*lambda*(1*sum((K_dc - 0).^2));% + 0.1*sum((E_ - 0).^2) + 0*C_^2);  % adding slope l2 regularization
 %     NLL = -nansum( mask.* ( log(marginalP + 0*1e-10) ) ) + lambda*(1*sum((K_dc - 0).^2));%
 end
 
