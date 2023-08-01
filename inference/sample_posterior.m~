@@ -6,25 +6,18 @@
 
 % for now, this continues from the Chemotaxis_inference script with those
 % _fit data vector ready.
-% include path for MCMC functions
-%%% /projects/LEIFER/Kevin/matlab_mcmc %%%
-
 %% likelihood function
 % for concatenated tracks
 % logLike = @(x)nLL_kernel_hist2(x, ang_fit, dcp_fit, ddc_fit, cosBasis, .1, trials_fit);
 
-% to load Data and x_MLE from pre-analyzed .mat file
-% load('/projects/LEIFER/Kevin/Data_odor_opto/odor_opto_learn_data/Data_opto_ave.mat')
-
 % for Data structure
-drange = randperm(length(Data));
-Data_fit = Data(drange(1:200));  %Data(1:100); %
+Data_fit = Data(drange(1:100));  %Data(1:100); %
 % logLike = @(x)pop_nLL(x, Data_fit);  % for chemotaxis tracks
-logLike = @(x)-pop_nLL_opto(x, Data_fit);  % for chemotaxis+opto tracks
+logLike = @(x)pop_nLL_opto(x, Data_fit);  % for chemotaxis+opto tracks
 
 %% Prior information
 % logprior = @(x)logPrior_mVM(x, cosBasis, 0.1);  % for chemotaxis trackjs
-logprior = @(x)logPrior_opto(x, cosBasis, 0.1);  % for chemotaxis+opto tracks
+logprior = @(x)logPrior_mVM(x, cosBasis, 0.1);  % for chemotaxis+opto tracks
 
 %% Find the posterior distribution using GWMCMC
 % Now we apply the MCMC hammer to draw samples from the posterior.
@@ -53,7 +46,7 @@ mball=bsxfun(@plus,x0',ball);
 tic
 % m=gwmcmc(mball,{logprior logLike},10000,'burnin',.3,'stepsize',2);
 % [m, logps]=gwmcmc(mball,{logprior logLike},10000,'burnin',.3,'stepsize',2);
-[m, logps] = gwmcmc(mball,{logprior logLike},10000,'ThinChain',5,'burnin',.2,'Parallel',true);
+[m, logps] = gwmcmc(mball,{logprior logLike},10000,'ThinChain',5,'burnin',.2);
 toc
 
 %% post-analysis
@@ -78,39 +71,7 @@ title('Markov Chain Auto Correlation')
 
 %% Corner plot of parameters
 figure
-% ecornerplot(m_bound,'ks',true,'color',[.6 .35 .3])
-ecornerplot(m_bound(3:10,:,:),'ks',true,'color',[.6 .35 .3])
+ecornerplot(m_bound,'ks',true,'color',[.6 .35 .3])
 
 %%% save('/projects/LEIFER/Kevin/Data_learn/N2/..._mcmc.mat','m'
 
-%% %%% test analysis for odor-opto kernels
-m_samps = reshape(m_bound(:,:,:), 13, []);
-n_samps = size(m_samps,2);
-k_norms = zeros(2, n_samps);
-[cosBasis, tgrid, basisPeaks] = makeRaisedCosBasis(4, [0, 8], 1.3);
-
-for ii = 1:n_samps
-    k_norms(1,ii) = norm(m_samps(3:6,ii)'*cosBasis');  %sign(sum(m_samps(3:6,ii)))*
-    k_norms(2,ii) = norm(m_samps(7:10,ii)'*cosBasis');
-    
-%     k_norms(1,ii) = sum(m_samps(3:4,ii));
-%     k_norms(2,ii) = sum(m_samps(7:8,ii));
-end
-
-X = k_norms(1,:);
-Y = k_norms(2,:);
-% figure;
-mdl = fitlm(k_norms(1,:)', k_norms(2,:)')
-% plot(mdl)
-coefficients = mdl.Coefficients.Estimate;
-slope = coefficients(2);
-intercept = coefficients(1);
-Y_predicted = slope * X + intercept;
-% Plot the scatter plot and the linear regression line
-figure;
-scatter(X, Y, 'filled', 'MarkerFaceColor', 'k');
-hold on;
-plot(X, Y_predicted, '--', 'LineWidth', 2);
-hold off;
-set(gca,'FontSize',20); set(gcf,'color','w');
-xlabel('K_{odor}'); ylabel('K_{opto}'); title('appetitive')

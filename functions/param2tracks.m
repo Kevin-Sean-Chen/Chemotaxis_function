@@ -64,12 +64,13 @@ function [simdata, CI] = param2tracks(x, specs, v_dist)
     [Mx, My] = size(M);
 
     for rep = 1:REP
-        vm = 0.11*30/fr;  %should be adjusted with the velocity statistics~~ this is approximately 0.2mm X 
+        vm = 0.2*30/fr;  %should be adjusted with the velocity statistics~~ this is approximately 0.2mm X 
         vs = .1;
         perp_dist = 1;
         tracks = zeros(T,2);
         %%% from middle
         tracks(1,:) = [size(M,2)*1/2 + randn()*300, randn()*300 + size(M,1)*1/2]*1. + 0.*[size(M,2)*rand(), size(M,1)*5/8];%origin; %initial position
+%         tracks(1,:) = [size(M,2)*1/2 + randn()*0, randn()*0 + size(M,1)*1/2]*1. + 0.*[size(M,2)*rand(), size(M,1)*5/8];
 
         tracks(2,:) = tracks(1,:)+randn(1,2)*vm*dt;%origin+randn(1,2)*vm*dt;
         ths = zeros(1,T);  ths(1:3) = randn(1,3)*360; %initial angle
@@ -100,7 +101,7 @@ function [simdata, CI] = param2tracks(x, specs, v_dist)
             %%% actions
             wv = (1*sum(Kdcp.*dCpv) + 0*1) + (vmrand(0,kappa))*180/pi;%kappa^1*randn;%length(wind)
             P_event = (A - Pturn_base) / (1+exp( -(sum(Kddc.*dCv)*1. + (sum(Kdth.*abs(dthv)*1)) *dt + 0)+0) ) + Pturn_base;%length(wind)
-            P_event = P_event/fr;  % rate per sec
+            P_event = P_event*5/14;  % rate per sec
             if rand < P_event*1
                 beta = 1;
             else
@@ -123,11 +124,11 @@ function [simdata, CI] = param2tracks(x, specs, v_dist)
             dcps(t) = dCpv(1);
 
             %%% draw velocity
-%             vv = vm+vs*randn;
-            vv = v_dist(randi(length(v_dist)));
-            if vv<1
-                vv = 1;
-            end
+            vv = vm+vs*randn;
+%             vv = v_dist(randi(length(v_dist)));
+%             if vv<1
+%                 vv = 1;
+%             end
             ths(t) = ths(t-1)+dth*dt;
             dd = [vv*sin(ths(t)*pi/180) vv*cos(ths(t)*pi/180)];
             dxy = dd';%(R)*dd';
@@ -158,6 +159,7 @@ function [simdata, CI] = param2tracks(x, specs, v_dist)
         simdata(rep).theta = ths;  %local angles
     end
     
+    %%% CI
     n_up = 0;
     for rep = 1:REP
         dc = simdata(rep).dc;

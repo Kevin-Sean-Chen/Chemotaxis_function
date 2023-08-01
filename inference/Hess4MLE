@@ -1,0 +1,33 @@
+% Hess4MLE
+% compute Hessian around the MLE fit for each Data conditions
+
+%% load Data and MLE fits
+% load data files
+datas = {'/projects/LEIFER/Kevin/Data_learn/N2/data_analysis/Data_app_test.mat',...
+         '/projects/LEIFER/Kevin/Data_learn/N2/data_analysis/Data_nai_test.mat',...
+         '/projects/LEIFER/Kevin/Data_learn/N2/data_analysis/Data_ave_test.mat'};
+load('/projects/LEIFER/Kevin/Data_learn/N2/data_analysis/Kfold_mle_param3.mat');
+
+%%
+MLE_std = zeros(3,13);  % three conditions and 13 parameters
+dx = 0.01;
+
+for ii = 1:3
+    load(datas{ii})
+    mlee = squeeze(mean(mle_params(:,ii,:)))';
+    [H, g] = compHess(@pop_LL, mlee', dx, Data)
+
+% Compute the inverse of the Hessian matrix
+H_inv = inv(H);
+% Extract the diagonal elements of the inverse Hessian matrix
+variances = diag(H_inv);
+% Compute the standard errors by taking the square root of the variances
+standard_errors = sqrt(variances);
+
+MLE_std(ii,:) = real(standard_errors)';
+
+end
+
+%%
+figure
+plot(MLE_std)

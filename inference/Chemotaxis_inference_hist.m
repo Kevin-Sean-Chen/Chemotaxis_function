@@ -219,6 +219,18 @@ prs0 = [randn(1,12)*1, 10, 50, 0.5, 0.5, 0.1];
 fval
 x
 
+%% test velocity distribution
+dis_fit = alldis(1:200000);
+trials_fit = alltrials(1:200000);
+lfun = @(x)nLL_Gamma_Mix(x, dis_fit, trials_fit);  % objective function
+opts = optimset('display','iter');
+LB = zeros(5);
+UB = [1 inf inf inf inf];
+prs0 = rand(1,5);
+[x,fval,EXITFLAG,OUTPUT,LAMBDA,GRAD,HESSIAN] = fmincon(lfun,prs0,[],[],[],[],LB,UB,[],opts);  % constrained optimization
+fval
+x
+
 %% test parameter distribution
 % repeats = 10;
 % prs_rep = zeros(length(prs0), repeats);
@@ -243,12 +255,12 @@ x
 K_ = x(1); A_ = x(2)*1; B_ = x(3:6); C_ = x(7); Amp = x(8); tau = x(9); Amp_h = x(10); tau_h = x(11); K2_ = x(12);  gamma = x(13);
 % base_dc = x(14); base_dcp = x(15); 
 % Amp_h_wv=x(16); tau_h_wv=x(17);
-base_dc = 0; base_dcp = 0;
+base_dc = 0; base_dcp = 10;
 Amp_h_wv=0; tau_h_wv=1;
 
 figure
 subplot(2,2,1)
-xx = 1:length(cosBasis);
+xx = 0:length(cosBasis)-1;
 yyaxis left; plot(Amp*exp(-xx/tau)); hold on
 yyaxis right; plot(Amp_h_wv*exp(-xx/tau_h_wv))
 title('\delta C^{\perp}, \delta \theta kernel')
@@ -259,14 +271,14 @@ title('\delta C, \delta \theta kernel')
 
 subplot(2,2,3)
 K_dcp_rec = Amp*exp(-xx/tau);
-filt_dcp = conv_kernel(dcp_fit, K_dcp_rec);%conv(dcp_fit, fliplr(Amp*exp(-xx/tau)), 'same');
+filt_dcp = conv_kernel(dcp_fit.*trials_fit, K_dcp_rec);%conv(dcp_fit, fliplr(Amp*exp(-xx/tau)), 'same');
 [aa,bb] = hist((ang_fit - filt_dcp - base_dcp*1)*pi/180 , 1000);
 bar( bb, 1/(2*pi*besseli(0,K_^1)) * exp(K_^1*cos( bb )) , 30); hold on
 bar( bb, 1/(2*pi*besseli(0,K2_^1)) * exp(K2_^1*cos( bb-pi ))*(gamma) + (1-gamma)/(2*pi) , 30,'r');
 title('von Mises for \delta C^{\perp}')
 subplot(2,2,4)
 K_dc_rec = B_*cosBasis';
-filt_ddc = conv_kernel(ddc_fit, K_dc_rec);
+filt_ddc = conv_kernel(ddc_fit.*trials_fit, K_dc_rec);
 xx_h = 1:length(xx)-1;
 K_h_rec = Amp_h*exp(-xx_h/tau_h);
 filt_dth = conv_kernel(abs(ang_fit), K_h_rec);
@@ -279,8 +291,8 @@ title('Logistic for \delta C')
 disp(['K_=',num2str(K_),' K2_',num2str(K2_),'beta',num2str(sum(B_)),'alpha',num2str(Amp)])
 
 %% joint density
-n_brw = sum(Pturns)*1;
-n_wv = sum(1-Pturns);
+n_brw = nansum(Pturns)*1;
+n_wv = nansum(1-Pturns);
 p_z = n_brw + n_wv;
 p_brw = n_brw/p_z;
 p_wv = n_wv/p_z;
@@ -430,8 +442,8 @@ for t = 2:T
     dcs(t) = dCv(1);
     dcps(t) = dCpv(1);
     
-    vv = vm+vs*randn;
-%     vv = alldis(randi(length(alldis)));
+%     vv = vm+vs*randn;
+    vv = alldis(randi(length(alldis)));
 %     if vv<1
 %         vv = 1;
 %     end

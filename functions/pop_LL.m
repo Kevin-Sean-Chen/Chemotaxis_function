@@ -14,7 +14,7 @@ function [LL] = pop_LL(THETA, D)
     ntracks = length(D);
     for nn = 1:ntracks
         Z = length(D(nn).dth);  %normalization for nLL per time!
-        LL = LL + nLL_kernel_hist2(THETA, D(nn).dth, D(nn).dcp, D(nn).dc, D(nn).Basis, D(nn).lambda, D(nn).mask);%/Z; % sum across tracks normalize by time
+        LL = LL + -nLL_kernel_hist2(THETA, D(nn).dth, D(nn).dcp, D(nn).dc, D(nn).Basis, D(nn).lambda, D(nn).mask);%/Z; % sum across tracks normalize by time
     end
     LL = LL / ntracks;  % normalize by number of tracks
 

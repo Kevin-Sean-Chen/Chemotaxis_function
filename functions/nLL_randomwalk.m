@@ -27,6 +27,7 @@ function [NLL] = nLL_randomwalk(THETA, dth, dcp, dc, Basis, lambda, mask)
     VM_turn = (1-gamma)*1/(2*pi) + gamma*VM_turn;
     
     %%% marginal probability
+    Pturn = Pturn*14/5;  % temporal step!
     marginalP = Pturn*VM_turn + (1-Pturn)*VM;  % marginal LL, indexed to match time step delay
     NLL = -nansum( mask.* ( log(marginalP + 1*1e-20) ) );
 end
