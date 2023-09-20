@@ -89,13 +89,15 @@ end
 %% %%%%%%%  TESTING  %%%%%%% 
 %%% testing with MLEs
 scal = 9;  % data length portions
-min_scal = 0.4;  % 0-1, for rescaling test data
+min_scal = 0.3;  % 0-1, for rescaling test data
 rep_samp = 10;  % repeat sub-sampling for better average performance
 cv_class = zeros(K, cond, scal, rep_samp); % K x c x T x s
 data_len = zeros(K, cond, scal, rep_samp); % K x c x T x s
 bin_class = zeros(K, cond, scal, rep_samp); % K x c x T x s
+null_class = zeros(K, cond, scal, rep_samp); % K x c x T x s
 cv_perf = zeros(cond, scal, rep_samp);  % c x T x s, this is averaged over K folds
 cv_perf_bin = zeros(cond, scal, rep_samp);  % c x T x s,  for binomial comparison
+cv_perf_null = zeros(cond, scal, rep_samp);  % c x T x s,  for null-model comparison
 testLL = zeros(K,cond, 3);  % record the test LL (three conditions for analysis)
 
 for ci = 1:cond  % C conditions
@@ -139,6 +141,7 @@ for ci = 1:cond  % C conditions
                 samps = randsample(data_select_vec, scal_vec(si));  % sample without replacement
                 cv_class(ki, ci, si, ri) = argmaxLL(Data_test(samps), squeeze(mle_params(ki,:,:)));  % selection
                 bin_class(ki, ci, si, ri) = argmaxLL_bin(Data_test(samps), squeeze(bin_params(ki,:,:)));  % compared to binomial model
+                null_class(ki, ci, si, ri) = argmaxLL_null(Data_test(samps), squeeze(null_params(ki,:,:)));  % compared to null random-walk model
                 [xx, yy, mm] = data2xy(Data_test(samps));  % concatenate data
                 data_len(ki, ci, si, ri) = data_len(ki, ci, si, ri) + length(yy);  % average length(?)..........
             end
@@ -152,6 +155,7 @@ for ci = 1:cond
         for ri = 1:rep_samp
             cv_perf(ci,si,ri) = length(find(cv_class(:, ci, si,ri)==ci))/K;
             cv_perf_bin(ci,si,ri) = length(find(bin_class(:, ci, si,ri)==ci))/K;
+            cv_perf_null(ci,si,ri) = length(find(null_class(:, ci, si,ri)==ci))/K;
         end
     end
 end
@@ -206,9 +210,12 @@ errorbar(rtime, mean(mean(cv_perf_bin,3)), std(mean(cv_perf_bin,3))./sqrt(K.*sca
 plot(rtime, mean((cv_nbc),2),'r--')
 errorbar(rtime, mean((cv_nbc),2), std((cv_nbc),0,2)'./sqrt(K.*scal_vec), '.r')
 
+plot(rtime, mean(mean(cv_perf_null,3)),'k-*')
+errorbar(rtime, mean(mean(cv_perf_null,3)), std(mean(cv_perf_null,3))./sqrt(K.*scal_vec), '*k')
+
 xlabel('mean data length (hr)')
 ylabel('cross-validation (ratio)')
-legend({'appetitive','naive','aversive','mean prediction', 'binomial prediction', '\Delta C'})
+legend({'appetitive','naive','aversive','mean prediction', 'binomial prediction', '\Delta C', 'behavior'})
 set(gcf,'color','w'); set(gca,'Fontsize',20);
 
 
@@ -307,7 +314,7 @@ function [x_MLE, fval] = MLE_mGLM(Data_train)
     trials_fit = mask_train;
     lfun = @(x)nLL_kernel_hist2(x, ang_fit, dcp_fit, ddc_fit, cosBasis, .1, trials_fit);  %nLL_kernel_hist2
     opts = optimset('display','iter');
-    LB = [1e-0, 1e-5, ones(1,nB)*-inf, 0.0 -inf, 1e-0, -inf, 1e-1, 1e-0*10, 0.1];
+    LB = [1e-0, 1e-5, ones(1,nB)*-inf, 0.0 -inf, 1e-0, -inf, 1e-1, 1e-0*10, 0.2];
     UB = [200, 1., ones(1,nB)*inf, 0.1, inf, 50, inf, 100, 50, 1];
     prs0 = [50, 0.1, randn(1,nB)*10, 0.01, -10, 25, 10, 25, 5, 1.];
 %     LB = [1e-0, 1e-5, ones(1,nB)*-inf, 0.0 -inf, 1e-0, -inf, 1e-1, 1e-0*10, -inf];
@@ -347,6 +354,9 @@ function [x_MLE, fval] = MLE_binomial(Data_train)
 end
 
 function predict_lambda = argmaxLL(data, mle_params)
+%%%
+% max-likelihood classification with the full mixture GLM model
+%%%
     [Basis, tgrid, basisPeaks] = makeRaisedCosBasis(4, [0, 8], 1.3);
     [xx, ang_fit, trials_fit] = data2xy(data);  % turn data sturcute into vectors for plug-in evaluation
     dcp_fit = xx(2,:);  % dcp concatented
@@ -365,6 +375,9 @@ function predict_lambda = argmaxLL(data, mle_params)
 end
 
 function predict_lambda = argmaxLL_bin(data, bin_params)
+%%%
+% max-likelihood classification with the binomial chemotaxis model
+%%%
     lls = zeros(1,3);  % three conditions
     for c = 1:3
         lls(c) = -pop_nLL_binomial(bin_params(c), data);
@@ -372,7 +385,21 @@ function predict_lambda = argmaxLL_bin(data, bin_params)
     predict_lambda = argmax(lls);
 end
 
+function predict_lambda = argmaxLL_null(data, bin_params)
+%%%
+% max-likelihood classification with the null behavioral model
+%%%
+    lls = zeros(1,3);  % three conditions
+    for c = 1:3
+        lls(c) = -pop_nLL_randwalk(bin_params(c,:), data);
+    end
+    predict_lambda = argmax(lls);
+end
+
 function labels= make_label(ns, label)
+%%%
+% make ns labels for naive Bayes classification
+%%%
     labels = cell(ns,1);
     for ii = 1:ns
         labels{ii} = label;

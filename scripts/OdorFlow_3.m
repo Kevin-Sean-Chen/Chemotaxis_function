@@ -16,6 +16,9 @@ Tracks = loadtracks(folder_names,fields_to_load);
 Cmap = load('/projects/LEIFER/Kevin/Data_odor_flow_equ/Landscape_low.mat');
 Fcon = load('/projects/LEIFER/Kevin/Data_odor_flow_equ/OdorFx_low.mat');
 
+Cmap = load('/projects/LEIFER/Kevin/Data_odor_flow_equ/Landscape_low_0623.mat')
+Cmap = load('/projects/LEIFER/Kevin/Data_odor_flow_equ/Landscape_low_0623_2.mat')
+
 % Fcon = load('/projects/LEIFER/Kevin/Data_odor_flow_equ/OdorFx_cone_low.mat');
 % Cmap = load('/projects/LEIFER/Kevin/Data_odor_flow_equ/Landscape_cone_low.mat');
 % % 
@@ -30,7 +33,7 @@ M = fliplr(flipud(M));  %flipped camera
 % M = flipud(M);
 %% pand a,b 
 poly_degree = 3;  %polynomial fitting for moving window
-filt = 7;  %window the path (has to be odd because it is +/- points around the center)
+filt = 14;  %window the path (has to be odd because it is +/- points around the center)
 fr = 1/14;  %1/14 seconds between each frame  (~0.0714 second for each frame)
 nn = length(Tracks); %number of worms selected
 mint = 60*2.;%.85; %minimum time in seconds
@@ -38,7 +41,7 @@ minx = 100*1.;  %minimum displacement (in terms of pixels) %3 for app?
 endingt = 60*30;  %only taking the first few minutes
 pix2mm = 1/31.5;
 targ_track = 7;
-conc_thre = .9*max(max(M));
+conc_thre = .8*max(max(M));
 
 figure();
 imagesc(M,'XData',[0 size(M,2)*pix2mm],'YData',[0 size(M,1)*pix2mm]);
@@ -58,10 +61,16 @@ for i = 1:nn
             if isempty(pos)~=1
                 x_smooth = smooth(Tracks(i).Path(:,1), filt,'sgolay',poly_degree);
                 y_smooth = smooth(Tracks(i).Path(:,2), filt,'sgolay',poly_degree);
-                    if M(floor(y_smooth(1)), floor(x_smooth(1))) < conc_thre %& x_smooth(end)>100 & x_smooth(end)<2900 & y_smooth(end)>100 & y_smooth(end)<2400 
+                    if M(floor(y_smooth(1)), floor(x_smooth(1))) < conc_thre %& x_smooth(end)>100 & x_smooth(end)<2900 & y_smooth(end)>100 & y_smooth(end)<2400
+                        
+%                   gray_scale = linspace(0, 1, floor(numel(x_smooth)/1));
+%                   hold on;
+%                     for ic = 1:numel(x_smooth)-1
+%                         plot(x_smooth(ic:ic+1), y_smooth(ic:ic+1), 'Color', [gray_scale(ic) gray_scale(ic) gray_scale(ic)]);
+%                     end
                 plot(x_smooth*pix2mm, y_smooth*pix2mm,'w','LineWidth',1); hold on;
-                plot(x_smooth(1)*pix2mm, y_smooth(1)*pix2mm,'g.', 'MarkerSize',15)
-                plot(x_smooth(end)*pix2mm, y_smooth(end)*pix2mm,'r.', 'MarkerSize',15)
+                plot(x_smooth(1)*pix2mm, y_smooth(1)*pix2mm,'g.', 'MarkerSize',30)
+                plot(x_smooth(end)*pix2mm, y_smooth(end)*pix2mm,'r.', 'MarkerSize',30)
                 cand = [cand i];
 %                 ttt = ttt+ (Tracks(i).Time(end)-Tracks(i).Time(1));
                     end

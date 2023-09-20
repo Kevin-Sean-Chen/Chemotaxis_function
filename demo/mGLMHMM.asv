@@ -19,7 +19,6 @@ nB = 4;  % number of basis function for the kernel
 [cosBasis, tgrid, basisPeaks] = makeRaisedCosBasis(nB, [0, 10], 1.3); % basis function
 %%% true params
 beta = 1; % nonlinear parameter
-A = 0.5;  % max probability of turning
 alpha_h1 = [-4:-1]*.01;  % angle history kernel coefficient
 alpha_dc1 = [1,4,-2,-1]*5;  % dC kernel coefficient
 alpha_dcp1 = [-4:-1]*.01;  % dCp kernel coefficient
@@ -42,7 +41,7 @@ K_dc2 = fliplr(alpha_dc2*cosBasis');  % dC kernel
 K_dcp2 = fliplr(alpha_dcp2*cosBasis');  % dCp kernel
 
 %% generate data
-r2d = 1;%180/pi;
+r2d = 180/pi;
 lc = 10;  %length of smoothing
 dC = conv(randn(1,lt),ones(1,lc),'same')/lc;  % dC stimulus vector
 dCp = conv(randn(1,lt),ones(1,lc),'same')/lc;  % dCp stimulus vector
@@ -57,7 +56,7 @@ for tt=pad+1:lt
         K_h = K_h2; K_dc = K_dc2; K_dcp = K_dcp2; kappa_turn = kappa_turn2; kappa_wv = kappa_wv2;
     end
     F(tt) = dC(tt-pad+1:tt)*K_dc' + abs(dth(tt-pad:tt-1))*r2d*K_h';  % linear filtering
-    turns(tt) = choice(NL(F(tt)+base,A));  % nonlinearity and binary choice
+    turns(tt) = choice(NL(F(tt)+base,beta));  % nonlinearity and binary choice
     dth(tt) = turns(tt)*circ_vmrnd(pi,kappa_turn,1) + (1-turns(tt))*circ_vmrnd(dCp(tt-pad+1:tt)*K_dcp',kappa_wv,1);  % angle drawn from mixture of von Mesis
 end
 
@@ -101,7 +100,7 @@ nB = 4;
 wts0 = rand(nY,nX,nStates); % parameters for the mixture-VonMesis behavioral model
 wts0(1,:,1) = [alpha_h1, alpha_dc1, alpha_dcp1, kappa_turn1, kappa_wv1]; %single mGLM
 wts0(1,:,2) = [alpha_h2, alpha_dc2, alpha_dcp2, kappa_turn2, kappa_wv2];
-% wts0 = wts0 + rand(nY, nX, nStates);
+wts0 = wts0 + rand(nY, nX, nStates);
 
 % Build struct for initial params
 mmhat = struct('A',A0,'wts',wts0,'loglifun',loglifun,'basis',cosBasis,'lambda',.0, 'Mstepfun',@runMstep_GTmVM);
@@ -150,7 +149,7 @@ jj = jj-1;
 
 
 %% compare to gound-truth
-stateK = 2;
+stateK = 1;
 x = squeeze(mmhat.wts(:,:,stateK));
 alpha_h_ = x(1:4);       % kernel for dth angle history kernel (weights on kerenl basis)
 alpha_dc_ = x(5:8);      % kernel for dC transitional concentration difference (weights on kerenl basis)
@@ -174,7 +173,7 @@ plot(fliplr(K_dcp_rec)); hold on; plot(K_dcp1,'--'); plot(K_dcp2,'--');
 figure;
 plot(allas(:)); hold on
 % plot(smooth((bb(wind)-1)*100,10))
-plot((bb(:)-1)*3)
+plot((bb(:)-1)*100)
 
 %% functions
 %%% nonlinear function
@@ -241,7 +240,7 @@ function [logli] = logli_GTmVM(mm, xx, yy, mask)
         P = NL(filt_dc + filt_dth, 0.5); %1 ./ (1 + exp( -(filt_dc + filt_dth + 0))) +0;  %sigmoid(A_,B_,dc); 
 
         %%% weathervaning part
-        d2r = 1;%pi/180;
+        d2r = pi/180;
         C = 1/(2*pi*besseli(0,kappa_wv^2));  % normalize for von Mises
         filt_dcp = conv_kernel(dcp(2:end), K_dcp);
         VM = C * exp(kappa_wv^2*cos(( filt_dcp - dth(2:end) )*d2r));  %von Mises distribution
@@ -274,7 +273,7 @@ function mm = runMstep_GTmVM(mm, xx, yy, gams, mask)
 %  mmnew - new model struct
 
 % normalize the gammas to sum to 1
-gamnrm = gams./(sum(gams,2)+1e-10);  
+gamnrm = gams./(sum(gams,2)+1e-8);  
 nStates = size(gams,1);
 
 %%% loading parameters
@@ -327,10 +326,10 @@ function [nll] = nll_mVM(THETA, dth, dcp, dc, gams, Basis, lambda, mask)
     
     filt_dth = conv_kernel(abs(dth(1:end-1)), K_h);
     filt_dc = conv_kernel(dc(2:end), K_dc);
-    P = NL(filt_dc + filt_dth, 0.5);  %1 ./ (1 + exp( -(filt_dc + filt_dth + 0))) +0;  %sigmoid(A_,B_,dc); 
+    P = NL(filt_dc + filt_dth, 0.5)1 ./ (1 + exp( -(filt_dc + filt_dth + 0))) +0;  %sigmoid(A_,B_,dc); 
 
     %%% weathervaning part
-    d2r = 1;%pi/180;
+    d2r = pi/180;
     C = 1/(2*pi*besseli(0,kappa_wv^2));  % normalize for von Mises
     filt_dcp = conv_kernel(dcp(2:end), K_dcp);
     VM = C * exp(kappa_wv^2*cos(( filt_dcp - dth(2:end) )*d2r));  %von Mises distribution

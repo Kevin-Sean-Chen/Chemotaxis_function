@@ -184,7 +184,7 @@ for c = 1:3
         Data_fit = Data(drange(1:200));
         lfun = @(x)pop_nLL_opto(x, Data_fit);
         opts = optimset('display','iter');
-        prs0 = prs0 + prs0.*randn(1,length(UB))*0.2;
+        prs0 = prs0 + prs0.*randn(1,length(UB))*0.;
         try
             [x,fval,EXITFLAG,OUTPUT,LAMBDA,GRAD,HESSIAN] = fmincon(lfun,prs0,[],[],[],[],LB,UB,[],opts);
             mle_params_opto(c,:,r) = x;

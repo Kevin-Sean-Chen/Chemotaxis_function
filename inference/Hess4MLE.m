@@ -6,7 +6,7 @@
 datas = {'/projects/LEIFER/Kevin/Data_learn/N2/data_analysis/Data_app_test.mat',...
          '/projects/LEIFER/Kevin/Data_learn/N2/data_analysis/Data_nai_test.mat',...
          '/projects/LEIFER/Kevin/Data_learn/N2/data_analysis/Data_ave_test.mat'};
-load('/projects/LEIFER/Kevin/Data_learn/N2/data_analysis/Kfold_mle_param3.mat');
+load('/projects/LEIFER/Kevin/Data_learn/N2/data_analysis/Kfold_mle_param6.mat');
 
 %%
 MLE_std = zeros(3,13);  % three conditions and 13 parameters
@@ -45,7 +45,7 @@ for cc = 1:3
 %     subplot(1,3,cc);
     mlee = squeeze(mean(mle_params(:,cc,:)));
     y = mlee(3:6)'*cosBasis';
-    mle_hess = MLE_std(cc, 3:6)*4;%/sqrt(length(Data));
+    mle_hess = MLE_std(cc, 3:6)*2;%/sqrt(length(Data));
     standardError = mle_hess*cosBasis';
     plot(tt,y,col{cc},'LineWidth',3)
     hold on

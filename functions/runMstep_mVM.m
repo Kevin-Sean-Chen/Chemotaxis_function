@@ -9,7 +9,7 @@ function mm = runMstep_mVM(mm, xx, yy, gams, mask)
 %        .wts  [1 K] - per-state slopes
 %        .vars [1 K] - per-state variances
 %    xx [d T] - input (design matrix)
-%    yy [1 T] - outputs
+%    yy [1 T] - outputs (angle and speed)
 %  gams [K T] - log marginal sate probabilities given data
 %
 % Output
@@ -23,7 +23,7 @@ nStates = size(gams,1);
 %%% loading parameters
 Basis = mm.basis;
 lambda = mm.lambda;
-dth = yy;
+dth = yy(1,:);
 dc = xx(1,:);
 dcp = xx(2,:);
 nB = size(Basis,2);
@@ -35,8 +35,8 @@ nB = size(Basis,2);
 
 opts = optimset('display','final');%'iter');
 % opts.Algorithm = 'sqp';
-LB = [1e-0, ones(1,nB)*-inf, -inf, 1e-0, -inf, 1e-1, 1e-0, 0.1];
-UB = [100, ones(1,nB)*inf, inf, 100, inf, 100, 20, 1];
+LB = [1e-0, ones(1,nB)*-inf, -inf, 1e-0, -inf, 1e-1, 1e-0, 0.1 ];
+UB = [100, ones(1,nB)*inf, inf, 100, inf, 100, 20, 1 ];
 % prs0 = rand(1,10);
 prs0 = [10, randn(1,nB)*10, 10, 25, 10, 25, 5, 1.] ;
 % prs0 = [9.9763  -0.5343  -0.0776   0.1238  -0.0529   0.5335   7.7254  367.3817  0.1990  1.0000  0.1000]; %single mGLM
@@ -72,22 +72,22 @@ function [nll] = nll_mVM(THETA, dth, dcp, dc, gams, Basis, lambda, mask)
     K_win = 1:length(K_dc);
     h_win = 1:length(K_dc)*1;
     K_h = Amp_h * exp(-h_win/tau_h);  % dth kernel (make longer~)
-    filt_dth = conv_kernel(abs(dth), K_h);
-    filt_dc = conv_kernel(dc, K_dc);
+    filt_dth = conv_kernel(abs(dth(1:end-1)), K_h);
+    filt_dc = conv_kernel(dc(2:end), K_dc);
     P = 1 ./ (1 + exp( -(filt_dc + filt_dth + 0))) +0;  %sigmoid(A_,B_,dc); 
 
     %%% weathervaning part
     d2r = pi/180;
     C = 1/(2*pi*besseli(0,kappa_wv^2));  % normalize for von Mises
     K_dcp = Amp_dcp * exp(-K_win/tau_dcp);    % dcp kernel
-    filt_dcp = conv_kernel(dcp, K_dcp);
-    VM = C * exp(kappa_wv^2*cos(wrapTo180( dth -filt_dcp )*d2r));  %von Mises distribution
+    filt_dcp = conv_kernel(dcp(2:end), K_dcp);
+    VM = C * exp(kappa_wv^2*cos(wrapTo180( dth(2:end) -filt_dcp )*d2r));  %von Mises distribution
 
     %%% turning analge model
-    VM_turn = 1/(2*pi*besseli(0,kappa_turn^2)) * exp(kappa_turn^2*cos((dth*d2r - pi)));  %test for non-uniform turns (sharp turns)
+    VM_turn = 1/(2*pi*besseli(0,kappa_turn^2)) * exp(kappa_turn^2*cos((dth(2:end)*d2r - pi)));  %test for non-uniform turns (sharp turns)
     VM_turn = (1-gamma)*1/(2*pi) + gamma*VM_turn;
 
     %%% marginal probability
     marginalP = (1-P).*VM + VM_turn.*P;
-    nll = -nansum( mask .* gams .*( log( marginalP + 1*1e-10) ) ) + lambda*(1*sum((K_dc - 0).^2));% + 0.1*sum((
+    nll = -nansum( mask(2:end) .* gams(2:end) .*( log( marginalP + 1*1e-10) ) ) + lambda*(1*sum((K_dc - 0).^2));% + 0.1*sum((
 end

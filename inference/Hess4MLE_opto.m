@@ -6,7 +6,7 @@
 datas = {'/projects/LEIFER/Kevin/Data_odor_opto/odor_opto_learn_data/Data_opto_app.mat',...
          '/projects/LEIFER/Kevin/Data_odor_opto/odor_opto_learn_data/Data_opto_nai.mat',...
          '/projects/LEIFER/Kevin/Data_odor_opto/odor_opto_learn_data/Data_opto_ave.mat'};
-% load('/projects/LEIFER/Kevin/Data_odor_opto/odor_opto_learn_data/mle_param_opto.mat');
+load('/projects/LEIFER/Kevin/Data_odor_opto/odor_opto_learn_data/mle_param_opto.mat');
 % %%% load mle_params_opt here...  %%%%% this is saved in a condition x parameter (3 x 13 x rep) matrix...
 
 %%
@@ -16,7 +16,7 @@ dx = 0.1;
 for ii = 1:3
     load(datas{ii})  % load Data
 %     mlee = squeeze((mle_params_opto(ii,:)))';  % load the fitted MLE as x0
-    mlee = squeeze(median(mle_params_opto(ii,:,:),3));  % cond x param x repeat
+    mlee = squeeze(nanmedian(mle_params_opto(ii,:,:),3));  % cond x param x repeat
     [H, g] = compHess(@pop_nLL_opto, mlee', dx, Data)
 
 % Compute the inverse of the Hessian matrix
@@ -41,15 +41,15 @@ ttl = {'appetitive','naive','aversive'};
 col = {'b','k','r'};
 [cosBasis, tgrid, basisPeaks] = makeRaisedCosBasis(4, [0, 8], 1.3);
 tt = [1:length(cosBasis)]*5/14;
-K = size(mle_params,1);
+K = size(mle_params_opto,1);
 figure
 for cc = 1:3
     subplot(1,3,cc);
-    mlee = squeeze(median(mle_params_opto(cc,:,:),3));
+    mlee = squeeze(nanmedian(mle_params_opto(cc,:,:),3));  %((mle_params_opto(cc,:,5))); %
     y_odor = mlee(3:6)*cosBasis';
     y_opto = mlee(7:10)*cosBasis';
     mle_hess_odor = MLE_std_opto(cc,3:6)*4;%/sqrt(length(Data));   % odor
-    mle_hess_opto = MLE_std_opto(cc,7:10);  % opto
+    mle_hess_opto = MLE_std_opto(cc,7:10)*1;  % opto
     
     standardError_odor = mle_hess_odor*cosBasis';
     yyaxis left; 
@@ -80,30 +80,7 @@ for cc = 1:3
     end
 
     xlabel('time (s)');
-    set(gca,'FontSize',20); set(gcf,'color','w'); title(cond_title{ci}); title(ttl{cc})
-end
-
-%% 
-% for Kc_perp kernel
-ttl = {'appetitive','naive','aversive'};
-col = {'b','k','r'};
-tt = [1:length(cosBasis)]*5/14;
-figure
-for cc = 1:3
-    subplot(1,3,cc);
-    mlee = squeeze(mean(mle_params(:,cc,:)));
-    y = -mlee(8).*exp(-tt./mlee(9));
-    mle_hess = MLE_std(8:9)/sqrt(length(Data));
-    standardError = -mle_hess(1).*exp(-tt./mle_hess(2));
-    plot(tt,y,col{cc},'LineWidth',3)
-    hold on
-    
-    % Create the shaded area
-    xArea = [tt, fliplr(tt)];
-    yArea = [y + standardError, fliplr(y - standardError)];
-    fill(xArea, yArea, 'k', 'FaceAlpha', 0.3, 'EdgeColor', 'none');
-
-    title(ttl{cc})
+    set(gca,'FontSize',20); set(gcf,'color','w'); title(ttl{cc})
 end
 
 %%
@@ -111,10 +88,10 @@ figure
 xx = [1,2,3];
 param_id = 1;  % the element for plot
 for cc = 1:3
-    base = squeeze(mean(mle_params(:,cc,param_id)));
+    base = squeeze(mean(mle_params_opto(cc,param_id,:)));
     bar(xx(cc), base)
     hold on
 %     berr = squeeze(std(mle_params(:,cc,param_id)));
-    berr = MLE_std(cc,param_id);%/sqrt(length(Data));
+    berr = MLE_std_opto(cc,param_id);%/sqrt(length(Data));
     errorbar(xx(cc),base,berr)
 end

@@ -69,7 +69,7 @@ function [simdata, CI] = param2tracks(x, specs, v_dist)
         perp_dist = 1;
         tracks = zeros(T,2);
         %%% from middle
-        tracks(1,:) = [size(M,2)*1/2 + randn()*300, randn()*300 + size(M,1)*1/2]*1. + 0.*[size(M,2)*rand(), size(M,1)*5/8];%origin; %initial position
+        tracks(1,:) = [size(M,2)*1/2 + randn()*100, randn()*100 + size(M,1)*1/2]*1. + 0.*[size(M,2)*rand(), size(M,1)*5/8];%origin; %initial position
 %         tracks(1,:) = [size(M,2)*1/2 + randn()*0, randn()*0 + size(M,1)*1/2]*1. + 0.*[size(M,2)*rand(), size(M,1)*5/8];
 
         tracks(2,:) = tracks(1,:)+randn(1,2)*vm*dt;%origin+randn(1,2)*vm*dt;

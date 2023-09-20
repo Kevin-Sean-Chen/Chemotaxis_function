@@ -47,7 +47,7 @@ for cc = 1:3
         if cc == 1
             [ci_, brw_index, wv_index] = compute_index(Tracks, M, 20);
         else
-            [ci_, brw_index, wv_index] = compute_index(Tracks, M, 20);
+            [ci_, brw_index, wv_index] = compute_index(Tracks, M, 30);
         end
         BWC(ff,:) = [ci_, brw_index, wv_index];
     end

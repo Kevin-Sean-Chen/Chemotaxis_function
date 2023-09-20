@@ -8,13 +8,13 @@ datas = {'/projects/LEIFER/Kevin/Data_learn/N2/data_analysis/Data_app_test2.mat'
          '/projects/LEIFER/Kevin/Data_learn/N2/data_analysis/Data_nai_test2.mat',...
          '/projects/LEIFER/Kevin/Data_learn/N2/data_analysis/Data_ave_test2.mat'};
 
-params_mat = load('/projects/LEIFER/Kevin/Data_learn/N2/data_analysis/Kfold_mle_param4.mat');
+params_mat = load('/projects/LEIFER/Kevin/Data_learn/N2/data_analysis/Kfold_mle_param6.mat');
 
 %% assign mle parameters
 time_scale = 5/14;
 [cosBasis, tgrid, basisPeaks] = makeRaisedCosBasis(4, [0, 8], 1.3);
 t_vec = 1:length(cosBasis)-1;
-% param_mle = params_mat.mle_params;
+param_mle = params_mat.mle_params;
 K1_mle = median(squeeze(param_mle(:,:,1)), 1);
 K2_mle = median(squeeze(param_mle(:,:,12)), 1);
 A_mle = median(squeeze(param_mle(:,:,2)), 1);
@@ -23,6 +23,25 @@ Ah_mle = median(squeeze(param_mle(:,:,10)), 1);
 th_mle = median(squeeze(param_mle(:,:,11)), 1);
 alpha_mle = squeeze(median((param_mle(:,:,3:6)), 1))';
 b_mle = median(squeeze(param_mle(:,:,13)), 1);
+Kc_mle = zeros(3, size(cosBasis,1));
+for ii = 1:3
+    Kc_mle(ii,:) = alpha_mle(:,ii)'* cosBasis';
+end
+
+%% test with just one fold
+kth = 2;
+time_scale = 5/14;
+[cosBasis, tgrid, basisPeaks] = makeRaisedCosBasis(4, [0, 8], 1.3);
+t_vec = 1:length(cosBasis)-1;
+% param_mle = params_mat.mle_params;
+K1_mle = squeeze(param_mle(kth,:,1));
+K2_mle = squeeze(param_mle(kth,:,12));
+A_mle = squeeze(param_mle(kth,:,2));
+C_mle = squeeze(param_mle(kth,:,7));
+Ah_mle = squeeze(param_mle(kth,:,10));
+th_mle = squeeze(param_mle(kth,:,11));
+alpha_mle = squeeze(param_mle(kth,:,3:6))';
+b_mle = squeeze(param_mle(kth,:,13));
 Kc_mle = zeros(3, size(cosBasis,1));
 for ii = 1:3
     Kc_mle(ii,:) = alpha_mle(:,ii)'* cosBasis';
@@ -39,6 +58,7 @@ total_turns = zeros(1,3);
 for ii = 1:3
     %%% load data
     load(datas{ii});
+             
     [xx_train, yy_train, mask_train] = data2xy(Data(1:400));
     ddc_fit = xx_train(1,:);
     trials_fit = ones(1,length(mask_train));
@@ -75,12 +95,13 @@ learn_bar_plot(C_mle*time_scale, 'min turn rate (per s)',0)
 %% histogram and turning curves
 total_turns = zeros(1,3);
 numBins = 50;
+xx_cond = linspace(-250,50,100); %linspace(min(dc_dth),max(dc_dth),100);
 cols = ['b', 'k', 'r'];
 figure
 for ii = 1:3
     %%% load data
     load(datas{ii});
-    [xx_train, yy_train, mask_train] = data2xy(Data(1:400));
+    [xx_train, yy_train, mask_train] = data2xy(Data(1:444));
     ddc_fit = xx_train(1,:);
     trials_fit = ones(1,length(mask_train));
     trials_fit(find(mask_train==0)) = NaN;
@@ -91,7 +112,7 @@ for ii = 1:3
     K_h_rec = Ah_mle(ii)*exp(-t_vec/th_mle(ii));
     filt_dth = conv_kernel(abs(ang_fit), K_h_rec);
 %     dc_dth = (filt_ddc + b_mle(ii)*0 + filt_dth)/norm(Kc_mle(ii, :));
-    dc_dth = filt_ddc/norm(Kc_mle(ii, :)) + filt_dth;
+    dc_dth = filt_ddc/norm(Kc_mle(ii, :)) + (filt_dth);
 %     if ii ==1 
 %         dc_dth = -( filt_ddc/norm(Kc_mle(ii, :)) + 1*(filt_dth) );
 %     else
@@ -100,28 +121,42 @@ for ii = 1:3
 
     subplot(212)
 %     histogram(dc_dth + mean(filt_dth)*0, 'FaceColor', cols(ii),'Normalization', 'probability'); hold on
-    histogram(dc_dth, numBins, 'Normalization', 'probability', 'EdgeColor', 'none', 'FaceColor', cols(ii), 'FaceAlpha', 0.7); hold on
+%     histogram(dc_dth, numBins, 'Normalization', 'probability', 'EdgeColor', 'none', 'FaceColor', cols(ii), 'FaceAlpha', 0.7); hold on
+    h = histogram(dc_dth, numBins, 'Normalization', 'pdf','Visible', 'off');
+    bin_edges = h.BinEdges;
+    probabilities = h.Values;
+    plot(bin_edges(1:end-1), probabilities, 'Color', cols(ii)); hold on
+    xlim([min(xx_cond), max(xx_cond)])
     subplot(211)
-    xx_cond = linspace(-180,80,100); %linspace(min(dc_dth),max(dc_dth),100);
     plot(xx_cond, ( (A_mle(ii)-C_mle(ii))./(1+exp(-(xx_cond*norm(Kc_mle(ii, :)) + 1*median(filt_dth))))+C_mle(ii) )*time_scale,'Color',cols(ii)); hold on
 %     scatter(dc_dth + 0*(filt_dth), ( (A_mle(ii)-C_mle(ii))./(1+exp(-(dc_dth*norm(Kc_mle(ii, :)) + 0*(filt_dth) )))+C_mle(ii) )*time_scale,'Marker', '.','MarkerFaceColor',cols(ii),'MarkerFaceAlpha', 0.5); hold on
 %     dc_dth_scaled = filt_ddc + filt_dth;
-%     plot(dc_dth, (A_mle(ii)-C_mle(ii))./(1+exp(dc_dth_scaled))+C_mle(ii),'.'); hold on
-    
+%     plot(dc_dth, (A_mle(ii)-C_mle(ii))./(1+exp(-dc_dth_scaled))+C_mle(ii),'.'); hold on
+    xlim([min(xx_cond), max(xx_cond)])
 end
 
 %% emperical vs. model turn probability
 model_Pturn = zeros(1,3);
 exp_Pturn = zeros(1,3);
-turn_thr = 130;
-gamm = 0.25;
+turn_thr = 150;
+gamm = 0.2;
 d2r = pi/180;
 
 figure
 for ii = 1:3
     %%% load data
     load(datas{ii});
-    [xx_train, yy_train, mask_train] = data2xy(Data(1:400));
+%     idvec = randperm(length(Data));
+    
+    %%% test with the same CV testing data
+    Data = Data(data_ids(ii,:)); % control the number of tracks 
+    indices = ids{ii};  % indices for CV (pre-assigned!)
+    test_set = (indices==kth);
+    train_set = ~test_set;
+    Data_train = Data(train_set);
+    %%%
+    
+    [xx_train, yy_train, mask_train] = data2xy(Data_train);%(Data(1:400));%(Data(idvec(1:400)));
     ddc_fit = xx_train(1,:);
     trials_fit = ones(1,length(mask_train));
     trials_fit(find(mask_train==0)) = NaN;
@@ -142,7 +177,60 @@ for ii = 1:3
 
 end
 
+% figure
+% bar([exp_Pturn; model_Pturn]')
+learn_bar_plot([exp_Pturn; model_Pturn], 'turn/s')
+
+%% emperical vs. model turn probability (histogram method!)
+model_Pturn = zeros(1,3);
+exp_Pturn = zeros(1,3);
+turn_thr = 150;
+gamm = 0.2;
+nbins = 50;
+d2r = pi/180;
+
 figure
+for ii = 1:3
+    %%% load data
+    load(datas{ii});
+%     idvec = randperm(length(Data));
+
+    %%% test with the same CV testing data
+    Data = Data(data_ids(ii,:)); % control the number of tracks 
+    indices = ids{ii};  % indices for CV (pre-assigned!)
+    test_set = (indices==kth);   %%% this matters!!
+    train_set = ~test_set;
+    Data_train = Data(train_set);
+    %%%
+    
+    [xx_train, yy_train, mask_train] = data2xy(Data_train);%(Data(1:400));%(Data(idvec(1:400)));
+    ddc_fit = xx_train(1,:);
+    trials_fit = ones(1,length(mask_train));
+    trials_fit(find(mask_train==0)) = NaN;
+    ang_fit = yy_train;
+    
+    % emperical
+    exp_Pturn(ii) = length(find(abs(ang_fit)>turn_thr)) / (length(ang_fit)-sum(isnan(trials_fit)));
+    
+    % model
+    filt_ddc = conv_kernel(ddc_fit.*trials_fit, Kc_mle(ii, :));
+    K_h_rec = Ah_mle(ii)*exp(-t_vec/th_mle(ii));
+    filt_dth = conv_kernel(abs(ang_fit), K_h_rec);
+    dc_dth = (filt_ddc + filt_dth + b_mle(ii)*0);
+    Pturns = (A_mle(ii)-C_mle(ii))./ (1 + exp( -(dc_dth) )) + C_mle(ii);
+    P_beta = nansum(Pturns) / (length(Pturns)-sum(isnan(Pturns)));
+    [n, edges] = histcounts(yy_train, nbins, 'Normalization', 'probability');
+    bb = edges(1:end-1)*pi/180;
+    pos = find(abs(bb) > turn_thr*pi/180);
+    scal = sum(1/(2*pi*besseli(0,K1_mle(ii)^1)) * exp(K1_mle(ii)^1*cos( bb )) * (1-P_beta)  + ... 
+       ( 1/(2*pi*besseli(0,K2_mle(ii)^1)) * exp(K2_mle(ii)^1*cos( bb-pi ))*(gamm) + (1-gamm)/(2*pi) ) *P_beta );
+    p_thr_beta = (1/(2*pi*besseli(0,K2_mle(ii)^1)) * exp(K2_mle(ii)^1*cos( bb-pi ))*(gamm) + (1-gamm)/(2*pi) ) * P_beta / scal;
+    model_Pturn(ii) = sum(p_thr_beta(pos));
+    exp_Pturn(ii) = sum(n(pos));
+
+end
+
+% figure
 % bar([exp_Pturn; model_Pturn]')
 learn_bar_plot([exp_Pturn; model_Pturn], 'turn/s')
 
@@ -160,13 +248,27 @@ dc_dth = (filt_ddc + filt_dth + b_mle(ii)*0);
 Pturns = (A_mle(ii)-C_mle(ii))./ (1 + exp( -(dc_dth) )) + C_mle(ii);
 P_beta = nansum(Pturns) / (length(Pturns)-sum(isnan(Pturns)));
 % dth histogram
-hh = histogram(yy_train, 100, 'Normalization', 'probability', 'EdgeColor', 'none', 'FaceAlpha', 0.7); hold on
+hh = histogram(yy_train, nbins, 'Normalization', 'probability', 'EdgeColor', 'none', 'FaceAlpha', 0.7); hold on
 bb = hh.BinEdges(1:end-1)*pi/180;
 scal = sum(1/(2*pi*besseli(0,K1_mle(ii)^1)) * exp(K1_mle(ii)^1*cos( bb )) * (1-P_beta)  + ... 
        ( 1/(2*pi*besseli(0,K2_mle(ii)^1)) * exp(K2_mle(ii)^1*cos( bb-pi ))*(gamm) + (1-gamm)/(2*pi) ) *P_beta );
 plot( bb*180/pi, 1/(2*pi*besseli(0,K1_mle(ii)^1)) * exp(K1_mle(ii)^1*cos( bb )) * (1-P_beta)*1/scal, 'b'); hold on
 plot( bb*180/pi, ( 1/(2*pi*besseli(0,K2_mle(ii)^1)) * exp(K2_mle(ii)^1*cos( bb-pi ))*(gamm) + (1-gamm)/(2*pi) ) *P_beta*1/scal,'r');
 
+%% direct concentration analysis
+numBins = 30;
+cols = ['b', 'k', 'r'];
+figure
+for ii = 1:3
+    %%% load data
+    load(datas{ii});
+    dcs = zeros(1,length(Data));
+    for jj = 1:length(Data)
+        dcs(jj) = Data(jj).dc(end) - Data(jj).dc(1);
+    end
+%     [xx_train, yy_train, mask_train] = data2xy(Data(1:444));
+    hh = histogram(dcs, numBins, 'Normalization', 'probability', 'EdgeColor', 'none', 'FaceAlpha', 0.5); hold on
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% plot function

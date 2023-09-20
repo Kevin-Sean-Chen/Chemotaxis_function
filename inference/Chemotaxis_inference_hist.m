@@ -19,6 +19,11 @@ M = fliplr(flipud(M));  %flipped camera
 H = fspecial('average',700);
 M = imfilter(M, H, 'replicate');
 
+Cmap = load('/projects/LEIFER/Kevin/Data_odor_flow_equ/Landscape_low_0623.mat')
+Cmap = load('/projects/LEIFER/Kevin/Data_odor_flow_equ/Landscape_low_0623_2.mat')
+M = Cmap.vq1;
+M = fliplr(flipud(M));  %flipped camera
+
 %batch analysis
 fields_to_load = {'Path','Time','Runs','Pirouettes','SmoothX','SmoothY'};%,'Behaviors'};
 folder_names = getfoldersGUI();
@@ -53,8 +58,12 @@ for c = 1:length(Tracks) %length(Paths)
 %     temp = Paths{c};  %for loading deleted tracks
     temp = Tracks(c);%.Path;  %for loading saved tracks
     temp1 = zeros(round(size(temp.Path,1)/1),2);
+    
     temp1(:,1) = smooth(temp.SmoothX, filt,'sgolay',poly_degree); %smooth(temp(1:round(length(temp)/1),1), filt,'sgolay',poly_degree);
     temp1(:,2) = smooth(temp.SmoothY, filt,'sgolay',poly_degree); %smooth(temp(1:round(length(temp)/1),2), filt,'sgolay',poly_degree);
+%     temp1(:,1) = smooth(temp.Path(:,1)', filt,'sgolay',poly_degree); %smooth(temp(1:round(length(temp)/1),1), filt,'sgolay',poly_degree);
+%     temp1(:,2) = smooth(temp.Path(:,2)', filt,'sgolay',poly_degree); 
+    
     subs = temp1(1:bin:end,:);
     vecs = diff(subs);
     vecs = [vecs; vecs(end,:)];   % compensating for the size change/time shift after taking difference 
@@ -95,7 +104,8 @@ for c = 1:length(Tracks) %length(Paths)
 %         dCs(dd) = (log(M(floor(subs(dd-l_window,2)), floor(subs(dd-l_window,1)))) - log(M(floor(subs(dd,2)), floor(subs(dd,1)))))*fr2sec;
         
         %%% check displacement
-        dds(dd) = norm(subs(dd,1)-subs(dd-l_window,1), subs(dd,2)-subs(dd-l_window,2));
+        dds(dd) = norm([subs(dd,1)-subs(dd-l_window,1), subs(dd,2)-subs(dd-l_window,2)]);
+%         dds(dd) = sqrt((subs(dd,1)-subs(dd-l_window,1))^2*(6/6)^2 + (subs(dd,2)-subs(dd-l_window,2))^2 );   %%% testing for x-y scale factor!!!
         %norm(vecs(dd,:));
         
         %%% record location in 2D\
@@ -137,7 +147,7 @@ alltrials(pos) = [];
 allxys(:,pos) = [];
 
 %%  test with mask
-pos = find(alldis<0. | alldis>15);  % remove too small/large displacements
+pos = find(alldis<0. | alldis>7);  % remove too small/large displacements
 alltrials(pos) = NaN;
 
 %%

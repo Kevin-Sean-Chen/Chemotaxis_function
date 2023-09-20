@@ -89,11 +89,11 @@ title('von Mises for \delta C^{\perp}')
 
 %% evaluate decision function
 figure
-xx = linspace(-5,5,50);
-kn = norm(K_dc);
-kn_ = norm(K_dc_rec);
-plot(xx, A./(1+exp(-kn*xx))); hold on
-plot(xx, A_./(1+exp(-kn_*xx)));
+filt_ddc = conv_kernel(dC, fliplr(K_dc_rec));
+filt_dth = conv_kernel(abs(dth), fliplr(K_h_rec));
+dc_dth = filt_ddc + filt_dth;
+Pturns = NL(dc_dth,A_);
+plot(P)
 
 %% functions
 %%% nonlinear function

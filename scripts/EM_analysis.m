@@ -2,8 +2,10 @@
 
 % testing
 
-wind_test = [100000:200000];%500000:length(allas)];%max(wind):length(allas);
+wind_test = [1:100000];%500000:length(allas)];%max(wind):length(allas);
 offset = min(wind_test)-1;
+% yy = [allas(wind_test);
+%       alldis(wind_test)];
 yy = allas(wind_test);
 xx = [alldC(wind_test); 
       alldcp(wind_test)];
@@ -14,7 +16,7 @@ mask(isnan(alltrials(wind_test))) = false;%
 
 %% emission analysis
 %%% load state condition
-stateK = 1;
+stateK = 2;
 x = squeeze(mmhat.wts(:,:,stateK));
 [aa,bb] = max( gams_ ,[], 1 );
 pos = find(bb==stateK)+offset;
@@ -58,7 +60,7 @@ pix2mm = 1/31.5;
 CM = ['k','w','y'];%jet(stateK);  % See the help for COLORMAP to see other choices.
 figure;
 imagesc(M,'XData',[0 size(M,2)*pix2mm],'YData',[0 size(M,1)*pix2mm]); hold on
-for kk = 1:nStates %nStates:-1:1 %
+for kk = nStates:-1:1 %1:nStates %
     pos = find(bb==kk)+offset;
 %     plot(allxys(1,pos)*pix2mm, allxys(2,pos)*pix2mm,'.')%,'color',CM(kk))
     plot(allxys(1,pos)*pix2mm, allxys(2,pos)*pix2mm,'.','color',CM(kk))
@@ -99,12 +101,14 @@ set(gca,'Fontsize',20); set(gcf,'color','w');
 %% example
 wind_ex = offset+(800:1200);  % 800:1200
 figure;
-subplot(211)
+subplot(311)
 yyaxis left 
 plot([1:length(wind_ex)]*5/14, allas(wind_ex)); ylabel('d\theta')
 yyaxis right
 plot([1:length(wind_ex)]*5/14, alldC(wind_ex)); ylabel('ppm');set(gca,'Fontsize',20);
-subplot(212)
+subplot(312)
+plot([1:length(wind_ex)]*5/14, alldis(wind_ex)); ylabel('dis')
+subplot(313)
 % plot([1:length(wind)]*5/14, reshape(smooth(gams(:,wind),10),2,length(wind)))
 plot([1:length(wind_ex)]*5/14, gams_(:,wind_ex-offset))
 ylim([-0.05,1.05])

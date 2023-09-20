@@ -43,9 +43,9 @@ for c = 1:length(Tracks)
     
     %%% computing turns (weathervaning)
     if isempty(prs)==0
-    for tt = 1:size(prs,1)
-        c_i = max((prs(tt,1)-dC_window), 1);  %initiation time 
-        c_f = min((prs(tt,2)+dC_window), length(paths));  %exiting time
+    for tt = 1:size(prs,2)-1 %size(prs,1) %
+        c_i = max((prs(tt,1)-1*dC_window), 1);  %initiation time 
+        c_f = min((prs(tt,2)+1*dC_window), length(paths));  %exiting time
 %         dC = Fcon(paths(c_i,1) , paths(c_i,2)) - Fcon(paths(c_f,1) , paths(c_f,2));  %delta C
         dC = -(M(floor(paths(c_i,2)),floor(paths(c_i,1))) - M(floor(paths(c_f,2)),floor(paths(c_f,1))));
         if dC>=0  %up gradient

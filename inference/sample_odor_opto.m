@@ -9,8 +9,8 @@ datas = {'/projects/LEIFER/Kevin/Data_odor_opto/odor_opto_learn_data/Data_opto_a
          '/projects/LEIFER/Kevin/Data_odor_opto/odor_opto_learn_data/Data_opto_ave.mat'};
      
 %% fitting loop
-rep = 3;
-samp = 200;
+rep = 20;
+samp = 100;
 cond = length(datas);  % all exp conditions
 n_params = 13;  % number of parameters in our model for now
 mle_params = zeros(rep, cond, n_params); % K x c x N
@@ -26,7 +26,7 @@ for rr = 1:rep
         LB = [1e-0, 1e-1, ones(1,nB*2)*-inf, 0,    1., 0.1];%, -inf, -180];
         UB = [200, 1., ones(1,nB*2)*inf, 0.1    50, 1.];%, inf, 180];
         prs0 = [50, 0.2, randn(1,nB*2)*1, 0.01,     5, .1];%, 0, 10];
-        prs0 = prs0 + prs0.*randn(1,length(UB))*0.1;
+        prs0 = prs0 + prs0.*randn(1,length(UB))*0.05;
         try
             [x,fval,EXITFLAG,OUTPUT,LAMBDA,GRAD,HESSIAN] = fmincon(lfun,prs0,[],[],[],[],LB,UB,[],opts);
         end
@@ -43,11 +43,11 @@ k_norms = zeros(2, rep);
 [cosBasis, tgrid, basisPeaks] = makeRaisedCosBasis(4, [0, 8], 1.3);
 
 for ii = 1:rep
-    k_norms(1,ii) = norm(squeeze(mle_params(ii,ci,3:6))'*cosBasis');  %sign(sum(m_samps(3:6,ii)))*
-    k_norms(2,ii) = norm(squeeze(mle_params(ii,ci,7:10))'*cosBasis');
+%     k_norms(1,ii) = norm(squeeze(mle_params(ii,ci,3:6))'*cosBasis');  %sign(sum(m_samps(3:6,ii)))*
+%     k_norms(2,ii) = norm(squeeze(mle_params(ii,ci,7:10))'*cosBasis');
     
-%     k_norms(1,ii) = sum(squeeze(mle_params(ii,cond,3:6)));
-%     k_norms(2,ii) = sum(squeeze(mle_params(ii,cond,7:10)));
+    k_norms(1,ii) = sum(squeeze(mle_params(ii,ci,3:4)));
+    k_norms(2,ii) = sum(squeeze(mle_params(ii,ci,7:8)));
 
 end
 
@@ -69,7 +69,7 @@ xlabel('K_{odor}'); ylabel('K_{opto}'); title(cond_title{ci})
 end
 
 %% show example
-samp_id = 1;
+samp_id = 2;
 figure
 for ci = 1:cond
     x = squeeze(mle_params(samp_id,ci,:))';

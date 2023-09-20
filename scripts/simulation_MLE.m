@@ -28,7 +28,7 @@ CIs = zeros(3, kfold);
 BWs = zeros(3,kfold, 2);
 for ci = 1:3
     for ki = 1:kfold
-        x = squeeze(median(mle(:,ci,:),1))';  %squeeze(mle(ki,ci,:))';
+        x = squeeze(median(mle(:,ci,:),1))';  %squeeze(mle(ki,ci,:))';  % 
         [tracks, CI] = param2tracks(x, specs, []);  % check if alldis is given from data
         
         [brw_index, wv_index] = track2strat(tracks, M);
@@ -58,6 +58,13 @@ ylabel('CI')
 set(gca,'xtick',[1:3],'xticklabel',names,'FontSize',20)
 set(gcf,'color','w');
 title('simulation with MLE parameters')
+
+%%
+xx = [1 2 3; 5 6 7];
+figure
+% bar(squeeze(mean(BWs,2))'*1)
+bar(xx,squeeze(mean(BWs,2))'*1); hold on
+errorbar(xx, squeeze(mean(BWs,2))', squeeze(std(BWs,[],2))'/sqrt(kfold),'o')
 
 %% visualize tracks
 figure; imagesc(M); hold on

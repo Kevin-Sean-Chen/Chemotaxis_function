@@ -10,7 +10,7 @@ addpath('C:\Users\Kevin\Desktop\Chemotaxis_function')
 %batch analysis
 fields_to_load = {'Path','Time','Runs','Pirouettes','SmoothSpeed','AngSpeed','SmoothX','SmoothY'};%,'Behaviors'};
 
-main_folder=('/projects/LEIFER/Kevin/Data_learn');
+main_folder=('/projects/LEIFER/Kevin/Data_learn/N2');
 cd(main_folder)
 
 folder_names = getfoldersGUI();
@@ -19,6 +19,7 @@ Tracks = loadtracks(folder_names,fields_to_load);
 %% odor pre-processing visualization
 Cmap = load('/projects/LEIFER/Kevin/Data_odor_flow_equ/Landscape_low.mat');
 Fcon = load('/projects/LEIFER/Kevin/Data_odor_flow_equ/OdorFx_low.mat');
+% Cmap = load('/projects/LEIFER/Kevin/Data_odor_flow_equ/Landscape_low_0623_2.mat');
 
 Fcon = Fcon.F;
 M = Cmap.vq1;
@@ -92,8 +93,8 @@ set(gca,'Fontsize',20); set(gcf,'color','w');
 
 %% loading example tracks
 load('/projects/LEIFER/Kevin/Data_learn/N2/data_analysis/exp_track_app.mat')
-load('/projects/LEIFER/Kevin/Data_learn/N2/data_analysis/exp_track_nai.mat')
-load('/projects/LEIFER/Kevin/Data_learn/N2/data_analysis/exp_track_ave.mat')
+% load('/projects/LEIFER/Kevin/Data_learn/N2/data_analysis/exp_track_nai.mat')
+% load('/projects/LEIFER/Kevin/Data_learn/N2/data_analysis/exp_track_ave.mat')
 figure()
 ax1 = axes;
 imagesc(ax1,M,'XData',[0 size(M,2)*pix2mm],'YData',[0 size(M,1)*pix2mm]);
@@ -121,7 +122,8 @@ colormap(ax1)
 %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% example time series, after running Data structure
-id = 5;
+% load with APP condition and run the inference_pop code to get Data structue
+id = 6;
 wind = [650:1780];
 
 n = length(wind);
@@ -134,11 +136,29 @@ end
 time_x = [1:n]*5/14;
 
 figure;
-imagesc(M,'XData',[0 size(M,2)*pix2mm],'YData',[0 size(M,1)*pix2mm]); hold on
-p = plot(Data(id).xy(1,wind)*pix2mm, Data(id).xy(2,wind)*pix2mm, 'LineWidth',2)
-set(p.Edge, 'ColorBinding','interpolated', 'ColorData',ccd)
-plot(Data(id).xy(1,wind(1))*pix2mm, Data(id).xy(2,wind(1))*pix2mm, 'g.','MarkerSize',15)
-plot(Data(id).xy(1,wind(end))*pix2mm, Data(id).xy(2,wind(end))*pix2mm, 'r.','MarkerSize',15)
+% imagesc(M,'XData',[0 size(M,2)*pix2mm],'YData',[0 size(M,1)*pix2mm]); hold on
+ax1 = axes;
+imagesc(ax1,M,'XData',[0 size(M,2)*pix2mm],'YData',[0 size(M,1)*pix2mm]);
+colormap()
+hold on
+ax2 = axes; 
+xx = Data(id).xy(1,wind);
+yy = Data(id).xy(2,wind);
+ll = length(xx);
+gg = linspace(0,1,ll);
+patch(ax2, [xx nan]*pix2mm,[yy nan]*pix2mm,[gg nan],[gg nan], 'edgecolor', 'interp','LineWidth', 5); hold on
+    
+% p = plot(Data(id).xy(1,wind)*pix2mm, Data(id).xy(2,wind)*pix2mm, 'LineWidth',2)
+% set(p.Edge, 'ColorBinding','interpolated', 'ColorData',ccd)
+plot(ax2,Data(id).xy(1,wind(1))*pix2mm, Data(id).xy(2,wind(1))*pix2mm, 'g.','MarkerSize',40)
+plot(ax2,Data(id).xy(1,wind(end))*pix2mm, Data(id).xy(2,wind(end))*pix2mm, 'r.','MarkerSize',40)
+set(gca, 'YDir','reverse')
+ax2.Visible = 'off';
+ax2.XTick = [];
+ax2.YTick = [];
+c = gray;
+colormap(ax2,c)
+colormap(ax1)
 
 figure;
 subplot(311)
@@ -152,7 +172,7 @@ ylabel('dC')
 subplot(313)
 p = plot(time_x,Data(id).dth(wind), 'LineWidth',2)
 hold on
-plot(time_x(turn_pos), ones(1,length(turn_pos))*-200,'k*')
+% plot(time_x(turn_pos), ones(1,length(turn_pos))*-200,'k*')
 % set(p.Edge, 'ColorBinding','interpolated', 'ColorData',ccd)
 ylabel('d\theta')
 
@@ -172,3 +192,14 @@ Pturns = (A_-C_) ./ (1 + exp( -(dc_dth + base_dc))) + C_;
 figure;
 plot(Pturns)
 turn_pos = find(Pturns>0.5);
+
+%% schematic functions
+xx = -10:0.1:10;
+Px = (0.23-0.01)./(1+exp((xx))) + 0.01;
+figure;
+subplot(131)
+plot(xx,Px*5/14); set(gca,'FontSize',20); set(gcf,'color','w');
+subplot(132)
+plot(xx,xx); set(gca,'FontSize',20); set(gcf,'color','w');
+subplot(133)
+imagesc(rand(2,2));colormap(gray)

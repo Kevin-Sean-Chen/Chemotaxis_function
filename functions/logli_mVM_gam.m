@@ -1,6 +1,6 @@
-function [logli] = logli_mVM(mm, xx, yy, mask)
+function [logli] = logli_mVM_gam(mm, xx, yy, mask)
 
-% Compute log-likelihood term under a mixture of von Mesis model
+% Compute log-likelihood term under a mixture of von Mesis angle + gamma speed model
 %
 % Inputs
 % ------
@@ -9,7 +9,7 @@ function [logli] = logli_mVM(mm, xx, yy, mask)
 %      .basis [len(alpha) len(kernel)] - basis functions used for the kernel
 %      .lambda -scalar for regularization of the logistic fit
 %    xx [2 T] - inputs (time series of dc,dcp, and dth)
-%    yy [1 T] - outputs (dth angles)
+%    yy [2 T] - outputs (dth angles and dis speed displacement)
 %
 % Output
 % ------
@@ -19,7 +19,8 @@ function [logli] = logli_mVM(mm, xx, yy, mask)
     THETA = mm.wts;
     Basis = mm.basis;
     lambda = mm.lambda;
-    dth = yy;
+    dth = yy(1,:);
+    dv = yy(2,:);
     dc = xx(1,:);
     dcp = xx(2,:);
     
@@ -36,6 +37,12 @@ function [logli] = logli_mVM(mm, xx, yy, mask)
         tau_h = THETA(1,9,k);         % time scale for dth history kernel
         kappa_turn = THETA(1,10,k)^0.5;   % vairance of the sharp turn von Mises
         gamma = THETA(1,11,k);        % weight for uniform angle in the turn
+        A_ = THETA(1,12,k);           % max turning probability
+        B_ = THETA(1,13,k);           % baseline turning probability
+        gamm_shape = THETA(1,14,k);       % shape parameter for speed distribution
+        gamm_scale = THETA(1,15,k);       % scale parameter for speed distribution
+        base_dc = THETA(1,16,k);      % bias of turning
+        base_dcp = THETA(1,17,k);     % bias of curving
 
         %%% turning decision
         %[cosBasis, tgrid, basisPeaks] = makeRaisedCosBasis(5, [0, 10], 1.5);
@@ -45,21 +52,30 @@ function [logli] = logli_mVM(mm, xx, yy, mask)
         K_h = Amp_h * exp(-h_win/tau_h);  % dth kernel (make longer~)
         filt_dth = conv_kernel(abs(dth(1:end-1)), K_h);
         filt_dc = conv_kernel(dc(2:end), K_dc);
-        P = 1 ./ (1 + exp( -(filt_dc + filt_dth + 0))) +0;  %sigmoid(A_,B_,dc); 
-
+        P = (A_-B_) ./ (1 + exp( -(filt_dc + filt_dth + base_dc))) +B_;  %sigmoid(A_,B_,dc); 
+%         P = P*14/5;
+        
         %%% weathervaning part
         d2r = pi/180;
         C = 1/(2*pi*besseli(0,kappa_wv^2));  % normalize for von Mises
         K_dcp = Amp_dcp * exp(-K_win/tau_dcp);    % dcp kernel
         filt_dcp = conv_kernel(dcp(2:end), K_dcp);
-        VM = C * exp(kappa_wv^2*cos(wrapTo180( dth(2:end) - filt_dcp )*d2r));  %von Mises distribution
-
+        VM = C * exp(kappa_wv^2*cos(wrapTo180( dth(2:end) - filt_dcp - base_dcp)*d2r));  %von Mises distribution
+%         VM = C * exp(kappa_wv^2*cos(( dth(2:end) - filt_dcp - base_dcp)*d2r)); 
+        
         %%% turning analge model
         VM_turn = 1/(2*pi*besseli(0,kappa_turn^2)) * exp(kappa_turn^2*cos((dth(2:end)*d2r - pi)));  %test for non-uniform turns (sharp turns)
         VM_turn = (1-gamma)*1/(2*pi) + gamma*VM_turn;
 
         %%% marginal probability
         marginalP = (1-P).*VM + VM_turn.*P;
-        logli(2:end,k) = ( mask(2:end).* ( log(marginalP + 1*1e-10) ) ) + lambda(k)/lt*(1*sum((K_dc - 0).^2));% + 0.1*sum((E_ - 0).^2) + 0*C_^2);  % adding slope l2 regularization
+        pos = (~isinf(log(dv)));
+        ll_gamm = (gamm_shape-1)*log(dv.*pos) - dv/gamm_scale - gamm_shape*log(gamm_scale) - gammaln(gamm_shape);
+        if K>1
+            logli(2:end,k) = ( mask(2:end).* ( log(marginalP + 1*1e-10) ) ) + lambda(k)*(1*sum((K_dc - 0).^2))/lt  + mask(2:end).*ll_gamm(2:end);
+        elseif K==1
+            logli(2:end) = (( mask(2:end).* ( log(marginalP + 1*1e-10) ) ) + lambda*(1*sum((K_dc - 0).^2))/lt  + mask(2:end).*ll_gamm(2:end))';
+        end
+        
     end
 end

@@ -17,11 +17,11 @@ function [NLL] = nLL_kernel_hist5(THETA, dth, dcp, dc, Basis, lambda, mask)
     tau_dcp = THETA(9);       % time scale for dcp kernel
     Amp_h = THETA(10);        % amplitude of turning history kernel
     tau_h = THETA(11);        % time scale for dth history kernel
-    kappa_turn = THETA(12)^0.5;   % vairance of the sharp turn von Mises
+    kappa_turn = 10; %THETA(12)^0.5;   % vairance of the sharp turn von Mises
 %     gamma = THETA(13);        % weight for uniform angle in the turn
     
-    base_dc = THETA(13);      % baseline for dc probability
-    base_dcp = 0;%THETA(14);     % baseline for dcp probability
+    base_dc = THETA(12);      % baseline for dc probability
+    base_dcp = THETA(13);     % baseline for dcp probability
     
     %%% turning decision
     try
@@ -49,13 +49,13 @@ function [NLL] = nLL_kernel_hist5(THETA, dth, dcp, dc, Basis, lambda, mask)
     %%% turning analge model
     VM_turn = 1/(2*pi*besseli(0,kappa_turn^2)) * exp(kappa_turn^2*cos((dth(2:end)*d2r - pi)));  %test for non-uniform turns (sharp turns)
 %     VM_turn = 1/(2*pi*besseli(0,kappa_turn^2)) * exp(kappa_turn^2*cos((dth*d2r - pi)));
-    gamma = 0.25;
+    gamma = 0.1;
     VM_turn = (1-gamma)*1/(2*pi) + gamma*VM_turn;
     
     %%% marginal probability
     marginalP = (1-P(1:end)).*VM(1:end) + VM_turn(1:end).*P(1:end);  % marginal LL, indexed to match time step delay
 %     lambda = 10;
-    NLL = -nansum( mask(2:end).* ( log(marginalP + 1*1e-20) ) ) + 1*lambda*(1*sum((K_dc - 0).^2));% + 0.1*sum((E_ - 0).^2) + 0*C_^2);  % adding slope l2 regularization
+    NLL = -nansum( mask(2:end).* ( log(marginalP + 1*1e-20) ) ) + 1*lambda*(1*sum((K_dc - 0).^2) + 1*sum((K_dcp - 0).^2) + 0*sum((K_h - 0).^2) );% + 0.1*sum((E_ - 0).^2) + 0*C_^2);  % adding slope l2 regularization
 %     NLL = -nansum( mask.* ( log(marginalP + 0*1e-10) ) ) + lambda*(1*sum((K_dc - 0).^2));%
 end
 
