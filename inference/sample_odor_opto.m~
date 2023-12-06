@@ -9,14 +9,17 @@ datas = {'/projects/LEIFER/Kevin/Data_odor_opto/odor_opto_learn_data/Data_opto_a
          '/projects/LEIFER/Kevin/Data_odor_opto/odor_opto_learn_data/Data_opto_ave.mat'};
      
 %% fitting loop
-rep = 3;
+rep = 20;
 samp = 100;
 cond = length(datas);  % all exp conditions
 n_params = 13;  % number of parameters in our model for now
+nB = 4;  % nunber of basis
 mle_params = zeros(rep, cond, n_params); % K x c x N
+samp_var_dc = zeros(cond,rep);  % storing variance of dC for normalization
 
 for rr = 1:rep
     for cc = 1:cond
+        %%% fit kernels
         load(datas{cc})
         drange = randperm(length(Data));%[1:length(Data)]; %
         Data_fit = Data(drange(1:samp));  %Data(1:100); %
@@ -26,11 +29,18 @@ for rr = 1:rep
         LB = [1e-0, 1e-1, ones(1,nB*2)*-inf, 0,    1., 0.1];%, -inf, -180];
         UB = [200, 1., ones(1,nB*2)*inf, 0.1    50, 1.];%, inf, 180];
         prs0 = [50, 0.2, randn(1,nB*2)*1, 0.01,     5, .1];%, 0, 10];
-        prs0 = prs0 + prs0.*randn(1,length(UB))*0.1;
+        prs0 = prs0 + prs0.*randn(1,length(UB))*0.01;
         try
             [x,fval,EXITFLAG,OUTPUT,LAMBDA,GRAD,HESSIAN] = fmincon(lfun,prs0,[],[],[],[],LB,UB,[],opts);
         end
         mle_params(rr,cc,:) = x;
+        
+        %%% record input variances
+        alldc = extractfield(Data_fit, 'dc');
+        alltrials = extractfield(Data_fit, 'mask');
+        trials_fit = ones(1,length(alltrials));
+        trials_fit(find(alltrials==0)) = NaN;
+        samp_var_dc(cc,rr) = nanstd(xx_fit(1,:).*trials_fit);
     end
 end
 
@@ -46,8 +56,8 @@ for ii = 1:rep
     k_norms(1,ii) = norm(squeeze(mle_params(ii,ci,3:6))'*cosBasis');  %sign(sum(m_samps(3:6,ii)))*
     k_norms(2,ii) = norm(squeeze(mle_params(ii,ci,7:10))'*cosBasis');
     
-%     k_norms(1,ii) = sum(squeeze(mle_params(ii,cond,3:6)));
-%     k_norms(2,ii) = sum(squeeze(mle_params(ii,cond,7:10)));
+%     k_norms(1,ii) = sum(squeeze(mle_params(ii,ci,3:4)));
+%     k_norms(2,ii) = sum(squeeze(mle_params(ii,ci,7:8)));
 
 end
 
@@ -69,7 +79,7 @@ xlabel('K_{odor}'); ylabel('K_{opto}'); title(cond_title{ci})
 end
 
 %% show example
-samp_id = 2;
+samp_id = 3;
 figure
 for ci = 1:cond
     x = squeeze(mle_params(samp_id,ci,:))';
@@ -77,12 +87,18 @@ for ci = 1:cond
     B_opto = x(7:10);
     tt = [1:length(cosBasis)]*5/14;
     subplot(1,3,ci)
-    yyaxis left;
-    plot(tt, B_dc * cosBasis')
+    yyaxis left; 
+    plot(tt, B_dc * cosBasis'); ylimr = get(gca,'Ylim');ratio = ylimr(1)/ylimr(2);
     ylabel('K_{dc}');
     yyaxis right;
-    plot(tt, B_opto * cosBasis')
-    ylabel('K_{opto}');
+    plot(tt, B_opto * cosBasis'); yliml = get(gca,'Ylim');
+    ylabel('K_{opto}'); 
+    if yliml(2)*ratio<yliml(1)
+        set(gca,'Ylim',[yliml(2)*ratio yliml(2)])
+    else
+        set(gca,'Ylim',[yliml(1) yliml(1)/ratio])
+    end
+
     xlabel('time (s)');
     set(gca,'FontSize',20); set(gcf,'color','w'); title(cond_title{ci})
 end

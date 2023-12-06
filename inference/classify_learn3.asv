@@ -6,16 +6,18 @@
 % load data files
 datas = {'/projects/LEIFER/Kevin/Data_learn/N2/data_analysis/Data_app_test2.mat',...
          '/projects/LEIFER/Kevin/Data_learn/N2/data_analysis/Data_nai_test2.mat',...
-         '/projects/LEIFER/Kevin/Data_learn/N2/data_analysis/Data_ave_test2.mat'};
+         '/projects/LEIFER/Kevin/Data_learn/N2/data_analysis/Data_ave_test2.mat'};  %4;2
      
 %% loop through K-folds, conditions, and scaling
-rep = 3;  % repetition per fold to make sure that it is the better fit
+rep = 5;  % repetition per fold to make sure that it is the better fit
 K = 7;  % K-fold cross-validation
 cond = length(datas);  % all exp conditions
 n_params = 13;  % number of parameters in our model for now
 mle_params = zeros(K, cond, n_params); % K x c x N
 null_params = zeros(K, cond, n_params);  % K x c x N, for random walk null model
 bin_params = zeros(K, cond, 1);  % K x c x 1, for binomial distribution (chemotaxis index)
+kc_control_params = zeros(K, cond, n_params);  % control anaylsis ablating kernels
+kcp_control_params = zeros(K, cond, n_params);
 Mdls = cell(1,K);  % models for naive bayes for dC clustering
 
 %% %%%%%%%  TRAINING  %%%%%%% 
@@ -61,6 +63,9 @@ for ci = 1:cond  % C conditions
         null_params(ki,ci, :) = null_mle;
         [p_mle, p_fval] = MLE_binomial(Data_train);  % binomial chemotaxis MEL
         bin_params(ki,ci,1) = p_mle;
+        
+        kc_control_params(ki,ci,:) = MLE_wo_Kc(Data_train);
+        kcp_control_params(ki,ci,:) = MLE_wo_Kcp(Data_train);
     
     end
 end
@@ -86,11 +91,18 @@ for ki = 1:K
     Mdls{ki} = fitcnb(mss,labels,'ClassNames',{'app','nai','ave'});
 end
 
+%% debugging info rate
+% -pop_nLL(x_MLE, Data_train) 
+% -pop_nLL_randwalk(x_null, Data_train) 
+% % -pop_nLL_rand2(x_null,Data_train)
+% -pop_nLL_kc(x_wo_Kc, Data_train)
+% -pop_nLL_kcp(x_wo_Kcp, Data_train)
+
 %% %%%%%%%  TESTING  %%%%%%% 
 %%% testing with MLEs
 scal = 9;  % data length portions
-min_scal = 0.3;  % 0-1, for rescaling test data
-rep_samp = 10;  % repeat sub-sampling for better average performance
+min_scal = 0.35; %.35  % 0-1, for rescaling test data
+rep_samp = 10;  %10% repeat sub-sampling for better average performance
 cv_class = zeros(K, cond, scal, rep_samp); % K x c x T x s
 data_len = zeros(K, cond, scal, rep_samp); % K x c x T x s
 bin_class = zeros(K, cond, scal, rep_samp); % K x c x T x s
@@ -123,14 +135,26 @@ for ci = 1:cond  % C conditions
 %         x_null = [x_MLE(1),mean([x_MLE(2),x_MLE(7)]),zeros(1,4),mean([x_MLE(2),x_MLE(7)]),zeros(1,4), x_MLE(12:13)];
 %         pturn = length(find(abs(yy_test)>100))/length(yy_test);
 %         x_null = [x_MLE(1), pturn, zeros(1,4), pturn, zeros(1,4), x_MLE(12:13)];
-        info_norm_factor = (sum(mask_test)*(5/14)) / log(2);
+        info_norm_factor = (sum(mask_test)*(5/14)) * log(2);
+        
         x_null = squeeze(null_params(ki, ci, :))';  % individually fitted null model parameters
-        x_wo_K = [x_MLE(1:2), zeros(1,4), x_MLE(7), zeros(1,4), x_MLE(12:13)];
+%         x_null = [x_MLE(1:2), zeros(1,4), x_MLE(7), zeros(1,4), x_MLE(12:13)];
         testLL(ki,ci,1) = -(pop_nLL(x_MLE, Data_test) - pop_nLL_randwalk(x_null, Data_test) ) / info_norm_factor;  % full model - randomwalk
-        x_wo_Kc = [x_MLE(1:2), zeros(1,4), x_MLE(7:13)];
-        testLL(ki,ci,2) = -(pop_nLL(x_wo_Kc, Data_test) - pop_nLL_randwalk(x_null, Data_test) ) / info_norm_factor;   % model w/o Kc - random
-        x_wo_Kcp = [x_MLE(1:7),zeros(1,2), x_MLE(10:13)];
-        testLL(ki,ci,3) = -(pop_nLL(x_wo_Kcp, Data_test) - pop_nLL_randwalk(x_null, Data_test) ) / info_norm_factor;  % model w/o Kcp - random
+%         testLL(ki,ci,1) = -(pop_nLL(x_MLE, Data_test) - pop_nLL(x_null, Data_test) ) / info_norm_factor;
+        
+        x_wo_Kc = [x_wo_Kc(1:2), zeros(1,4), x_wo_Kc(7:13)];
+%         x_wo_Kc = squeeze(kc_control_params(ki, ci, :))';
+%         testLL(ki,ci,2) = -(pop_nLL(x_wo_Kc, Data_test) - pop_nLL_randwalk(x_null, Data_test) ) / info_norm_factor;   % model w/o Kc - random
+        testLL(ki,ci,2) = -(pop_nLL(x_MLE, Data_test) - pop_nLL(x_wo_Kc, Data_test) ) / info_norm_factor; % zero-out kernels
+%         testLL(ki,ci,2) = -(pop_nLL(x_MLE, Data_test) - pop_nLL_kc(x_wo_Kc, Data_test) ) / info_norm_factor; % compare to without kernel
+%         testLL(ki,ci,2) = -(pop_nLL_kc(x_wo_Kc, Data_test) - pop_nLL_randwalk(x_null, Data_test) ) / info_norm_factor; 
+        
+        x_wo_Kcp = [x_wo_Kcp(1:7),zeros(1,2), x_wo_Kcp(10:13)];
+%         x_wo_Kcp = squeeze(kcp_control_params(ki, ci, :))';
+%         testLL(ki,ci,3) = -(pop_nLL(x_wo_Kcp, Data_test) - pop_nLL_randwalk(x_null, Data_test) ) / info_norm_factor;  % model w/o Kcp - random
+        testLL(ki,ci,3) = -(pop_nLL(x_MLE, Data_test) - pop_nLL(x_wo_Kcp, Data_test) ) / info_norm_factor;
+%         testLL(ki,ci,3) = -(pop_nLL(x_MLE, Data_test) - pop_nLL_kcp(x_wo_Kcp, Data_test) ) / info_norm_factor;
+%         testLL(ki,ci,3) = -(pop_nLL_kcp(x_wo_Kcp, Data_test) - pop_nLL_randwalk(x_null, Data_test) ) / info_norm_factor; 
         
         % testing scaled with time and bootstrap
         for ri = 1:rep_samp
@@ -199,9 +223,10 @@ figure;
 
 rtime = squeeze(mean(mean(mean(data_len,1),2),4))*5/14/60/60;
 figure;
-plot(rtime, mean(cv_perf,3),'-o')
-hold on
+% plot(rtime, mean(cv_perf,3),'-o')
+% hold on
 plot(rtime, mean(mean(cv_perf,3)),'k-o')
+hold on
 errorbar(rtime, mean(mean(cv_perf,3)), std(mean(cv_perf,3))/sqrt(K), '.k')
 
 plot(rtime, mean(mean(cv_perf_bin,3)),'g--')
@@ -210,20 +235,32 @@ errorbar(rtime, mean(mean(cv_perf_bin,3)), std(mean(cv_perf_bin,3))./sqrt(K.*sca
 plot(rtime, mean((cv_nbc),2),'r--')
 errorbar(rtime, mean((cv_nbc),2), std((cv_nbc),0,2)'./sqrt(K.*scal_vec), '.r')
 
-plot(rtime, mean(mean(cv_perf_null,3)),'k-*')
-errorbar(rtime, mean(mean(cv_perf_null,3)), std(mean(cv_perf_null,3))./sqrt(K.*scal_vec), '*k')
+plot(rtime, mean(mean(cv_perf_null,3)),'b-*')
+errorbar(rtime, mean(mean(cv_perf_null,3)), std(mean(cv_perf_null,3))./sqrt(K.*scal_vec), '*b')
 
 xlabel('mean data length (hr)')
 ylabel('cross-validation (ratio)')
-legend({'appetitive','naive','aversive','mean prediction', 'binomial prediction', '\Delta C', 'behavior'})
+% legend({'appetitive','naive','aversive','mean prediction', 'binomial prediction', '\Delta C', 'behavior'})
+legend({'mean prediction','','binomial prediction', '','\Delta C', '','behavior',''})
 set(gcf,'color','w'); set(gca,'Fontsize',20);
 
+figure
+for ii = 1:3
+    temp_cv = squeeze(cv_perf(ii,:,:));
+    plot(rtime, mean(temp_cv,2),'-o')
+    hold on
+    errorbar(rtime, mean(temp_cv,2), std(temp_cv,[],2)/sqrt(K), '.k')
+end
+legend({'appetitive','','naive','','aversive',''})
+xlabel('mean data length (hr)')
+ylabel('cross-validation (ratio)')
+set(gcf,'color','w'); set(gca,'Fontsize',20);
 
 %% some post analysis for variability!
 ttl = {'appetitive','naive','aversive'};
-tt = [1:length(cosBasis)]*5/14;
 figure
 [cosBasis, tgrid, basisPeaks] = makeRaisedCosBasis(4, [0, 8], 1.3);
+tt = [1:length(cosBasis)]*5/14;
 for cc = 1:3
     subplot(1,3,cc);
 for ii = 1:K
@@ -251,7 +288,7 @@ tils = {'full','K_c','K_{c^\perp}'};
 for nn = 1:3
     subplot(1,3,nn)
     temp_m = squeeze(mean(testLL(:,:,nn),1));
-    temp_s = squeeze(std(testLL(:,:,nn),0,1))/sqrt(7);
+    temp_s = squeeze(std(testLL(:,:,nn),0,1))/sqrt(K);
     for cc = 1:3
         bar(cc, temp_m(cc), 'FaceColor',col{cc})
         hold on
@@ -352,6 +389,86 @@ function [x_MLE, fval] = MLE_binomial(Data_train)
     [x,fval,EXITFLAG,OUTPUT,LAMBDA,GRAD,HESSIAN] = fmincon(lfun,prs0,[],[],[],[],LB,UB,[],opts);
     x_MLE = x;
 end
+
+function [x_MLE] = MLE_wo_Kc(Data_train);
+    [xx_train, yy_train, mask_train] = data2xy(Data_train);
+    nB = 4;
+    [cosBasis, tgrid, basisPeaks] = makeRaisedCosBasis(nB, [0, 8], 1.3);
+    ang_fit = yy_train;
+    dcp_fit = xx_train(2,:);
+    ddc_fit = xx_train(1,:);
+    trials_fit = mask_train;
+    lfun = @(x)nLL_wo_kc(x, ang_fit, dcp_fit, ddc_fit, cosBasis, .1, trials_fit);
+    opts = optimset('display','iter');
+    LB = [1e-0, 0, ones(1,nB)*-inf, 0.0 -inf, 1e-0, -inf, 1e-1, 1e-0*10, 0.2];
+    UB = [200, 1., ones(1,nB)*inf, 0.1, inf, 50, inf, 100, 50, 1];
+    prs0 = [50, 0.1, randn(1,nB)*10, 0.01, -10, 25, 10, 25, 5, 1.];
+    prs0 = prs0 + prs0.*randn(1,length(UB))*0.1;
+    [x,fval,EXITFLAG,OUTPUT,LAMBDA,GRAD,HESSIAN] = fmincon(lfun,prs0,[],[],[],[],LB,UB,[],opts);
+    x_MLE = x;
+end
+
+function [x_MLE] = MLE_wo_Kcp(Data_train);
+    [xx_train, yy_train, mask_train] = data2xy(Data_train);
+    nB = 4;
+    [cosBasis, tgrid, basisPeaks] = makeRaisedCosBasis(nB, [0, 8], 1.3);
+    ang_fit = yy_train;
+    dcp_fit = xx_train(2,:);
+    ddc_fit = xx_train(1,:);
+    trials_fit = mask_train;
+    lfun = @(x)nLL_wo_kcp(x, ang_fit, dcp_fit, ddc_fit, cosBasis, .1, trials_fit);
+    opts = optimset('display','iter');
+    LB = [1e-0, 0, ones(1,nB)*-inf, 0.0 -inf, 1e-0, -inf, 1e-1, 1e-0*10, 0.2];
+    UB = [200, 1., ones(1,nB)*inf, 0.1, inf, 50, inf, 100, 50, 1];
+    prs0 = [50, 0.1, randn(1,nB)*10, 0.01, -10, 25, 10, 25, 5, 1.];
+    prs0 = prs0 + prs0.*randn(1,length(UB))*0.1;
+    [x,fval,EXITFLAG,OUTPUT,LAMBDA,GRAD,HESSIAN] = fmincon(lfun,prs0,[],[],[],[],LB,UB,[],opts);
+    x_MLE = x;
+end
+
+function [NLL] = pop_nLL_kc(THETA, D)
+    [xx_train, yy_train, mask_train] = data2xy(D);
+    nB = 4;
+    [cosBasis, tgrid, basisPeaks] = makeRaisedCosBasis(nB, [0, 8], 1.3);
+    ang_fit = yy_train;
+    dcp_fit = xx_train(2,:);
+    ddc_fit = xx_train(1,:);
+    trials_fit = mask_train;
+    NLL = nLL_wo_kc(THETA, ang_fit, dcp_fit, ddc_fit, cosBasis, .1, trials_fit);
+%     NLL = 0;
+%     ntracks = length(D);
+%     for nn = 1:ntracks
+%         NLL = NLL + nLL_wo_kc(THETA, D(nn).dth, D(nn).dcp, D(nn).dc, D(nn).Basis, D(nn).lambda, D(nn).mask);%/Z; % sum across tracks normalize by time
+%     end
+end
+
+function [NLL] = pop_nLL_kcp(THETA, D)
+    [xx_train, yy_train, mask_train] = data2xy(D);
+    nB = 4;
+    [cosBasis, tgrid, basisPeaks] = makeRaisedCosBasis(nB, [0, 8], 1.3);
+    ang_fit = yy_train;
+    dcp_fit = xx_train(2,:);
+    ddc_fit = xx_train(1,:);
+    trials_fit = mask_train;
+    NLL = nLL_wo_kcp(THETA, ang_fit, dcp_fit, ddc_fit, cosBasis, .1, trials_fit);
+%     NLL = 0;
+%     ntracks = length(D);
+%     for nn = 1:ntracks
+%         NLL = NLL + nLL_wo_kcp(THETA, D(nn).dth, D(nn).dcp, D(nn).dc, D(nn).Basis, D(nn).lambda, D(nn).mask);%/Z; % sum across tracks normalize by time
+%     end
+end
+
+function [NLL] = pop_nLL_rand2(THETA, D)
+    [xx_train, yy_train, mask_train] = data2xy(D);
+    nB = 4;
+    [cosBasis, tgrid, basisPeaks] = makeRaisedCosBasis(nB, [0, 8], 1.3);
+    ang_fit = yy_train;
+    dcp_fit = xx_train(2,:);
+    ddc_fit = xx_train(1,:);
+    trials_fit = mask_train;
+    NLL = nLL_randomwalk(THETA, ang_fit, dcp_fit, ddc_fit, cosBasis, .1, trials_fit);
+end
+
 
 function predict_lambda = argmaxLL(data, mle_params)
 %%%
