@@ -175,7 +175,7 @@ rep = 5;
 mle_params_opto = zeros(3,13, rep);
 LB = [1e-0, 1e-1, ones(1,nB*2)*-inf, 0,    1., 0.1];%, -inf, -180];
 UB = [200, 1., ones(1,nB*2)*inf, 0.1    20, 1.];%, inf, 180];
-prs0 = [50, 0.5, randn(1,nB*2)*1, 0.01,     5, .5];%, 0, 10];
+prs0 = [50, 0.5, randn(1,nB*2)*.1, 0.01,     5, .5];%, 0, 10];
     
 for c = 1:3
     load(datas{c})

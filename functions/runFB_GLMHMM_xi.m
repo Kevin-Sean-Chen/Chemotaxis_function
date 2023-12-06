@@ -81,9 +81,9 @@ end
 for jj = nT-1:-1:1
     if mask(jj+1) % Include likelihood term
         logbbpy = logbb(:,jj+1) + logpy(jj+1,:)';
-        logbb(:,jj) = log(squeeze(alpha(:,:,jj+1))*exp(logbbpy)) - logcs(jj+1);
+        logbb(:,jj) = log(squeeze(alpha(:,:,jj))*exp(logbbpy)) - logcs(jj+1);
     else  % ignore this likelihood term
-        logbb(:,jj) = log(squeeze(alpha(:,:,jj+1))*exp(logbb(:,jj+1))) - logcs(jj+1);
+        logbb(:,jj) = log(squeeze(alpha(:,:,jj))*exp(logbb(:,jj+1))) - logcs(jj+1);
     end
 end
 

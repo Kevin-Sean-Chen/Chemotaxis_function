@@ -1,4 +1,4 @@
-function mm = runMstep_mVM_gam(mm, xx, yy, gams, mask)
+function mm = runMstep_mGVM_opto(mm, xx, yy, gams, mask)
 % mm = runMstep_LinGauss(mm,xx,yy,gams)
 %
 % Run m-step updates for Gaussian observation model
@@ -8,7 +8,7 @@ function mm = runMstep_mVM_gam(mm, xx, yy, gams, mask)
 %   mm [struct] - model structure with params 
 %        .wts  [1 K] - per-state slopes
 %        .vars [1 K] - per-state variances
-%    xx [d T] - input (design matrix)
+%    xx [3 T] - input (design matrix)
 %    yy [2 T] - outputs (angle and speed)
 %  gams [K T] - log marginal sate probabilities given data
 %
@@ -27,6 +27,7 @@ dth = yy(1,:);
 dv = yy(2,:);
 dc = xx(1,:);
 dcp = xx(2,:);
+opto = xx(3,:);
 nB = size(Basis,2);
 
 % setup fmincon
@@ -36,18 +37,18 @@ nB = size(Basis,2);
 
 opts = optimset('display','final');%'iter');
 % opts.Algorithm = 'sqp';
-LB = [1e-0, ones(1,nB)*-inf, -inf, 1e-0, -inf, 1e-1, 1e-0,   0.  0   0    0   0 -10 -10];
-UB = [100,  ones(1,nB)*inf,   inf,  100,  inf, 100,   100,   1  1  0.5  100 100  10  10];
+LB = [1e-0, ones(1,nB)*-inf, -inf, 1e-0, -inf, 1e-1, 1e-0,   0.  0   0    0   0 -10 -10   ones(1,nB)*-inf];
+UB = [100,  ones(1,nB)*inf,   inf,  100,  inf, 100,   100,   1  1  0.5  100 100  10  10   ones(1,nB)*inf];
 % prs0 = rand(1,10);
-prs0 = [10, randn(1,nB)*10, 10, 25, 10, 25, 5, 1.   0.5 0  1 1 0 0] ;
+prs0 = [10, randn(1,nB)*10, 10, 25, 10, 25, 5, 1.   0.5 0  1 1 0 0   randn(1,nB)*10] ;
 % prs0 = [9.9763  -0.5343  -0.0776   0.1238  -0.0529   0.5335   7.7254  367.3817  0.1990  1.0000  0.1000]; %single mGLM
 % [x,fval] = fmincon(lfun,prs0,[],[],[],[],LB,UB,[],opts);
-ineq = zeros(17,17);
+ineq = zeros(21,21);
 ineq(:,12) = -1;  ineq(:,13)=1;
-ineq_r = zeros(1,17);
+ineq_r = zeros(1,21);
     
 for jj = 1:nStates
-    lfun = @(x)nll_mVMG(x, dth, dcp, dc, dv, gamnrm(jj,:), Basis, lambda(jj), mask);
+    lfun = @(x)nll_mVMG_(x, dth, dcp, dc, opto, dv, gamnrm(jj,:), Basis, lambda(jj), mask);
 %     prs0 = prs0 + prs0.*randn(1,length(UB))*0.5;
     prs0 = mm.wts(:,:,jj); %+ mm.wts(:,:,jj).*(2*(rand(1,length(UB))-0.5))*0.5;  %from last time!
     [x,fval,EXITFLAG,OUTPUT,LAMBDA,GRAD,HESSIAN] = fmincon(lfun,prs0,ineq,ineq_r,[],[],LB,UB,[],opts);
@@ -57,7 +58,7 @@ end
 
 end
 
-function [nll] = nll_mVMG(THETA, dth, dcp, dc, dv, gams, Basis, lambda, mask)
+function [nll] = nll_mVMG_(THETA, dth, dcp, dc, opto, dv, gams, Basis, lambda, mask)
     
     %%% Assume we parameterize in such way first
     kappa_wv = THETA(1)^0.5;      % variance of von Mises
@@ -73,16 +74,19 @@ function [nll] = nll_mVMG(THETA, dth, dcp, dc, dv, gams, Basis, lambda, mask)
     theta_gamm = THETA(14:15);    % shape and scale parameters for gamma
     base_dc = THETA(16);      % bias of turning
     base_dcp = THETA(17);     % bias of curving
+    alpha_opto = THETA(18:21);  % opto kernel
 
     %%% turning decision
     %[cosBasis, tgrid, basisPeaks] = makeRaisedCosBasis(5, [0, 10], 1.5);
     K_dc = alpha_dc * Basis';  %reconstruct with basis
+    K_opto = alpha_opto * Basis';
     K_win = 1:length(K_dc);
     h_win = 1:length(K_dc)*1;
     K_h = Amp_h * exp(-h_win/tau_h);  % dth kernel (make longer~)
     filt_dth = conv_kernel(abs(dth(1:end-1)), K_h);
     filt_dc = conv_kernel(dc(2:end), K_dc);
-    P = (A_-B_) ./ (1 + exp( -(filt_dc + filt_dth + base_dc))) + B_;  %sigmoid(A_,B_,dc); 
+    filt_opto = conv_kernel(opto(2:end), K_opto);
+    P = (A_-B_) ./ (1 + exp( -(filt_dc + filt_dth + base_dc + filt_opto))) + B_;  %sigmoid(A_,B_,dc); 
 %     P = P*14/5;
     
     %%% weathervaning part

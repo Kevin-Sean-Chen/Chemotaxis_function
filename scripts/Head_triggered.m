@@ -114,7 +114,7 @@ end
 %% %%%%%%%%%%%%%%%%%%%%%%%% path-triggered analysis
 %% visualize paths
 smooth_n = 10;
-for w = 1:100%length(Tracks)
+for w = 1:length(Tracks)
 %     w = I(w);
     w = randi(length(Tracks));
     temp = Tracks(w).Path;
@@ -162,7 +162,7 @@ thr = 30;  %quite arbitrary for sudden head angle change (30 or 50 (typical head
 win = 150;
 trigs = [];  %triggering stimuli
 pathdyn = [];  %looking at the head dynamics
-for w = 1:5000%%%nn
+for w = 1:length(Tracks)%5000%%%nn
     w = I(w);  %starting with smoother paths
     stim = Tracks(w).LEDPower;
     
@@ -187,6 +187,18 @@ for w = 1:5000%%%nn
     end
     
 end
+
+%% plotting track-triggered average
+trigs = trigs_ave;  %%%
+time_v = [-win:win]*1/14;
+mean_opto = mean(trigs,1);
+std_opto = std(trigs) / sqrt(size(trigs,1));
+figure;
+plot(time_v, mean_opto, 'k', 'LineWidth',3)
+hold on
+xArea = [time_v, fliplr(time_v)];
+yArea = [mean_opto + std_opto, fliplr(mean_opto - std_opto)];
+fill(xArea, yArea, 'k', 'FaceAlpha', 0.3, 'EdgeColor', 'none');
 
 %% %%%%%%%%%%%%%%%%%%%%%%%% Angular speed triggered analysis
 %%%using Angspeed variable from Mochi's behavioral analysis code

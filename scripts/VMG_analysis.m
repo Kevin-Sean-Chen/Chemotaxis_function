@@ -56,14 +56,14 @@ title('P(\beta=1)')%('Logistic for \delta C')
 set(gcf,'color','w'); set(gca,'Fontsize',20);
 
 %% transitional kernels
-tt = [0:size(cosBasis,1)-1]*5/14;
-figure
-alpha_tran_ = squeeze(mmhat.wts_state(1,2,:));
-K_trans_ = alpha_tran_' * cosBasis';
-plot(tt,(K_trans_)); hold on
-alpha_tran_ = squeeze(mmhat.wts_state(2,1,:));
-K_trans_ = alpha_tran_' * cosBasis';
-plot(tt,(K_trans_)); 
+% tt = [0:size(cosBasis,1)-1]*5/14;
+% figure
+% alpha_tran_ = squeeze(mmhat.wts_state(1,2,:));
+% K_trans_ = alpha_tran_' * cosBasis';
+% plot(tt,(K_trans_)); hold on
+% alpha_tran_ = squeeze(mmhat.wts_state(2,1,:));
+% K_trans_ = alpha_tran_' * cosBasis';
+% plot(tt,(K_trans_)); 
 
 %% spatial analysis
 pix2mm = 1/31.5;

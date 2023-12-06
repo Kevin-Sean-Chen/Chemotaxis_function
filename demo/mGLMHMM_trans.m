@@ -48,7 +48,7 @@ K_dc2 = fliplr(alpha_dc2*cosBasis');  % dC kernel
 K_dcp2 = fliplr(alpha_dcp2*cosBasis');  % dCp kernel
 
 %%% transition kernels
-alpha_ij = randn(nStates,nStates, nB)*.1;  % state x state x weights
+alpha_ij = randn(nStates,nStates, nB)*1;  % state x state x weights
 lk = length(K_h1);
 K_ij = zeros(nStates, nStates, lk);
 for ii = 1:nStates
@@ -80,7 +80,11 @@ for tt=pad+1:lt
     Pu_ij = zeros(nStates,nStates);
     for ii = 1:nStates
         for jj = 1:nStates
-            Pu_ij(ii,jj) = exp(Pij(ii,jj) + dC(tt-pad+1:tt)*squeeze(K_ij(ii,jj,:)));  % input-driven state transitions
+            if ii ~= jj
+                Pu_ij(ii,jj) = exp(dC(tt-pad+1:tt)*squeeze(K_ij(ii,jj,:))) + (Pij(ii,jj));  % input-driven state transitions
+            else
+                Pu_ij(ii,jj) = 0 + Pij(ii,jj);
+            end
         end
     end
     Pu_ij = Pu_ij ./ (sum(Pu_ij,2)+1e-8);  % normalize row, conditional probability
@@ -150,6 +154,10 @@ mmhat = struct('A',A0,'wts',wts0,'wts_state',wts_state0,'loglifun',loglifun,'log
 % test = runMstep_GTmVM(mmhat, xx, yy, gams, mask)
 % test2 = logli_GTmVM(mmhat, xx, yy, mask)
 % -nLL_gamma([10, 2], dv, mask)
+% [logli] = logli_trans(mmhat,xx,yy,mask);
+% [logli] = logli_GTmVM(mmhat, xx, yy, mask);
+% [logp,gams, xis, xisum] = runFB_GLMHMM_xi(mmhat,xx,yy,mask);
+% gams
 
 %% Set up variables for EM
 maxiter = 50;
@@ -248,7 +256,7 @@ plot(alldis); hold on; plot(bb*10)
 
 %% evaluate density
 figure;
-kk = 2;
+kk = 1;
 x = squeeze(mmhat.wts(:,:,kk));
 alpha_h_ = x(1:4);       % kernel for dth angle history kernel (weights on kerenl basis)
 alpha_dc_ = x(5:8);      % kernel for dC transitional concentration difference (weights on kerenl basis)
@@ -345,9 +353,9 @@ function [logli] = logli_trans(mm,xx,yy,mask)
             if ii ~=jj
                 K_ij_dc = (squeeze(alpha_ij(ii,jj,:))'*Basis');  % reconstruct kernel
                 Kij(ii,jj,:) = K_ij_dc;
-                logli(ii,jj,:) = conv_kernel(dc, K_ij_dc) + log(Pij(ii,jj));
+                logli(ii,jj,:) = log(exp(conv_kernel([dc(2:end) 0], K_ij_dc)) + (Pij(ii,jj)));  % taking the log of numerater, apparently the time shift is important!!
             else
-                logli(ii,jj,:) = 0 + log(Pij(ii,jj));  % remove diagonal components
+                logli(ii,jj,:) = 0 + log(0+Pij(ii,jj));  % remove diagonal components, important to remove zero-kernels!
             end
         end
         logli(ii,:,:) = logli(ii,:,:) - logsumexp(logli(ii,:,:));
@@ -369,7 +377,8 @@ function mm = runMstep_trans(mm, xx, yy, xis, mask)
         Aeq(ii,lw+(ii-1)*nStates+1:lw+ii*nStates) = ones(1,nStates);  % "smart" parameterizing with the last nStates^2 being state transitions
     end
     beq = ones(nStates,1);  % this all makes the constrain: Ax = b
-    [x,fval,EXITFLAG,OUTPUT,LAMBDA,GRAD,HESSIAN] = fmincon(lfun,prs0,[],[],Aeq,beq,LB,UB,[]);
+%     [x,fval,EXITFLAG,OUTPUT,LAMBDA,GRAD,HESSIAN] = fmincon(lfun,prs0,[],[],Aeq,beq,LB,UB,[]);  % constraint needed only    if A is the probability matrix itself!
+    [x,fval,EXITFLAG,OUTPUT,LAMBDA,GRAD,HESSIAN] = fmincon(lfun,prs0,[],[],[],[],LB,UB,[]);
     mm.wts_state = reshape(x(1:end-nStates^2), nStates, nStates, []);   % update weights
     mm.A = reshape(x(end-nStates^2+1:end), nStates, nStates)';  % update baseline, note the transpose here, at flatten, and corresponding to the constaints, important!!
 end
@@ -388,15 +397,15 @@ function nll = nll_MLR(x, dc, xis, Basis, mask)
             if ii ~= jj
                 K_ij_dc = (squeeze(alpha_ij(ii,jj,:))'*Basis');  % reconstruct kernel
                 Kij(ii,jj,:) = K_ij_dc;
-                logP_(ii,jj,:) = conv_kernel(dc, K_ij_dc) + log(Pij(ii,jj));
+                logP_(ii,jj,:) = log(exp(conv_kernel([dc(2:end) 0], K_ij_dc)) + (Pij(ii,jj)));
             else
-                logP_(ii,jj,:) = 0 + log(Pij(ii,jj));
+                logP_(ii,jj,:) = 0 + log(0+Pij(ii,jj));
             end
         end
         logP_(ii,:,:) = logP_(ii,:,:) - logsumexp(logP_(ii,:,:));
     end
     
-    nll = -squeeze(sum(sum(xis(:,:,1:end) .* logP_(:,:,1:end))))'*mask(1:end)';
+    nll = -squeeze(sum(sum(xis(:,:,1:end) .* logP_(:,:,1:end))))'*mask(1:end)';  %%% currently debugging if this is mismatched!!! %%%
 end
 
 function [logli] = logli_GTmVM(mm, xx, yy, mask)

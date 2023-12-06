@@ -106,6 +106,9 @@ wts0(1,:,2) = [alpha_h2, alpha_dc2, alpha_dcp2, kappa_turn2, kappa_wv2];
 % Build struct for initial params
 mmhat = struct('A',A0,'wts',wts0,'loglifun',loglifun,'basis',cosBasis,'lambda',.0, 'Mstepfun',@runMstep_GTmVM);
 
+%% debug
+% [logli] = logli_GTmVM(mmhat, xx, yy, mask);
+
 %% Set up variables for EM
 maxiter = 50;
 EMdisplay = 2;

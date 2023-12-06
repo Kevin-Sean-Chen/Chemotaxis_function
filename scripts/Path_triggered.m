@@ -29,7 +29,8 @@ windt = 14 * (1/(bin*fr)); %time window in seconds
 acst = 4 * (1/(bin*fr));  % acausal window
 trig_angs = [];
 kk = 0;
-turn_thr = 150;  % threshold for turning
+turn_thr = 100;  % threshold for turning
+n_up = 0;  n_down = 0;  % record movement direction upon the pulse!
 
 figure
 for ii = 1:nn
@@ -53,22 +54,35 @@ for ii = 1:nn
     %%% conditioning
     if temp1(end,1)>500 && temp1(end,1)<2500 && temp1(end,2)>500 && temp1(end,2)<2000 && ...
        M(floor(temp1(1,2)), floor(temp1(1,1))) - M(floor(temp1(end,2)), floor(temp1(end,1))) < 0. % thresholding tracks
+%         M(floor(temp1(1,2)), floor(temp1(1,1))) - M(floor(temp1(end,2)), floor(temp1(end,1))) > 0. % thresholding tracks
         kk = kk+1;
     %%% LED signal
     stim = Tracks(ii).LEDVoltages;
     stim = stim(1:bin:end);
     pos = find(diff(stim)>1);% & diff(stim)>1);  %0.01 1 3 thresholding to find impulse
-%     pos = randi([1,length(stim)],1,length(pos)*1);%randi(length(stim));  %%%% important: randomized here  %%%
+    pos = randi([1,length(stim)],1,length(pos)*1);%randi(length(stim));  %%%% important: randomized here  %%%
+%     pos = find(diff(stim)<-1);
     turn_i = zeros(1,length(floor((1-acst):(1+windt))));
     if isempty(pos)~=1
         for pp = 1:length(pos)
-            if (pos+windt)<length(stim) & pos-acst>1
+            if (pos(pp)+windt)<length(stim) && pos(pp)-acst>1
                 wind = floor((pos(pp)-acst):(pos(pp)+windt));
-                temp = angs(wind);
+                tempa = angs(wind);
 %                 turn_i(find(abs(temp)>turn_thr)) = 1;
-                trig_angs = [trig_angs; temp]; %turn_i]; %
+                trig_angs = [trig_angs; tempa]; %turn_i]; %
              
 %                 plot(subs(wind,1),subs(wind,2)); hold on
+
+                %%% record turn direction upon impulse
+                if M(floor(subs(wind(1)+10,2)), floor(subs(wind(1)+10,1))) - M(floor(subs(wind(end),2)), floor(subs(wind(end),1)))<0 && ...
+                        max(abs(tempa(10:20)))>turn_thr
+                    n_up = n_up+1;
+                elseif max(abs(tempa(10:20)))>turn_thr
+                    n_down = n_down+1;
+%                 else 
+%                     break
+                end
+                %%%
             end
         end
     end
@@ -87,6 +101,9 @@ hold on
 xArea = [t_vec, fliplr(t_vec)];
 yArea = [mean_ang + std_ang, fliplr(mean_ang - std_ang)];
 fill(xArea, yArea, 'k', 'FaceAlpha', 0.3, 'EdgeColor', 'none');
+
+%%% CI upon impulse!
+(n_up-n_down)/(n_up+n_down)
 
 %% triggered plot
 figure
@@ -115,7 +132,7 @@ dang_stds = zeros(1,6);
 figure
 for ii = 1:6
     temp_trigs = all_ang_trigs{ii};
-    temp = mean(abs(temp_trigs(:,8:21)),2) - mean(abs(temp_trigs(:,1:14)),2);  % post - pre absolute average
+    temp = mean(abs(temp_trigs(:,acst:acst+14)),2) - mean(abs(temp_trigs(:,1:acst)),2);  % post - pre absolute average
     temp = temp/(fr*bin);   % per time unit
     dang_means(ii) = mean(temp);
     dang_stds(ii) = std(temp)/sqrt(length(temp));

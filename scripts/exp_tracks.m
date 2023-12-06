@@ -30,7 +30,7 @@ poly_degree = 3;  %polynomial fitting for moving window
 filt = 7;  %window the path (has to be odd because it is +/- points around the center)
 fr = 1/14;  %1/14 seconds between each frame  (~0.0714 second for each frame)
 nn = length(Tracks); %number of worms selected
-mint = 60*3;% 5 10 %minimum time in seconds
+mint = 60*5;% 5 10 %minimum time in seconds
 minx = 450;% 450 250 500;  %minimum displacement (in terms of pixels)
 endingt = 60*30;  %only taking the first few minutes
 pix2mm = 1/31.5;
@@ -71,7 +71,7 @@ set(gca,'Fontsize',20); set(gcf,'color','w');
 cand_app = [591  593  616  642  3509 3521   3645   3649   3662  3704 3849 3855  3871 4833 6763];  % 10t 500x
 cand_nai = [155  264  358   465   2389 2394 2397  2447 2482 2543   2672 2698  2708  2788 2789  2834 ];  % 5t 250x
 cand_ave = [1225 1227  1437 1494 1596 1954 2063 2102 2206 2234 2864  2918  2968 3052 3101 3119];  % 10t 450x
-cand = cand_ave;
+cand = cand_app;
 clear exp_track
 exp_track(length(cand)) = struct(); 
 figure();
@@ -123,7 +123,8 @@ colormap(ax1)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% example time series, after running Data structure
 % load with APP condition and run the inference_pop code to get Data structue
-id = 6;
+load('/projects/LEIFER/Kevin/Data_learn/N2/data_analysis/Data_exp_dcdthdxy.mat');
+id = 5;
 wind = [650:1780];
 
 n = length(wind);
@@ -145,7 +146,7 @@ ax2 = axes;
 xx = Data(id).xy(1,wind);
 yy = Data(id).xy(2,wind);
 ll = length(xx);
-gg = linspace(0,1,ll);
+gg = fliplr(linspace(0,1,ll));%linspace(0,1,ll);
 patch(ax2, [xx nan]*pix2mm,[yy nan]*pix2mm,[gg nan],[gg nan], 'edgecolor', 'interp','LineWidth', 5); hold on
     
 % p = plot(Data(id).xy(1,wind)*pix2mm, Data(id).xy(2,wind)*pix2mm, 'LineWidth',2)
@@ -179,6 +180,8 @@ ylabel('d\theta')
 
 %% convolutions and model
 % with MLE parameter vecotr x and unpack kernels, visualize turning probability
+% load('/projects/LEIFER/Kevin/Data_learn/N2/data_analysis/nai_param.mat')
+
 ddc_exp = Data(id).dcp(wind);
 ang_exp = Data(id).dth(wind);
 

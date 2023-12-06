@@ -85,7 +85,7 @@ for ii = 1:ntracks
         dCs(dd) = M(floor(subs(dd-0,2)), floor(subs(dd-0,1)));
         
         %%% check displacement
-        dds(dd) = norm(subs(dd,1)-subs(dd-l_window,1), subs(dd,2)-subs(dd-l_window,2));
+        dds(dd) = norm([subs(dd,1)-subs(dd-l_window,1), subs(dd,2)-subs(dd-l_window,2)]);
         
         %%% record location in 2D
         xys(:,dd) = subs(dd,:)';
@@ -103,7 +103,7 @@ for ii = 1:ntracks
     
 %     pos = find(dds>dis_thr); %remove sharp jumps
 %     trials(pos) = nan;
-    trials(1) = nan; trials(end) = nan;
+    trials(1:50) = nan; trials(end) = nan;
     
     % store as structure
     Data(ii).dth = angs; %angle change

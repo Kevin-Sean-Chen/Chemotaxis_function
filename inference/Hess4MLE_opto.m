@@ -1,4 +1,4 @@
-% Hess4MLE
+% Hess4MLE_opto
 % compute Hessian around the MLE fit for each Data conditions
 
 %% load Data and MLE fits
@@ -48,7 +48,7 @@ for cc = 1:3
     mlee = squeeze(nanmedian(mle_params_opto(cc,:,:),3));  %((mle_params_opto(cc,:,5))); %
     y_odor = mlee(3:6)*cosBasis';
     y_opto = mlee(7:10)*cosBasis';
-    mle_hess_odor = MLE_std_opto(cc,3:6)*4;%/sqrt(length(Data));   % odor
+    mle_hess_odor = MLE_std_opto(cc,3:6)*1;%4/sqrt(length(Data));   % odor
     mle_hess_opto = MLE_std_opto(cc,7:10)*1;  % opto
     
     standardError_odor = mle_hess_odor*cosBasis';
@@ -95,3 +95,86 @@ for cc = 1:3
     berr = MLE_std_opto(cc,param_id);%/sqrt(length(Data));
     errorbar(xx(cc),base,berr)
 end
+
+%% compare emperical and model-predictive turns
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
+load('/projects/LEIFER/Kevin/Data_odor_opto/odor_opto_learn_data/mle_param_opto2.mat');
+%% bar analysis
+fr = 1/14;  % frame rate
+bin = 7;  % filtering bins
+turn_thre = 60;  % turning threshold for emperical analysis
+acst = 4 * (1/(bin*fr)); % pre-stim
+windt = 14 * (1/(bin*fr));  % post-stim
+wind_analysis = 4*2:4*2+5*2;  % time window with impulse
+wind_baseline = 1:4*2;  % baseline comparison
+t_vec = [-acst:windt]*((bin*fr));
+Impulse = zeros(1,length(t_vec));
+Impulse(5:5+5*2) = 4.2780;  % opto strength
+load('/projects/LEIFER/Kevin/Data_odor_opto/odor_opto_learn_data/app_trigs.mat')
+load('/projects/LEIFER/Kevin/Data_odor_opto/odor_opto_learn_data/nai_trigs.mat')
+load('/projects/LEIFER/Kevin/Data_odor_opto/odor_opto_learn_data/ave_trigs.mat')
+all_ang_trigs = {[app_up_trigs; app_down_trigs],... 
+                 [nai_up_trigs; nai_down_trigs],...
+                 [ave_up_trigs; ave_down_trigs]};
+data_pr_mean = zeros(1,3);
+data_pr_std = zeros(1,3);
+model_pr_mean = zeros(1,3);
+model_pr_std = zeros(1,3);
+
+for cc = 1:3
+    %%% data
+%     temp_trigs = all_ang_trigs{cc};
+%     temp = temp_trigs*0;
+%     temp(abs(temp_trigs)>turn_thre) = 1;
+%     temp = sum(temp(:,wind_analysis),2) - sum(temp(:,wind_baseline),2);   % take the difference!!!
+%     temp = temp/(fr*bin)/5;   % per time unit
+%     data_pr_mean(cc) = mean(temp);
+%     data_pr_std(cc) = std(temp)/sqrt(length(temp));
+    load(datas{cc})
+    opto_data = extractfield(Data, 'opto');
+    dth_data = extractfield(Data, 'dth');
+    stim_pos = find(opto_data>4);
+    n_turns = zeros(1,length(stim_pos)); 
+    n_pre = n_turns*1;
+    beh_opt = dth_data(stim_pos);
+    n_turns(abs(beh_opt)>turn_thre) = 1;
+    beh_pre = dth_data(stim_pos-9);
+    n_pre(abs(beh_pre)>turn_thre) = 1;
+    data_pr_mean(cc) = (mean(n_turns) - mean(n_pre))*14/5;
+    data_pr_std(cc) = (std(n_turns)+std(n_turns))/2/sqrt(length(temp));
+    
+    %%% model
+%     load(datas{cc})  % load Data structure
+    mlee = squeeze(nanmean(mle_params_opto(cc,:,:),3));
+    mlee = squeeze((mle_params_opto(cc,:,5)));
+    Kodor = mlee(3:6)*cosBasis';
+    Kopto = mlee(7:10)*cosBasis';
+    odor_data = extractfield(Data, 'dc');
+    opto_data = extractfield(Data, 'opto');
+    stim_pos = find(opto_data>4);  % find impulse position
+    filt_dc = conv_kernel(odor_data, Kodor);  % fix this
+    filt_opto = conv_kernel(opto_data, Kopto); % looking at impulse... if this does not work we only look ar data...
+    A_ = mlee(2); C_ = mlee(11);
+    P = (A_-C_) ./ (1 + exp( -((filt_dc(stim_pos)) + filt_opto(stim_pos)) )) + C_;  %sigmoid(A_,B_,dc); 
+    Pbase = (A_-C_) ./ (1 + exp( -((filt_dc(stim_pos)) + filt_opto(stim_pos-9)) )) + C_;
+    dP = P - Pbase;
+    model_pr_mean(cc) = mean(dP)*14/5;
+    model_pr_std(cc) = std(dP);%/(sqrt(length(stim_pos)));
+    
+end
+data_pr_mean
+model_pr_mean
+
+clear ctr ydt
+figure;
+hBar = bar([data_pr_mean; model_pr_mean]');
+
+for k1 = 1:2
+    ctr(k1,:) = bsxfun(@plus, hBar(k1).XData, hBar(k1).XOffset');    hold on  
+    ydt(k1,:) = hBar(k1).YData;  hold on
+end
+hold on 
+errorbar(ctr, ydt,  [data_pr_std; model_pr_std], '.k')
+xticklabels({'appetitive', 'naive', 'aversive'});
+set(gcf,'color','w'); set(gca,'Fontsize',20);

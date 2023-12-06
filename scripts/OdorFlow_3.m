@@ -7,8 +7,9 @@ addpath('C:\Users\Kevin\Documents\GitHub\leifer-Behavior-Triggered-Averaging-Tra
 addpath('C:\Users\Kevin\Desktop\Chemotaxis_function')
 
 %batch analysis
-fields_to_load = {'Path','Time','Runs','Pirouettes','SmoothSpeed','AngSpeed','SmoothX','SmoothY'};%,'Behaviors'};
+fields_to_load = {'Path','Time','Runs','Pirouettes','SmoothSpeed','AngSpeed','SmoothX','SmoothY','LEDVoltages'};%,'Behaviors'};
 folder_names = getfoldersGUI();
+% folder_names = folder_names([1:4  6:end])
 Tracks = loadtracks(folder_names,fields_to_load);
 
 %% pre-processing visualization
@@ -36,7 +37,7 @@ poly_degree = 3;  %polynomial fitting for moving window
 filt = 14;  %window the path (has to be odd because it is +/- points around the center)
 fr = 1/14;  %1/14 seconds between each frame  (~0.0714 second for each frame)
 nn = length(Tracks); %number of worms selected
-mint = 60*2.;%.85; %minimum time in seconds
+mint = 60*2.;%.85; %minimum time incand seconds
 minx = 100*1.;  %minimum displacement (in terms of pixels) %3 for app?
 endingt = 60*30;  %only taking the first few minutes
 pix2mm = 1/31.5;

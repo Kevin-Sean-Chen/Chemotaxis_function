@@ -14,9 +14,11 @@ Tracks = loadtracks(folder_names,fields_to_load);
 %%
 Cmap = load('/projects/LEIFER/Kevin/Data_odor_flow_equ/Landscape_low.mat');
 Fcon = load('/projects/LEIFER/Kevin/Data_odor_flow_equ/OdorFx_low.mat');
+Cmap = load('/projects/LEIFER/Kevin/Data_odor_flow_equ/Landscape_low_0623.mat')
+Cmap = load('/projects/LEIFER/Kevin/Data_odor_flow_equ/Landscape_low_0623_2.mat')
 M = Cmap.vq1;
 M = fliplr(flipud(M));
-[ci_, brw_index, wv_index] = compute_index(Tracks, M)
+[ci_, brw_index, wv_index] = compute_index(Tracks, M, 30)
 
 %% load odor landscape
 test = load('/projects/LEIFER/Kevin/Data_odor_flow_equ/20211029_GWN_app+_MEK110mM_40ml/Landscape.mat');
@@ -45,7 +47,7 @@ for cc = 1:3
     for ff = 1:length(folder_names)
         Tracks = loadtracks(folder_names{ff},fields_to_load);
         if cc == 1
-            [ci_, brw_index, wv_index] = compute_index(Tracks, M, 20);
+            [ci_, brw_index, wv_index] = compute_index(Tracks, M, 30); %20
         else
             [ci_, brw_index, wv_index] = compute_index(Tracks, M, 30);
         end
@@ -54,6 +56,46 @@ for cc = 1:3
     plot(BWC',cols(cc)); hold on
     BWCs{cc} = BWC;
 end
+
+%% compute for AVE without repeats!
+temp = load('/projects/LEIFER/Kevin/Data_learn/N2/data_analysis/Data_ave_wo_repeat.mat');
+fold_wo = temp.folder_ave_wo_rep;
+fold_rep = folder_all{3};
+fold_compare = {fold_wo, fold_rep};
+BWC_ave = cell(1,2);
+figure;
+for cc = 1:2
+    folder_names = fold_compare{cc};
+    BWC = zeros(length(folder_names), 3);
+    for ff = 1:length(folder_names)
+        Tracks = loadtracks(folder_names{ff},fields_to_load);
+        [ci_, brw_index, wv_index] = compute_index(Tracks, M, 30);
+        BWC(ff,:) = [ci_, brw_index, wv_index];
+    end
+    plot(BWC',cols(cc)); hold on
+    BWC_ave{cc} = BWC;
+end
+%% bar plot
+wo_rep = BWC_ave{1}';  w_rep = BWC_ave{2}';
+figure
+m_wo = mean(wo_rep');
+m_wi = mean(w_rep');
+s_wi = std(wo_rep')/sqrt(size(wo_rep,2));
+s_wo = std(w_rep')/sqrt(size(w_rep,2));
+
+hBar = bar([m_wo; m_wi]');
+for k1 = 1:2
+    ctr_ave(k1,:) = bsxfun(@plus, hBar(k1).XData, hBar(k1).XOffset');     
+    ydt_ave(k1,:) = hBar(k1).YData;                    
+end
+hold on
+errorbar(ctr_ave, ydt_ave, [m_wo;m_wi]*0,[s_wo; s_wi], '.k')         
+hold off
+ylabel('Index')
+names = {'CI'; 'BRW'; 'WV'};
+set(gca,'xticklabel',names,'FontSize',20)
+set(gcf,'color','w');
+legend([hBar(1), hBar(2)], 'wo repeats','w/ repeats')
 
 %% test with RBW and WV index vs. CI (biased-random walk, weathervaning, and chemotaxis index)
 % chemotaxis = struct('brw','wv','ci');
@@ -176,14 +218,16 @@ s_na = std(nai_')/sqrt(size(nai_,2));
 s_av = std(ave_')/sqrt(size(ave_,2));
 
 hBar = bar([m_ap;m_na;m_av]');
+data_cell = {app_, nai_, ave_};
 for k1 = 1:3
     ctr(k1,:) = bsxfun(@plus, hBar(k1).XData, hBar(k1).XOffset');     
-    ydt(k1,:) = hBar(k1).YData;                    
+    ydt(k1,:) = hBar(k1).YData;  hold on
+    plot(ctr(k1,:), data_cell{k1},'ko')
 end
 % set(hBar, {'DisplayName'}, {'App','Naive','Ave'}')
 hold on
 % errorbar(ctr, ydt, [s_ap;s_na;s_av]', '.r')  
-errorbar(ctr, ydt, [m_ap;m_na;m_av]'*0,[s_ap;s_na;s_av]', '.k')         
+errorbar(ctr, ydt, [m_ap;m_na;m_av]*0,[s_ap;s_na;s_av], '.k')         
 hold off
 ylabel('Index')
 % set(gca,'linewidth',2,'FontSize',20)

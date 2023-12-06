@@ -1,17 +1,24 @@
 %%% compare kernels
 
 %% load inferred parameters
-x = load('/projects/LEIFER/Kevin/Figures/Cosyne23/app_infer.mat');
-x_app = x.x;
-x = load('/projects/LEIFER/Kevin/Figures/Cosyne23/nai_infer.mat');
-x_nai = x.x;
-x = load('/projects/LEIFER/Kevin/Figures/Cosyne23/ave_infer.mat');
-x_ave = x.x;
+% old inference
+% x = load('/projects/LEIFER/Kevin/Figures/Cosyne23/app_infer.mat');
+% x_app = x.x;
+% x = load('/projects/LEIFER/Kevin/Figures/Cosyne23/nai_infer.mat');
+% x_nai = x.x;
+% x = load('/projects/LEIFER/Kevin/Figures/Cosyne23/ave_infer.mat');
+% x_ave = x.x;
+
+% updated
+x = load('/projects/LEIFER/Kevin/Data_learn/N2/data_analysis/Kfold_mle_param4.mat');
+x_app = squeeze(mean(x.mle_params(:,1,:),1))';
+x_nai = squeeze(mean(x.mle_params(:,2,:),1))';
+x_ave = squeeze(mean(x.mle_params(:,3,:),1))';
 
 %% iterations
 nB = 4;
 [cosBasis, tgrid, basisPeaks] = makeRaisedCosBasis(nB, [0, 8], 1.3);
-xx = [0:1:length(cosBasis)-1]*5/14;
+xx = [1:1:length(cosBasis)]*5/14;
 
 figure();
 [Kdc,Kdcp] = x2k(x_app,cosBasis)
