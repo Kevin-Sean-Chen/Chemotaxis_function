@@ -423,8 +423,9 @@ function [varargout] = BRW_Kc_conv(x, Data);
         min_point = log(((mid-rang*0.25) - m)/(M - (mid-rang*0.25)));
         pir_index = length(find(dc_dth<max_point | dc_dth>min_point))/length(dc_dth);
         pir_index = length(find(abs(dc_dth)<3))/length(dc_dth);  % * (x(2)-x(7))*5/14;% *norm(Kc);
-        pir_index = norm(Kc)*0 + 1/ nanstd(dc_dth.*1); % iqr(dc_dth);  %mad(dc_dth);
-        varargout{1} = norm(Kc)/nanstd(ddc_fit.*1);%pir_index; %
+%         pir_index = norm(Kc)/ nanstd(filt_dth.*1); % iqr(dc_dth);  %mad(dc_dth);
+        pir_index = norm(Kc)/nanstd(ddc_fit.*1) * length(find(dc_dth>0))/length(dc_dth);
+        varargout{1} = pir_index; %norm(Kc)/nanstd(ddc_fit.*1);%
         %%%
     end
 end

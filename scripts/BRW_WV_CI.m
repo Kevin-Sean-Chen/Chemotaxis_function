@@ -38,12 +38,14 @@ Fcon = Fcon.F;
 temp = load('/projects/LEIFER/Kevin/Data_learn/N2/data_analysis/learn_folders4.mat');
 folder_all = {temp.folder_app, temp.folder_nai, temp.folder_ave};
 % BWC = zeros(length(folder_names), 3);
+track_learn_all = cell(1,3);
 BWCs = cell(1,3);
 cols = ['b','k','r'];
 figure
 for cc = 1:3
     folder_names = folder_all{cc};
     BWC = zeros(length(folder_names), 3);
+    sub_learn_tracks = cell(1,length(folder_names));
     for ff = 1:length(folder_names)
         Tracks = loadtracks(folder_names{ff},fields_to_load);
         if cc == 1
@@ -52,9 +54,12 @@ for cc = 1:3
             [ci_, brw_index, wv_index] = compute_index(Tracks, M, 30);
         end
         BWC(ff,:) = [ci_, brw_index, wv_index];
+        sub_learn_tracks{ff} = Tracks;
     end
+    
     plot(BWC',cols(cc)); hold on
     BWCs{cc} = BWC;
+    track_learn_all{cc} = sub_learn_tracks;
 end
 
 %% compute for AVE without repeats!
