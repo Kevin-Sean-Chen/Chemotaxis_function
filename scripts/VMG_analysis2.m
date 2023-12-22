@@ -18,7 +18,7 @@ offset = min(wind_test)-1;
 
 %%
 % with Data structure
-wind_test = [1:100000];
+wind_test = [1:300000];
 offset = min(wind_test)-1;
 xx = xxf(:,wind_test);
 yy = yyf(:,wind_test);
@@ -85,19 +85,30 @@ plot(bb, gam_p/sum(gam_p))
 %% plot densities, fits, across states
 figure()
 CM = ['k','r'];
+dis_cutoff = 10;  % displacement cutoff
+fac_mms = 1/30;  % convert to mm displacement
 for sk = 1:2
     stateK = sk;
     x = squeeze(mmhat.wts(:,:,stateK));
-    [aa,bb] = max( gams_ ,[], 1 );
-    pos = find(bb==stateK)+offset;
+    %%% armax method
+%     [aa,bb] = max( gams_ ,[], 1 );
+%     pos = find(bb==stateK)+offset;
+    %%% probablistic sampling method
+    rand_temp = rand(1,length(gams_));
+    pos = find(gams_(stateK,:)>rand_temp);
+    %%% asigning state and parameters
     dcp_K = xxf(2,pos); ddc_K = xxf(1,pos);  ang_K = yyf(1,pos)*1; dis_K = yyf(2,pos);
     K_ = x(1); B_ = x(2:5); Amp = x(6); tau = x(7); Amp_h = x(8); tau_h = x(9); K2_ = x(10);  gamma = x(11); A_=x(12); C_=x(13); b_dc=x(16); b_dcp=x(17);
     k_ = x(14);  theta_ = x(15);
+    K_h_rec = Amp_h*exp(-xv/tau_h);
+    K_dc_rec = B_*cosBasis';
+    K_dcp_rec = Amp*exp(-xv/tau);
     
     subplot(131)
-    Pk_frac = length(pos)/length(gams_);
+    Pk_frac = length(pos)/length(gams_);  % fraction in state K
 %     hh = histogram(dis_K, nbins, 'Normalization', 'probability', 'EdgeColor', 'none', 'FaceAlpha', 0.7); hold on
-    [counts, edges] = histcounts(dis_K, 100);
+    [counts, edges] = histcounts(dis_K(find(dis_K<dis_cutoff)), 100);
+%     bb = hh.BinEdges(1:end-1);
     logCounts = (counts)/sum(counts) * Pk_frac;
     bar(edges(1:end-1)*fac_mms, logCounts,'FaceColor', CM(sk), 'FaceAlpha',0.5); hold on
     bb = edges;  %hh.BinEdges(1:end-1);
@@ -146,7 +157,7 @@ pix2mm = 1/31.5;
 CM = ['k','r','w','g'];%jet(stateK);  % See the help for COLORMAP to see other choices.
 figure;
 imagesc(M,'XData',[0 size(M,2)*pix2mm],'YData',[0 size(M,1)*pix2mm]); hold on
-for kk = 1:nStates %nStates:-1:1 %
+for kk = nStates:-1:1 %1:nStates %
     pos = find(bb==kk)+offset;
 %     plot(allxys(1,pos)*pix2mm, allxys(2,pos)*pix2mm,'.')%,'color',CM(kk))
     plot(allxys(1,pos)*pix2mm, allxys(2,pos)*pix2mm,'.','color',CM(kk))

@@ -15,6 +15,9 @@
 %%
 % for Data structure loading
 % extracting typical data
+%%% run: [Data] = track2data(Tracks, cand, M); after loading raw data and
+%%% selecting tracks
+
 [xxf, yyf, alltrials, time] = data2xy(Data);
 % opto
 % allopto = extractfield(Data, 'opto');
@@ -29,7 +32,7 @@ maskf = true(1,length(yyf));
 maskf = alltrials;  %((alltrials)==0) = false;%
 
 %%% pick a window
-wind = 1:100000;
+wind = 1:300000;
 xx = xxf(:,wind);
 yy = yyf(:,wind);
 mask = maskf(wind);

@@ -17,7 +17,7 @@ perp_dist = 1;
 
 %% initialize vectors
 lt = 10000;  % length of simulation
-REP = 10;  % repeating simulation tracks
+REP = 30;  % repeating simulation tracks
 
 alldths = [];
 alldCs = [];
@@ -25,9 +25,11 @@ alldCps = [];
 allths = [];
 allstate = [];
 allvs = [];
-trackss = {};
+% trackss = {};
+trackss = struct();
 T = lt;
-dt = 1.;
+dt = 1;
+t_step = 10/14;  % simulation steps
 
 %% chemotaxis dynamics
 figure;
@@ -100,7 +102,7 @@ for t = 2:T
     
     wv = (1*sum(Kdcp.*dCpv) + base_dcp*1) + (vmrand(0,kappa))*180/pi;%kappa^1*randn;%length(wind)
     P_event = (A-B) / (1+exp( -(sum(Kddc.*dCv)*1. + 1*(sum(Kdth.*abs(dthv)*180/pi)) *dt + 1*base_dc)+0) ) + B;%Pturn_base;%length(wind)
-    if rand < P_event*14/14;
+    if rand < P_event*t_step;
         beta = 1;
     else
         beta = 0;
@@ -124,7 +126,7 @@ for t = 2:T
     dcps(t) = dCpv(1);
     
     %%% displacement from gamma
-    vv = gamrnd(k_, theta_);
+    vv = gamrnd(k_, theta_)/1;
     vs(t) = vv;
     
     ths(t) = ths(t-1)+dth*dt;
@@ -160,7 +162,12 @@ allths = [allths ths(1:t)];
 allstate = [allstate kt((1:t))];
 allvs = [allvs vs(1:t)];
 
-trackss{rep} = tracks;
+% trackss{rep} = tracks;
+trackss(rep).dth = dths(1:t);
+trackss(rep).vs = vs(1:t);
+trackss(rep).state = kt(1:t);
+trackss(rep).dc = dcs(1:t);
+trackss(rep).dcp = dcps(1:t);
 
 end
 
@@ -174,6 +181,13 @@ allths(pos) = [];
 allstate(pos) = [];
 allvs(pos) = [];
 
+%% plot time sereis
+id = 1;
+figure()
+subplot(311); plot(trackss(id).dth);
+subplot(312); plot(trackss(id).vs);
+subplot(313); plot(trackss(id).state);
+
 %% compare to data (if available)
 nbins = 50;
 figure
@@ -182,10 +196,10 @@ hh = histogram(yyf(1,:), nbins, 'Normalization', 'pdf', 'EdgeColor', 'none', 'Fa
 hh = histogram(alldths, nbins, 'Normalization', 'pdf', 'EdgeColor', 'none', 'FaceAlpha', 0.7);
 title('d\theta'); set(gca,'Fontsize',20); set(gca, 'YScale', 'log');
 
-temp_hist = yy(2,:)*1/30/(5/14);
-temp_hist(temp_hist>.7) = [];
+temp_hist = yy(2,:);
+temp_hist(temp_hist>10) = [];
 subplot(122)
-hh1 = histogram(temp_hist, nbins, 'Normalization', 'pdf', 'EdgeColor', 'none', 'FaceAlpha', 0.7); hold on
+hh1 = histogram(temp_hist*1/30/(5/14), nbins, 'Normalization', 'pdf', 'EdgeColor', 'none', 'FaceAlpha', 0.7); hold on
 hh = histogram(allvs*1/30/(5/14), hh1.BinEdges, 'Normalization', 'pdf', 'EdgeColor', 'none', 'FaceAlpha', 0.7);
 title('dr'); set(gcf,'color','w'); set(gca,'Fontsize',20);
 
