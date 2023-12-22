@@ -103,7 +103,7 @@ load('/projects/LEIFER/Kevin/Data_odor_opto/odor_opto_learn_data/mle_param_opto2
 %% bar analysis
 fr = 1/14;  % frame rate
 bin = 7;  % filtering bins
-turn_thre = 60;  % turning threshold for emperical analysis
+turn_thre = 50;  % turning threshold for emperical analysis
 acst = 4 * (1/(bin*fr)); % pre-stim
 windt = 14 * (1/(bin*fr));  % post-stim
 wind_analysis = 4*2:4*2+5*2;  % time window with impulse
@@ -146,7 +146,7 @@ for cc = 1:3
     
     %%% model
 %     load(datas{cc})  % load Data structure
-    mlee = squeeze(nanmean(mle_params_opto(cc,:,:),3));
+%     mlee = squeeze(nanmedian(mle_params_opto(cc,:,:),3));
     mlee = squeeze((mle_params_opto(cc,:,5)));
     Kodor = mlee(3:6)*cosBasis';
     Kopto = mlee(7:10)*cosBasis';

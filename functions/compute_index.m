@@ -5,7 +5,7 @@ dC_window = 14*10;  %time window for dC measurement for turns
 time_wind = 60*T;  %first few minutes
 min_t = 60*2;  % minumum time window
 min_x = 100;  % min displacement pixels
-conc_thre = .6*max(max(M));  % high concentration initial to be excluded (70%)
+conc_thre = .6*max(max(M));  % high concentration initial to be excluded (60%)
 
 % initializing counts
 run_up = 0;  %recording for runs
@@ -77,7 +77,7 @@ for c = 1:length(Tracks)
 end
 
 % %% analysis
-brw_index = (median(run_up)-median(run_dn)) / (median(run_up)+median(run_dn));
+brw_index = (mean(run_up)-mean(run_dn)) / (mean(run_up)+mean(run_dn));
 wv_index = ((turn_up)-(turn_dn)) / ((turn_up)+(turn_dn));
 ci_ = (ci_high - ci_low) / (ci_high+ci_low);
 % % % % % % % ci_ = (ci_high + ci_low) / (ci_high+abs(ci_low));

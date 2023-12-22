@@ -1,7 +1,7 @@
 % mGLM
 %%% mixture GLM debugging with ground truth generative model
 %% define variables
-lt = 100000; % length of simulation / data
+lt = 50000; % length of simulation / data
 nB = 4;  % number of basis function for the kernel
 [cosBasis, tgrid, basisPeaks] = makeRaisedCosBasis(nB, [0, 10], 1.3); % basis function
 %%% true params

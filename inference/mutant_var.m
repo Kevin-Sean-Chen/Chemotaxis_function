@@ -62,6 +62,27 @@ subplot(121); imagesc(CIm)
 subplot(122); imagesc(CIstd)
 
 [h,p] = ttest2(n2_ci_std.m_na, squeeze(CIsamp(1,6,:)))
+
+%% sample test for CI
+rng(4)
+nsamp = 100;
+mut_ci_sig = zeros(3,5);  % condition x strains
+for cc = 1:3
+    for ss = 1:5
+        %%% sampling
+        n2_samps = N2_ci(cc) + N2_ci_std(cc)*randn(1, nsamp);
+        mut_samps = CIm(cc,ss) + CIstd(cc,ss)*randn(1,nsamp);
+        %%% tests
+        [h, p] = ttest2(n2_samps, mut_samps);
+        p
+        %%% IMPORTANT: Bonferroni correction for multiple tests
+        if p<0.05/(5)
+            mut_ci_sig(cc,ss) = 1;
+        end
+    end
+end
+figure; imagesc(mut_ci_sig)
+
 %% compute Hessian of parameters
 % given this: mle_mut_params ( (learning x strain) x parameters)
 mut_param_std = zeros(3*n_strains, n_params);
@@ -115,17 +136,30 @@ for ii = 1:15
 end
 
 %% sampling posterior of kernels for significance test!
-nsamp = 50;  % sample from kernel posterior
+rng(1)
+nsamp = 100;  % sample from kernel posterior
 mut_sig = zeros(2,3,5);  % 2 x condition x strains
-Knorms_n2 = zeros(3, nsamp, 2);
+Knorms_n2 = zeros(3, nsamp, 2);  % condition x samples x behavior (brw and wv)
 for cc = 1:3
-for jj = 1:nsamp
-    temp_samp = (N2_param(cc,:)) + (N2_std(cc,:)).*randn(1,13);
-    Knorms_n2(cc,jj,1) = BRW_id(temp_samp);
-    Knorms_n2(cc,jj,2) = WV_id(temp_samp);
+    %%% sampling with normalization
+    Data_n2_i = load(data_n2{cc});
+    temp_n2_param = N2_param(cc,:);
+    mean_brw = BRW_Kc_conv(temp_n2_param, Data_n2_i.Data);
+    std_brw = BRW_Kc_conv(N2_std(cc,:), Data_n2_i.Data);
+    mean_wv = WV_Kcp_conv(temp_n2_param, Data_n2_i.Data);
+    std_wv = WV_Kcp_conv(N2_std(cc,:), Data_n2_i.Data);
+    
+% for jj = 1:nsamp
+    %%% without normalization
+%     temp_samp = (N2_param(cc,:)) + (N2_std(cc,:)) .* randn(1,13);
+%     Knorms_n2(cc,jj,1) = BRW_id(temp_samp);
+%     Knorms_n2(cc,jj,2) = WV_id(temp_samp); 
+% end
+
+    Knorms_n2(cc,:,1) = mean_brw + std_brw*randn(1,nsamp);
+    Knorms_n2(cc,:,2) = mean_wv + std_wv*randn(1,nsamp);
 end
-end
-        
+  
 for cc = 1:3
     for ss = 1:5
 
@@ -137,31 +171,46 @@ for cc = 1:3
         %%%% try to sample and convolve here!
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         %%%%
-        load(data_mut{cc,ss})
+        Data_mut_i = load(data_mut{cc,ss});       
         
-        
-        %%% samples
-        samp_param = zeros(nsamp, n_params);
+%         %%% samples
+%         samp_param = zeros(nsamp, n_params);
+%         Knorms = zeros(nsamp, 2);
+%         for jj = 1:nsamp
+%             temp_samp = squeeze(mut_param(cc,ss,:))' + squeeze(mut_param_std2(cc,ss,:))' .* randn(1,n_params)*1;
+%             samp_param(jj,:) = temp_samp;
+%             Knorms(jj,1) = BRW_id(temp_samp); %BRW_Kc_conv(temp_param, Data_mut_i.Data, 50000); %
+%             Knorms(jj,2) = WV_id(temp_samp); %WV_Kcp_conv(temp_param, Data_mut_i.Data, 50000); %
+%         end
+        %%% sampling with Gaussian assumption        
+        mean_brw = BRW_Kc_conv(squeeze(mut_param(cc,ss,:))', Data_mut_i.Data);
+        std_brw = BRW_Kc_conv(squeeze(mut_param_std2(cc,ss,:))', Data_mut_i.Data);
+        mean_wv = WV_Kcp_conv(squeeze(mut_param(cc,ss,:))', Data_mut_i.Data);
+        std_wv = WV_Kcp_conv(squeeze(mut_param_std2(cc,ss,:))', Data_mut_i.Data);
         Knorms = zeros(nsamp, 2);
-        for jj = 1:nsamp
-            temp_samp = squeeze(mut_param(cc,ss,:))' + squeeze(mut_param_std2(cc,ss,:))'.*randn(1,n_params)*1;
-            samp_param(jj,:) = temp_samp;
-            Knorms(jj,1) = BRW_id(temp_samp);
-            Knorms(jj,2) = WV_id(temp_samp);
-        end
+        Knorms(:,1) = mean_brw + std_brw*randn(1,nsamp);
+        Knorms(:,2) = mean_wv + std_wv*randn(1,nsamp);
         
         %%% tests
         [h, p] = ttest2(Knorms(:,1)', squeeze(Knorms_n2(cc,:,1))');
         p
-        mut_sig(1,cc,ss) = h;
+        %%% IMPORTANT: Bonferroni correction for multiple tests
+        if p<0.05/(5*3)
+            mut_sig(1,cc,ss) = 1;
+        end
         [h, p] = ttest2(Knorms(:,2)', squeeze(Knorms_n2(cc,:,2))');
-        mut_sig(2,cc,ss) = h;
+        if p<0.05/(5*3)
+            mut_sig(2,cc,ss) = 1;
+        end
     end
 end
 
 figure;
 subplot(121); imagesc(squeeze(mut_sig(1,:,:))); colorbar(); title('BRW'); xticklabels(xtickLabels); yticklabels(ytickLabels); xticks([1:n_strains]);yticks([1:3]);%colormap(jet(256))
 subplot(122); imagesc(squeeze(mut_sig(2,:,:))); colorbar(); title('WV'); xticklabels(xtickLabels); yticklabels(ytickLabels); xticks([1:n_strains]);yticks([1:3]);%colormap(jet(256))
+
+%%
+WV_Kcp_conv(N2_std(cc,:), Data_n2_i.Data)
 
 %% arrow plots with error bars
 figure
@@ -272,7 +321,7 @@ function [brw] = BRW_std(x)
     brw = (1)*beta*1;
 end
 
-function [varargout] = BRW_Kc_conv(x, Data);
+function [varargout] = BRW_Kc_conv(x, Data,  nsamp);
     [cosBasis, tgrid, basisPeaks] = makeRaisedCosBasis(4, [0, 8], 1.3);
     tt = 0:length(cosBasis)-1;
     Kc = x(3:6)*cosBasis';
@@ -295,11 +344,16 @@ function [varargout] = BRW_Kc_conv(x, Data);
 %         varargout{2} = dc_dth;
     else
 %         varargout{1} = 1/nanstd((ddc_fit.*trials_fit)) * nanstd(conv_kernel(ddc_fit.*trials_fit, Kc));
-        varargout{1} = norm(Kc)/nanstd(ddc_fit.*1);%norm(Kc);   %(nanstd(compute_nl));% - nanstd(filt_dc);
+        if nargin>2
+            rand_t = randi(length(ddc_fit)-nsamp);
+            varargout{1} = norm(Kc)/nanstd(ddc_fit(rand_t:rand_t+nsamp).*1);%norm(Kc);   %(nanstd(compute_nl));% - nanstd(filt_dc);
+        else
+            varargout{1} = norm(Kc)/nanstd(ddc_fit.*1);
+        end
     end
 end
 
-function [varargout] = WV_Kcp_conv(x, Data)
+function [varargout] = WV_Kcp_conv(x, Data,  nsamp)
     [cosBasis, tgrid, basisPeaks] = makeRaisedCosBasis(4, [0, 8], 1.3);
     tt = 0:length(cosBasis)-1;
     Kcp = x(8)*exp(-tt/x(9));
@@ -313,7 +367,12 @@ function [varargout] = WV_Kcp_conv(x, Data)
         temp = (conv_kernel(dcp_fit.*trials_fit, Kcp));
         varargout{2} = temp(~isnan(temp));
     else
-        varargout{1} = nanstd(conv_kernel(dcp_fit.*trials_fit, Kcp));
+        if nargin>2
+            rand_t = randi(length(dcp_fit)-nsamp);
+            varargout{1} = nanstd(conv_kernel(dcp_fit(rand_t:rand_t+nsamp).*trials_fit(rand_t:rand_t+nsamp), Kcp));
+        else
+            varargout{1} = nanstd(conv_kernel(dcp_fit.*trials_fit, Kcp));
+        end
     end
 end
 

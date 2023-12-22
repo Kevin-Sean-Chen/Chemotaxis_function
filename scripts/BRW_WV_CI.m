@@ -35,7 +35,7 @@ Fcon = Fcon.F;
 
 %% looping files and conditions
 % Tracks = loadtracks(folder_names{1},fields_to_load);
-temp = load('/projects/LEIFER/Kevin/Data_learn/N2/data_analysis/learn_folders4.mat');
+temp = load('/projects/LEIFER/Kevin/Data_learn/N2/data_analysis/learn_folders5.mat');
 folder_all = {temp.folder_app, temp.folder_nai, temp.folder_ave};
 % BWC = zeros(length(folder_names), 3);
 track_learn_all = cell(1,3);
@@ -49,7 +49,7 @@ for cc = 1:3
     for ff = 1:length(folder_names)
         Tracks = loadtracks(folder_names{ff},fields_to_load);
         if cc == 1
-            [ci_, brw_index, wv_index] = compute_index(Tracks, M, 30); %20
+            [ci_, brw_index, wv_index] = compute_index(Tracks, M, 20); %20
         else
             [ci_, brw_index, wv_index] = compute_index(Tracks, M, 30);
         end
@@ -227,7 +227,7 @@ data_cell = {app_, nai_, ave_};
 for k1 = 1:3
     ctr(k1,:) = bsxfun(@plus, hBar(k1).XData, hBar(k1).XOffset');     
     ydt(k1,:) = hBar(k1).YData;  hold on
-    plot(ctr(k1,:), data_cell{k1},'ko')
+%     plot(ctr(k1,:), data_cell{k1},'ko')
 end
 % set(hBar, {'DisplayName'}, {'App','Naive','Ave'}')
 hold on

@@ -138,16 +138,17 @@ subplot(122); imagesc(squeeze(mut_sig(2,:,:))); colorbar(); title('WV'); xtickla
 
 %% samp of samp
 % for realiability, resample the subsample more times!
-n_resamp = 5;
+rng(123)
+n_resamp = 1;
 mut_sig_resamp = ones(2,3,n_strains);
 for rr = 1:n_resamp
     ii = 1;
     for ss = 1:n_strains
         for cc = 1:3
-            fileName = fileList(ii).name;
-            filePath = fullfile(data_path, fileName);
-            load(filePath);
-    %         load(data_mut{cc,ss});
+%             fileName = fileList(ii).name;
+%             filePath = fullfile(data_path, fileName);
+%             load(filePath);
+            load(data_mut{cc,ss});
             Data_n2_i = load(data_n2{cc});
             temp_param = squeeze(mut_param(cc,ss,:))';
             temp_n2_param = N2_param(cc,:);
@@ -425,7 +426,7 @@ function [varargout] = BRW_Kc_conv(x, Data);
         pir_index = length(find(abs(dc_dth)<3))/length(dc_dth);  % * (x(2)-x(7))*5/14;% *norm(Kc);
 %         pir_index = norm(Kc)/ nanstd(filt_dth.*1); % iqr(dc_dth);  %mad(dc_dth);
         pir_index = norm(Kc)/nanstd(ddc_fit.*1) * length(find(dc_dth>0))/length(dc_dth);
-        varargout{1} = pir_index; %norm(Kc)/nanstd(ddc_fit.*1);%
+        varargout{1} = norm(Kc)/nanstd(ddc_fit.*1);%pir_index; %
         %%%
     end
 end
@@ -451,8 +452,8 @@ end
 function [h_brw, h_wv] = significant_test(x1, Data1, x2, Data2);
     
 %%%%%% test with sampling
-    alpha = 0.001; % Significance level
-    samps = 15;  % sample the variance, rather than using vartest (?)
+    alpha = 0.05/(5*3); % Significance level
+    samps = 100;  % sample the variance, rather than using vartest (?)
     numsamps = 5;
     %%% sampling
     originalVector1 = 1:length(Data1);

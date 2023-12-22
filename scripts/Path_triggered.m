@@ -128,6 +128,7 @@ load('/projects/LEIFER/Kevin/Data_odor_opto/odor_opto_learn_data/ave_trigs.mat')
 all_ang_trigs = {app_up_trigs, app_down_trigs, nai_up_trigs, nai_down_trigs, ave_up_trigs, ave_down_trigs};
 dang_means = zeros(1,6);
 dang_stds = zeros(1,6);
+temp_stats = cell(1,6);
 
 figure
 for ii = 1:6
@@ -136,7 +137,26 @@ for ii = 1:6
     temp = temp/(fr*bin);   % per time unit
     dang_means(ii) = mean(temp);
     dang_stds(ii) = std(temp)/sqrt(length(temp));
-    
+    temp_stats{ii} = temp;
     bar(ii, dang_means(ii)); hold on
     errorbar(ii, dang_means(ii), dang_stds(ii), 'k.')
+end
+
+%% for joint analyis without context
+joint_ang_trigs = {[app_up_trigs; app_down_trigs], [nai_up_trigs; nai_down_trigs], [ave_up_trigs; ave_down_trigs]};
+jang_means = zeros(1,3);
+jang_stds = zeros(1,3);
+temp_stats = cell(1,3);
+
+figure
+for ii = 1:3
+    temp_trigs = joint_ang_trigs{ii};
+    temp = mean(abs(temp_trigs(:,acst:acst+14)),2) - mean(abs(temp_trigs(:,1:acst)),2);  % post - pre absolute average
+    temp = temp/(fr*bin);   % per time unit
+    temp_stats{ii} = temp;
+    jang_means(ii) = mean(temp);
+    jang_stds(ii) = std(temp)/sqrt(length(temp));
+    
+    bar(ii, jang_means(ii)); hold on
+    errorbar(ii, jang_means(ii), jang_stds(ii), 'k.')
 end
