@@ -11,4 +11,4 @@
 module purge
 module load matlab/R2020b
 
-matlab -singleCompThread -nodisplay -nosplash -r scan_staPAW
+matlab -singleCompThread -nodisplay -nosplash -r "scan_staPAW"
