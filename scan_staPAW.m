@@ -5,13 +5,13 @@
 
 %% load path and data
 % set path to reach the subfolder functions
-% addpath(genpath(pwd))   %%%% use this for cluster computation!  %%%
+addpath(genpath(pwd))   %%%% use this for cluster computation!  %%%
 
 filepath = '/projects/LEIFER/Kevin/Data_salt/data_analysis/';
 load([filepath,'Data_salt0_50.mat']);     %%%%%%%% load Data structure here %%%%%%%%
 
 %% scanning parameters
-num_cv = 2;  % half is enough data
+num_cv = 3;  % half is enough data
 num_states = 4;  % number of states scanned
 num_repeats = 5;  % repeat for EM selection
 num_subsamp = 20;  % testing subsamples
@@ -30,18 +30,23 @@ all_record(num_cv, num_states, num_repeats).test_ll = []; % test ll
 % loop through train-test sets
 for c = 1:num_cv
     % loading train-test Data tracks
-    test_set = (data_sv==c);
-    train_set = ~test_set;
+%     test_set = (data_sv==c);
+%     train_set = ~test_set;
+    train_set = (data_sv==c);  % tweek here to speed up...
+    test_set = ~train_set;
+    
     Data_test = Data(test_set);
     Data_train = Data(train_set);
+    c
     
     % scan through states
     for k = 1:num_states
 %         mmhat0 = init_staPAW(k);      %%%%%%%% initialize parameters here %%%%%%%%... include this in EM function for now
-        
+    k
+    
         % run repeats
         for r = 1:num_repeats
-            [logp, mmhat] = runEM_staPAW(Data_train, k);      %%%%%%%% EM training here %%%%%%%% % check K=1 and run null model separately
+            [mmhat, logp] = runEM_staPAW(Data_train, k);      %%%%%%%% EM training here %%%%%%%% % check K=1 and run null model separately
             testLL = staPAW_test(Data_test, mmhat, num_subsamp, len_data);      %%%%%%%% testing here %%%%%%%%
             
             % putting results in
@@ -53,5 +58,7 @@ for c = 1:num_cv
 end
 
 %% saving
-filename = [filepath, 'cv_staPWA.mat']; % save all variable... with caution~
+currentDateTime = datetime('now', 'Format', 'yyyyMMdd_HHmmss');  % in case of overwriting the large data...
+timestampString = datestr(currentDateTime, 'yyyymmdd_HHMMSS');
+filename = [filepath, timestampString, '_cv_staPWA.mat']; % save all variable... with caution~
 save(filename);

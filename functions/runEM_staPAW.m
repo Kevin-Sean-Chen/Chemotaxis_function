@@ -100,6 +100,8 @@ while (jj <= maxiter) && (dlogp>1e-3)
     % Update for input-driven transitions
     if K_states > 1   % only run state-update if there is HMM (K>1)
         mmhat = runMstep_state(mmhat, xx, yy, xis, mask); 
+    elseif K_states==1
+        break
     end
     
     % ---  Display progress ----

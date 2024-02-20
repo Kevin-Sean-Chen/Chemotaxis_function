@@ -101,7 +101,12 @@ while (jj <= maxiter) && (dlogp>1e-3)
     % Update model params
     mmhat = runMstep_staPAW(mmhat, xx, yy, gams, mask);
     % Update for input-driven transitions
-    mmhat = runMstep_state(mmhat, xx, yy, xis, mask); 
+%     mmhat = runMstep_state(mmhat, xx, yy, xis, mask); 
+    if nStates > 1   % only run state-update if there is HMM (K>1)
+        mmhat = runMstep_state(mmhat, xx, yy, xis, mask); 
+    elseif nStates==1
+        break
+    end
     
     % ---  Display progress ----
     if mod(jj,EMdisplay)==0
