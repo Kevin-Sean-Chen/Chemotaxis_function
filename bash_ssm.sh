@@ -8,6 +8,8 @@
 #SBATCH --mail-type=all          # send email on job start, end and fault
 #SBATCH --mail-user=kschen@princeton.edu
 
+cd ~/github/Chemotaxis_function
+
 module purge
 module load matlab/R2020b
 
