@@ -8,7 +8,7 @@
 % If this is right after 
 
 % testing
-wind_test = [1:300000]; %[100000:148982];%500000:length(allas)];%max(wind):length(allas);
+wind_test = [100000:200000]; %[100000:148982];%500000:length(allas)];%max(wind):length(allas);
 offset = min(wind_test)-1;
 yy = yyf(:,wind_test);
 xx = xxf(:,wind_test);
@@ -26,7 +26,7 @@ for ii = 1:length(Data);  allxys = [allxys  Data(ii).xy]; end
 stateK = 2;
 x = squeeze(mmhat.wts(:,:,stateK));
 [aa,bb] = max( gams_ ,[], 1 );
-pos = find(bb==stateK)+offset;
+pos = find(bb==stateK);%+offset;
 % pos = wind_test;
 mask_K = mask(pos);
 dcp_K = xx(2,pos).*mask_K; ddc_K = xx(1,pos).*mask_K;  ang_K = yy(1,pos).*mask_K; dis_K = yy(2,pos).*mask_K; 
@@ -117,20 +117,45 @@ fac_mms = 1/33*14/5;
 figure
 [aa,bb] = max( gams_ ,[], 1 );
 for kk = nStates:-1:1 %1:nStates %
-    pos = find(bb==kk)+offset;
+    pos = find(bb==kk);%+offset;
     subplot(121)
-    histogram(yy(2,wind_test(pos))*fac_mms,100, 'FaceColor', CM(kk)); hold on
+    histogram(yy(2,wind_test(pos)-offset)*fac_mms,100, 'FaceColor', CM(kk)); hold on
     title('dr'); set(gca,'Fontsize',20); set(gcf,'color','w');
     subplot(122)
 %     histogram(allas(wind_test(pos)),100, 'FaceColor', CM(kk)); hold on
-    [counts, edges] = histcounts(yy(1,wind_test(pos)), 100);
+    [counts, edges] = histcounts(yy(1,wind_test(pos)-offset), 100);
     logCounts = log(counts);
     bar(edges(1:end-1), logCounts,'FaceColor', CM(kk)); hold on
     title('d\theta'); set(gca,'Fontsize',20); set(gcf,'color','w');
 end
 
+%% check input distribution
+nbins = 30;
+figure
+[aa,bb] = max( gams_ ,[], 1 );
+for kk = 1:nStates %
+    pos = find(bb==kk);
+    x = squeeze(mmhat.wts(:,:,kk));
+    K_ = x(1); B_ = x(2:5); Amp = x(6); tau = x(7); Amp_h = x(8); tau_h = x(9); K2_ = x(10);  gamma = x(11); A_=x(12); C_=x(13); b_dc=x(16); b_dcp=x(17);
+    K_h_rec = Amp_h*exp(-tv/tau_h); K_dc_rec = B_*cosBasis'; K_dcp_rec = Amp*exp(-tv/tau);
+    mask_K = mask(pos); dcp_K = xx(2,pos).*mask_K; ddc_K = xx(1,pos).*mask_K; ang_K = yy(1,pos).*mask_K;
+    filt_ddc = conv_kernel(ddc_K(2:end), K_dc_rec);
+    filt_dcp = conv_kernel(dcp_K(2:end), K_dcp_rec);
+    filt_dth = conv_kernel(abs(ang_K(1:end-1)), K_h_rec);
+    %%% plotting
+    subplot(121)
+    histogram(filt_ddc+filt_dth, nbins, 'Normalization', 'pdf','FaceColor', CM(kk)); hold on
+    title('dr'); set(gca,'Fontsize',20); set(gcf,'color','w');
+    subplot(122)
+    histogram(filt_dcp, nbins, 'Normalization', 'pdf', 'FaceColor', CM(kk)); hold on
+%     [counts, edges] = histcounts(xx(1,wind_test(pos)-offset), nbins);
+%     logCounts = (counts)/sum(counts);
+%     bar(edges(1:end-1), logCounts,'FaceColor', CM(kk)); hold on
+    title('d\theta'); set(gca,'Fontsize',20); set(gcf,'color','w');
+end
+
 %% example
-wind_ex = offset+(1:1800);  % 800:1200
+wind_ex = offset*0+(700:1800);  % 800:1200
 figure;
 subplot(311)
 yyaxis left 
@@ -141,7 +166,7 @@ subplot(312)
 plot([1:length(wind_ex)]*5/14, yy(2,wind_ex)*fac_mms, 'k'); ylabel('mm/s'); set(gca,'Fontsize',20);
 subplot(313)
 % plot([1:length(wind)]*5/14, reshape(smooth(gams(:,wind),10),2,length(wind)))
-plot([1:length(wind_ex)]*5/14, gams_(:,wind_ex-offset))
+plot([1:length(wind_ex)]*5/14, gams_(:,wind_ex-offset*0))
 ylim([-0.05,1.05])
 xlabel('time (s)'); ylabel('P(Z)')
 set(gca,'Fontsize',20); set(gcf,'color','w');

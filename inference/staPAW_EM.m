@@ -1,28 +1,13 @@
-%% mVMG_EM
+%% staPAW_EM
 % mixture of von Mesis and Gamma model, with input-driven states!
+% dr and dtheta are both under a sigmoid decision!
 
 %% load some test data
-% for direct loading from allx data
-% wind = 1:100000;%200000:length(allas);  %
-% yy = [allas(wind)*1;
-%       alldis(wind)];
-% xx = [alldC(wind); 
-%       alldcp(wind)];
-% 
-% mask = true(1,length(yy));
-% mask(isnan(alltrials(wind))) = false;%
-
-%%
-% for Data structure loading
-% extracting typical data
-%%% run: [Data] = track2data(Tracks, cand, M); after loading raw data and
-%%% selecting tracks
-
-[xxf, yyf, alltrials, time] = data2xy(Data);
+[xxf, yyf, alltrials, time] = data2xy(Data);  %Data
 % opto
 % allopto = extractfield(Data, 'opto');
 % displacement
-alldis = extractfield(Data, 'dis');
+alldis = extractfield(Data, 'dis');  % Data
 
 % creating new xx,yy for fitting
 yyf = [yyf; alldis];
@@ -42,11 +27,11 @@ mask = maskf(wind);
 
 %% Observation and input
 % Set parameters: transition matrix and emission matrix
-nStates = 2; % number of latent states
-nX = 17;  % number of input dimensions (i.e., dimensions of regressor)
+nStates = 1; % number of latent states
+nX = 17+2 +2;  % number of input dimensions (i.e., dimensions of regressor)
 nY = 1;  % number of output dimensions 
 nT = length(yy); % number of time bins
-loglifun = @logli_mVM_gam;  % log-likelihood function
+loglifun = @logli_staPAW;  % log-likelihood function
 loglitrans = @logli_trans;  % log-likelihood of soft-max state transitions
 
 % Set transition matrix by sampling from Dirichlet distr
@@ -66,10 +51,11 @@ nB = 4;
 % Set linear weights & output noise variances
 % wts0 = [10, randn(1,nB)*10, 10, 25, 10, 25, 5, 1.]; 
 wts0 = rand(nY,nX,nStates); % parameters for the mixture-VonMesis behavioral model
-wts0(1,:,1) = [50,  randn(1,nB)*10,  10, 25,  10, 25,  5,   1.  0.1 0  1 1 0 0]; %[20, randn(1,nB)*10, 10, 25, 10, 25, 1, 1.]; %single mGLM
-wts0(1,:,2) = [10,  randn(1,nB)*10, -10, 25, -10, 25, 20,  .5   0.1 0  1 1 0 0];
-% wts0(1,:,3) = [10,  randn(1,nB)*10, -10, 25, -10, 25, 20,.5 0.1 0  1 1 0 0];
-% wts0(1,:,4) = [10,  randn(1,nB)*10, -20, 25, -20, 25, 20,.5 0.1 0  1 1 0 0];
+%%% kappa_wv, alpha_Kc, a_dc, tau_dc, a_h, tau_h, gamma, kappa_brw, A, B, k1, k2, theta1, theta2, base_c, base_dcp
+wts0(1,:,1) = [50,  randn(1,nB)*10,  10, 25,  10, 25,  5,   1.  0.1 0  1 1 1 1 .1 .1 0 0]; %[20, randn(1,nB)*10, 10, 25, 10, 25, 1, 1.]; %single mGLM
+% wts0(1,:,2) = [10,  randn(1,nB)*10, -10, 25, -10, 25, 20,  .5   0.1 0  1 1 1 1 .1 .1 0 0];
+% wts0(1,:,3) = [10,  randn(1,nB)*10, -10, 25, -10, 25, 20,.5 0.1 0  1 1 1 1 0 0];
+% wts0(1,:,4) = [10,  randn(1,nB)*10, -20, 25, -20, 25, 20,.5 0.1 0  1 1 1 1 0 0];
 
 %%% transition kernels
 alpha_ij = randn(nStates,nStates, nB)*.1;  % state x state x weights
@@ -113,7 +99,7 @@ while (jj <= maxiter) && (dlogp>1e-3)
 %     mmhat.A = (alpha-1 + xisum) ./ (nStates*(alpha-1) + sum(xisum,2)); % normalize each row to sum to 1
     
     % Update model params
-    mmhat = runMstep_mVM_gam(mmhat, xx, yy, gams, mask);
+    mmhat = runMstep_staPAW(mmhat, xx, yy, gams, mask);
     % Update for input-driven transitions
     mmhat = runMstep_state(mmhat, xx, yy, xis, mask); 
     

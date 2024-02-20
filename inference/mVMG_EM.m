@@ -2,7 +2,7 @@
 % mixture of von Mesis and Gamma model
 
 %% load some test data
-wind = 1:100000;%500000:length(allas);
+wind = 1:150000;%500000:length(allas);
 yy = [allas(wind)*1;
       alldis(wind)];
 xx = [alldC(wind); 
@@ -16,7 +16,7 @@ mask(isnan(alltrials(wind))) = false;%
 
 %% Observation and input
 % Set parameters: transition matrix and emission matrix
-nStates = 4; % number of latent states
+nStates = 1; % number of latent states
 nX = 17;  % number of input dimensions (i.e., dimensions of regressor)
 nY = 1;  % number of output dimensions 
 nT = length(yy); % number of time bins
@@ -40,10 +40,10 @@ nB = 4;
 % Set linear weights & output noise variances
 % wts0 = [10, randn(1,nB)*10, 10, 25, 10, 25, 5, 1.]; 
 wts0 = rand(nY,nX,nStates); % parameters for the mixture-VonMesis behavioral model
-wts0(1,:,1) = [20, randn(1,nB)*10, 50, 25, 10, 25, 5, 1.  0.1 0  1 1 0 0]; %[20, randn(1,nB)*10, 10, 25, 10, 25, 1, 1.]; %single mGLM
-wts0(1,:,2) = [10,  randn(1,nB)*10, -50, 25, -10, 25, 20,.5  0.1 0  1 1 0 0];
-wts0(1,:,3) = [10,  randn(1,nB)*10, -10, 25, -10, 25, 20,.5 0.1 0  1 1 0 0];
-wts0(1,:,4) = [10,  randn(1,nB)*10, -20, 25, -20, 25, 20,.5 0.1 0  1 1 0 0];
+% wts0(1,:,1) = [20, randn(1,nB)*10, 50, 25, 10, 25, 5, 1.  0.1 0  1 1 0 0]; %[20, randn(1,nB)*10, 10, 25, 10, 25, 1, 1.]; %single mGLM
+% wts0(1,:,2) = [10,  randn(1,nB)*10, -50, 25, -10, 25, 20,.5  0.1 0  1 1 0 0];
+% wts0(1,:,3) = [10,  randn(1,nB)*10, -10, 25, -10, 25, 20,.5 0.1 0  1 1 0 0];
+% wts0(1,:,4) = [10,  randn(1,nB)*10, -20, 25, -20, 25, 20,.5 0.1 0  1 1 0 0];
 % wts0(1,:,5) = [3,  randn(1,nB)*10, -20, 25, -20, 25, 20,.5 0.1 0  1 1 0 0];
 %[9.9763  -0.5343  -0.0776   0.1238  -0.0529   0.5335   7.7254  367.3817  0.1990  1.0000  0.1000];
 
@@ -136,3 +136,38 @@ for nn = 1:n_samp
     test_lls(nn) = logp_test/length(wind_i);
 end
 test_lls
+
+%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Baseline comparison (random walk)
+% ang_fit = yy(1,:);
+% dcp_fit = xx(2,:);
+% ddc_fit = xx(1,:);
+% trials_fit = mask;
+% lfun = @(x)nLL_randomwalk(x, ang_fit, dcp_fit, ddc_fit, cosBasis, .1, trials_fit);
+% opts = optimset('display','iter');
+% LB = [1e-0, 0, ones(1,nB)*-inf, 0.0 -inf, 1e-0, -inf, 1e-1, 1e-0*10, 0.1];
+% UB = [200, 1., ones(1,nB)*inf, 0.1, inf, 50, inf, 100, 50, 1];
+% prs0 = [50, 0.05, randn(1,nB)*10, 0.01, -10, 25, 10, 25, 5, 1.];
+% prs0 = prs0 + prs0.*randn(1,length(UB))*0.1;
+% [x,fval,EXITFLAG,OUTPUT,LAMBDA,GRAD,HESSIAN] = fmincon(lfun,prs0,[],[],[],[],LB,UB,[],opts);
+% x_MLE = x;
+% 
+% %%
+% n_samp = 30;  % repeats
+% l_samp = 10000;  % length
+% test_lls = zeros(1, n_samp);
+% for nn = 1:n_samp
+%     randomInteger = randi([max(wind), length(yyf)-l_samp]);%randi([1,min(wind)]);%
+%     wind_i = randomInteger:randomInteger+l_samp;
+%     yy = yyf(:, wind_i);
+%     xx = xxf(:, wind_i);
+%     mask = maskf(wind_i);
+%     ang_fit = yy(1,:);
+%     dcp_fit = xx(2,:);
+%     ddc_fit = xx(1,:);
+%     trials_fit = mask;
+%     logp_test = -nLL_randomwalk(x_MLE, ang_fit, dcp_fit, ddc_fit, cosBasis, .1, trials_fit);;
+%     test_lls(nn) = logp_test/length(wind_i);
+% end
+% test_lls

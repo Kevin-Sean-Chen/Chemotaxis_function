@@ -24,7 +24,7 @@ maskf = true(1,length(yyf));
 maskf = alltrials;  %((alltrials)==0) = false;%
 
 %%% pick a window
-wind = 1:300000;
+wind = 1:150000;
 xx = xxf(:,wind);
 yy = yyf(:,wind);
 mask = maskf(wind);
@@ -39,7 +39,7 @@ loglifun = @logli_mVMG_opto;  % log-likelihood function, with opto input
 loglitrans = @logli_trans_opto;  % log-likelihood of soft-max state transitions, with opto driven
 
 % Set transition matrix by sampling from Dirichlet distr
-alpha_diag = 30;  % concentration param added to diagonal (higher makes more diagonal-dominant)
+alpha_diag = 60;  % concentration param added to diagonal (higher makes more diagonal-dominant)
 alpha_full = 5;  % concentration param for other entries (higher makes more uniform)
 G = gamrnd(alpha_full*ones(nStates) + alpha_diag*eye(nStates),1); % sample gamma random variables
 A0 = G./repmat(sum(G,2),1,nStates); % normalize so rows sum to 1
@@ -80,6 +80,7 @@ wts_state0 = alpha_ij;
 w_state_opto0 = alpha_opto;
 
 % Build struct for initial params
+A0 = A0*50;
 mmhat = struct('A',A0,'wts',wts0,'wts_state',wts_state0,'w_state_opto',w_state_opto0,'loglifun',loglifun,'loglitrans',loglitrans,'basis',cosBasis,'lambda',zeros(1,nStates)+0.0);
 
 %% Set up variables for EM
