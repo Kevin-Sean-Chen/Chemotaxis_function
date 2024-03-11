@@ -26,6 +26,10 @@ all_record(num_cv, num_states, num_repeats).params = [];  % trained parameter
 all_record(num_cv, num_states, num_repeats).logp = [];  % train ll trace
 all_record(num_cv, num_states, num_repeats).test_ll = []; % test ll
 
+%% parallel computing
+% Open a parallel pool
+parpool;%('local', 16); % Opens a pool with 16 workers
+
 %%
 % loop through train-test sets
 for c = 1:num_cv
@@ -56,6 +60,9 @@ for c = 1:num_cv
         end
     end
 end
+
+%% close paralllel computing
+delete(gcp)
 
 %% saving
 currentDateTime = datetime('now', 'Format', 'yyyyMMdd_HHmmss');  % in case of overwriting the large data...

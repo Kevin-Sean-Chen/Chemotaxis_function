@@ -1,5 +1,5 @@
-%% staPAW_EM
-% mixture of von Mesis and Gamma model, with input-driven states!
+%% staPAW_lnorm_EM
+% mixture of von Mesis and log-normal model, with input-driven states!
 % dr and dtheta are both under a sigmoid decision!
 
 %% load some test data
@@ -17,7 +17,7 @@ maskf = true(1,length(yyf));
 maskf = alltrials;  %((alltrials)==0) = false;%
 
 %%% pick a window
-wind = 1:100000;
+wind = 1:50000;
 xx = xxf(:,wind);
 yy = yyf(:,wind);
 mask = maskf(wind);
@@ -31,7 +31,7 @@ nStates = 2; % number of latent states
 nX = 17+2 +2;  % number of input dimensions (i.e., dimensions of regressor)
 nY = 1;  % number of output dimensions 
 nT = length(yy); % number of time bins
-loglifun = @logli_staPAW;  % log-likelihood function
+loglifun = @logli_staPAW_ln;  % log-likelihood function
 loglitrans = @logli_trans;  % log-likelihood of soft-max state transitions
 
 % Set transition matrix by sampling from Dirichlet distr
@@ -42,7 +42,7 @@ A0 = G./repmat(sum(G,2),1,nStates); % normalize so rows sum to 1
 
 % sticky priors
 alpha = 1.;  % Dirichlet shape parameter as a prior
-kappa = .5;  % .5 upweighting self-transition for stickiness
+kappa = [100, 1.];  % .5 upweighting self-transition for stickiness
 
 % basis function
 nB = 4;
@@ -74,7 +74,7 @@ wts_state0 = alpha_ij;
 
 % Build struct for initial params
 A0 = A0*50;  % test with non-normalized initial weights
-mmhat = struct('A',A0,'wts',wts0,'wts_state',wts_state0,'loglifun',loglifun,'loglitrans',loglitrans,'basis',cosBasis,'lambda',zeros(1,nStates)+0.0);
+mmhat = struct('A',A0,'wts',wts0,'wts_state',wts_state0,'loglifun',loglifun,'loglitrans',loglitrans,'basis',cosBasis,'lambda',zeros(1,nStates)+0.);
 
 %% Set up variables for EM
 maxiter = 50;
@@ -92,14 +92,18 @@ while (jj <= maxiter) && (dlogp>1e-3)
    
     % --- run M step  -------
     
-    % Update transition matrix (with stickiness)
-%     normed_xisum = xisum ./ sum(xisum,2);
-%     unormedA = kappa*eye(nStates) + (alpha-1)*ones(nStates,nStates) + normed_xisum;
-%     mmhat.A = unormedA ./ sum(unormedA,2);
-%     mmhat.A = (alpha-1 + xisum) ./ (nStates*(alpha-1) + sum(xisum,2)); % normalize each row to sum to 1
-    
+    % Update transition matrix (with stickiness) %%%%%%%%%%%%%%% TESTING %%%%%%%%%%%%%%%
+    normed_xisum = xisum ./ sum(xisum,2);
+    unormedA = kappa.*eye(nStates) + (alpha-1)*ones(nStates,nStates) + normed_xisum;
+    mmhat.A = unormedA ./ sum(unormedA,2);
+    mmhat.A = (alpha-1 + xisum) ./ (nStates*(alpha-1) + sum(xisum,2)); % normalize each row to sum to 1
+    %%%
+%     expected_joints = sum([np.sum(Ezzp1, axis=0) for _, Ezzp1, _ in expectations]) + 1e-16
+%     expected_joints += self.kappa * np.eye(self.K) + (self.alpha-1) * np.ones((self.K, self.K))
+%     P = (expected_joints / expected_joints.sum(axis=1, keepdims=True)) + 1e-16
+    %%%
     % Update model params
-    mmhat = runMstep_staPAW(mmhat, xx, yy, gams, mask);
+    mmhat = runMstep_staPAW_ln(mmhat, xx, yy, gams, mask);
     % Update for input-driven transitions
 %     mmhat = runMstep_state(mmhat, xx, yy, xis, mask); 
     if nStates > 1   % only run state-update if there is HMM (K>1)
@@ -127,7 +131,7 @@ end
 jj = jj-1;
 
 %% testing
-wind_test = max(wind):max(wind)+100000;%length(alldis)-30000:length(alldis)-10000; %length(alldis);%1:max(wind); %
+wind_test = max(wind):max(wind)+50000;%length(alldis)-30000:length(alldis)-10000; %length(alldis);%1:max(wind); %
 yy = yyf(:,wind_test);
 xx = xxf(:,wind_test);
 mask = maskf(wind_test);
