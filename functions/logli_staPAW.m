@@ -42,12 +42,12 @@ function [logli] = logli_staPAW(mm, xx, yy, mask)
         B_ = THETA(1,13,k);           % baseline turning probability
         gamm_shapes = THETA(1,14:15,k);       % shape parameters for speed distribution
         gamm_scales = THETA(1,16:17,k);       % scale parameters for speed distribution
-        gamm_AR = THETA(1,18:19,k);           % AR weight for speed distribution
-        base_dc = THETA(1,20,k);      % bias of turning
-        base_dcp = THETA(1,21,k);     % bias of curving
-%         gamm_AR = [0,0];
-%         base_dc = THETA(1,18,k);      % bias of turning
-%         base_dcp = THETA(1,19,k);     % bias of curving
+%         gamm_AR = THETA(1,18:19,k);           % AR weight for speed distribution
+%         base_dc = THETA(1,20,k);      % bias of turning
+%         base_dcp = THETA(1,21,k);     % bias of curving
+        gamm_AR = [0,0];
+        base_dc = THETA(1,18,k);      % bias of turning
+        base_dcp = THETA(1,19,k);     % bias of curving
         
 
         %%% turning decision

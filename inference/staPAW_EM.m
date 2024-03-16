@@ -28,21 +28,21 @@ mask = maskf(wind);
 %% Observation and input
 % Set parameters: transition matrix and emission matrix
 nStates = 2; % number of latent states
-nX = 17+2 +2;  % number of input dimensions (i.e., dimensions of regressor)
+nX = 17+2 +0;  % number of input dimensions (i.e., dimensions of regressor)
 nY = 1;  % number of output dimensions 
 nT = length(yy); % number of time bins
 loglifun = @logli_staPAW;  % log-likelihood function
 loglitrans = @logli_trans;  % log-likelihood of soft-max state transitions
 
 % Set transition matrix by sampling from Dirichlet distr
-alpha_diag = 50;%60  % concentration param added to diagonal (higher makes more diagonal-dominant)
-alpha_full = 1;%5  % concentration param for other entries (higher makes more uniform)
+alpha_diag = 60;%60  % concentration param added to diagonal (higher makes more diagonal-dominant)
+alpha_full = 5;%5  % concentration param for other entries (higher makes more uniform)
 G = gamrnd(alpha_full*ones(nStates) + alpha_diag*eye(nStates),1); % sample gamma random variables
 A0 = G./repmat(sum(G,2),1,nStates); % normalize so rows sum to 1
 
 % sticky priors
 alpha = 1.;  % Dirichlet shape parameter as a prior
-kappa = .5;  % .5 upweighting self-transition for stickiness
+kappa = .5; %[10 10];  % .5 upweighting self-transition for stickiness
 
 % basis function
 nB = 4;
@@ -52,8 +52,8 @@ nB = 4;
 % wts0 = [10, randn(1,nB)*10, 10, 25, 10, 25, 5, 1.]; 
 wts0 = rand(nY,nX,nStates); % parameters for the mixture-VonMesis behavioral model
 %%% kappa_wv, alpha_Kc, a_dc, tau_dc, a_h, tau_h, gamma, kappa_brw, A, B, k1, k2, theta1, theta2, base_c, base_dcp
-wts0(1,:,1) = [50,  randn(1,nB)*10,  10, 25,  10, 25,  5,   1.  0.1 0  1 1 1 1 .1 .1 0 0]; %[20, randn(1,nB)*10, 10, 25, 10, 25, 1, 1.]; %single mGLM
-wts0(1,:,2) = [10,  randn(1,nB)*10, -10, 25, -10, 25, 20,  .5   0.1 0  1 1 1 1 .1 .1 0 0];
+wts0(1,:,1) = [50,  randn(1,nB)*10,  10, 25,  10, 25,  5,   1.  0.1 0  1 1 .1 .1 0 0]; %[20, randn(1,nB)*10, 10, 25, 10, 25, 1, 1.]; %single mGLM
+wts0(1,:,2) = [10,  randn(1,nB)*10, -10, 25, -10, 25, 20,  .5   0.1 0  1 1 .1 .1 0 0];
 % wts0(1,:,3) = [10,  randn(1,nB)*10, -10, 25, -10, 25, 20,.5 0.1 0  1 1 1 1 0 0];
 % wts0(1,:,4) = [10,  randn(1,nB)*10, -20, 25, -20, 25, 20,.5 0.1 0  1 1 1 1 0 0];
 

@@ -24,15 +24,15 @@ mask = maskf;
 %% Observation and input
 % Set parameters: transition matrix and emission matrix
 nStates = K_states; % number of latent states
-nX = 17 + 2 + 2;  % number of input dimensions (i.e., dimensions of regressor)
+nX = 17 + 2 + 0;  % number of input dimensions (i.e., dimensions of regressor)
 nY = 1;  % number of output dimensions 
 nT = length(yy); % number of time bins
 loglifun = @logli_staPAW;  % log-likelihood function
 loglitrans = @logli_trans;  % log-likelihood of soft-max state transitions
 
 % Set transition matrix by sampling from Dirichlet distr
-alpha_diag = 50;%60  % concentration param added to diagonal (higher makes more diagonal-dominant)
-alpha_full = 1;%5  % concentration param for other entries (higher makes more uniform)
+alpha_diag = 60;%60  % concentration param added to diagonal (higher makes more diagonal-dominant)
+alpha_full = 5;%5  % concentration param for other entries (higher makes more uniform)
 G = gamrnd(alpha_full*ones(nStates) + alpha_diag*eye(nStates),1); % sample gamma random variables
 A0 = G./repmat(sum(G,2),1,nStates); % normalize so rows sum to 1
 
