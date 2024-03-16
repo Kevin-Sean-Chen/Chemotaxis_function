@@ -47,11 +47,11 @@ nB = 4;
 % Set linear weights & output noise variances
 wts0 = rand(nY, nX, 5); % parameters for the mixture-VonMesis behavioral model, assuming we never check above 5 states...
 %%% kappa_wv, alpha_Kc, a_dc, tau_dc, a_h, tau_h, gamma, kappa_brw, A, B, k1, k2, theta1, theta2, phi1, phi2, base_c, base_dcp
-wts0(1,:,1) = [50,  randn(1,nB)*10,  10, 25,  10, 25,  5,   1.  0.1 0  1 1 1 1 .1 .1 0 0];
-wts0(1,:,2) = [10,  randn(1,nB)*10, -10, 25, -10, 25, 20,  .5   0.1 0  1 1 1 1 .1 .1 0 0];
-wts0(1,:,3) = [10,  randn(1,nB)*10, -10, 25, -10, 25, 20,  .5   0.1 0  1 1 1 1 .1 .1 0 0];
-wts0(1,:,4) = [10,  randn(1,nB)*10, -20, 25, -20, 25, 20,  .5   0.1 0  1 1 1 1 .1 .1 0 0];
-wts0(1,:,5) = [10,  randn(1,nB)*10, -20, 25, -20, 25, 20,  .5   0.1 0  1 1 1 1 .1 .1 0 0];
+wts0(1,:,1) = [50,  randn(1,nB)*10,  10, 25,  10, 25,  5,   1.  0.1 0  1 1 1 1  0 0];
+wts0(1,:,2) = [10,  randn(1,nB)*10, -10, 25, -10, 25, 20,  .5   0.1 0  1 1 1 1  0 0];
+wts0(1,:,3) = [10,  randn(1,nB)*10, -10, 25, -10, 25, 20,  .5   0.1 0  1 1 1 1  0 0];
+wts0(1,:,4) = [10,  randn(1,nB)*10, -20, 25, -20, 25, 20,  .5   0.1 0  1 1 1 1  0 0];
+wts0(1,:,5) = [10,  randn(1,nB)*10, -20, 25, -20, 25, 20,  .5   0.1 0  1 1 1 1  0 0];
 wts0 = wts0(:,:,1:nStates);
 
 %%% transition kernels

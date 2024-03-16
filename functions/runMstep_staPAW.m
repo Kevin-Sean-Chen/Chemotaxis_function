@@ -39,8 +39,8 @@ nB = size(Basis,2);
 
 opts = optimset('display','final');%'iter');
 % opts.Algorithm = 'sqp';
-LB = [1e-0, ones(1,nB)*-inf, -inf, 1e-0, -inf, 1e-1, 1e-0,   0.  0   0    0   0   0    0  0 0 -10 -10];
-UB = [100,  ones(1,nB)*inf,   inf,  100,  inf, 100,   100,   1  1  0.5  100 100 100  100  50 50 10  10];
+LB = [1e-0, ones(1,nB)*-inf, -inf, 1e-0, -inf, 1e-1, 1e-0,   0.  0   0    0   0   0 0 -10 -10];
+UB = [100,  ones(1,nB)*inf,   inf,  100,  inf, 100,   100,   1  1  0.5  100 100  50 50 10  10];
 % prs0 = rand(1,10);
 prs0 = [10, randn(1,nB)*10, 10, 25, 10, 25, 5, 1.   0.5 0  1 1 1 1 .1 .1 0 0] ;
 % [x,fval] = fmincon(lfun,prs0,[],[],[],[],LB,UB,[],opts);
@@ -75,9 +75,12 @@ function [nll] = nll_staPAW(THETA, dth, dcp, dc, dv, gams, Basis, lambda, mask)
     B_ = THETA(13);           % basline turn probability
     gamm_shapes = THETA(14:15);    % shape parameters for gamma
     gamm_scales = THETA(16:17);    % scale parameters for gamma
-    gamm_AR = THETA(18:19);        % AR weight for gamma
-    base_dc = THETA(20);      % bias of turning
-    base_dcp = THETA(21);     % bias of curving
+%     gamm_AR = THETA(18:19);        % AR weight for gamma
+%     base_dc = THETA(20);      % bias of turning
+%     base_dcp = THETA(21);     % bias of curving
+    gamm_AR = [0 0];
+    base_dc = THETA(18);      % bias of turning
+    base_dcp = THETA(19);     % bias of curving
 
     %%% turning decision
     %[cosBasis, tgrid, basisPeaks] = makeRaisedCosBasis(5, [0, 10], 1.5);
