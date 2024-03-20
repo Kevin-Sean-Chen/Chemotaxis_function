@@ -1,8 +1,8 @@
 %% scan_staPAW_analysis
 
 %% load data
-load('/projects/LEIFER/Kevin/Data_salt/data_analysis/20240224_132726_cv_staPWA.mat')
-
+% load('/projects/LEIFER/Kevin/Data_salt/data_analysis/20240224_132726_cv_staPWA.mat')
+load('/projects/LEIFER/Kevin/Data_salt/data_analysis/20240319_110114_cv_staPWA.mat')
 %% ablation for null model control...
 neg_control = struct();
 neg_control(num_cv, 1, num_repeats).params = [];  % trained parameter
@@ -30,7 +30,9 @@ for c = 1:num_cv
 %             [mmhat, logp] = runEM_staPAW(Data_train, k);      %%%%%%%% EM training here %%%%%%%% % check K=1 and run null model separately
             mmhat = all_record(c,1,r).params;
             temp_ws = mmhat.wts;
-            temp_ws([2:7 18:19]) = zeros(1,8);
+            temp_ws([2:5]) = zeros(1,4);
+            temp_ws([14:17]) = ones(1,4);
+%             temp_ws([12:13]) = [mean(temp_ws([12:13])) mean(temp_ws([12:13]))];
             mmhat.wts = temp_ws;  % ad-hoc ablation!
             testLL = staPAW_test(Data_test, mmhat, num_subsamp, len_data);      %%%%%%%% testing here %%%%%%%%
             
