@@ -15,7 +15,7 @@ addpath(genpath(pwd))   %%%% use this for cluster computation!  %%%
 % load([filepath,'Data_salt100_50.mat']); 
 
 load(file_dir);   %%%%%%%% load Data structure here %%%%%%%%
-[filePath_, fileName_, fileExt_] = fileparts(fullFilePath);
+[filePath_, fileName_, fileExt_] = fileparts(file_dir);
 filepath = [filePath_, '/'];
 
 %% scanning parameters
