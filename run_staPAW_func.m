@@ -66,8 +66,9 @@ for c = 1:num_cv
 end
 
 %% saving
-notes = cell(1,1);
+notes = cell(1,2);
 notes{1} = note;  % store note string
+notes{2} = file_dir;  % storing the analysis file
 currentDateTime = datetime('now', 'Format', 'yyyyMMdd_HHmmss');  % in case of overwriting the large data...
 timestampString = datestr(currentDateTime, 'yyyymmdd_HHMMSS');
 filename = [filepath, timestampString, '_cv_staPWA.mat']; % save all variable... with caution~
