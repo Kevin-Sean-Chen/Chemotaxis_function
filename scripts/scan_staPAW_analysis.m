@@ -3,6 +3,8 @@
 %% load data
 % load('/projects/LEIFER/Kevin/Data_salt/data_analysis/20240224_132726_cv_staPWA.mat')
 load('/projects/LEIFER/Kevin/Data_salt/data_analysis/20240319_110114_cv_staPWA.mat')
+% load('/projects/LEIFER/Kevin/Data_salt/data_analysis/20240324_114402_cv_staPWA.mat')
+
 %% ablation for null model control...
 neg_control = struct();
 neg_control(num_cv, 1, num_repeats).params = [];  % trained parameter
