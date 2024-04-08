@@ -127,7 +127,7 @@ errorbar([1,2,3],mean(pred_dr'),std(pred_dr')/n_samps^0.5,'ko')
 custom_labels = {'staPAW', 'dPAW', 'control'};
 xticks([1,2,3]);
 xticklabels(custom_labels); set(gcf,'color','w'); set(gca,'Fontsize',20); ylabel('speed prediction')
-set(gca, 'YScale', 'log');
+% set(gca, 'YScale', 'log');
 
 %%
 function [pp] = predict_turns(v1,v2,threshold)
@@ -140,16 +140,19 @@ function [pp] = predict_turns(v1,v2,threshold)
     % direct correlation
 %     pp = sum(v1b.*v2b)/(sum(v1b)*sum(v2b));  %%% some metric here...
     % Jarrad similarity
+%     windw = ones(1,5);
+%     v1b = conv(v1b, windw, 'same');
+%     v2b = conv(v2b, windw, 'same');
     intersection = sum(v1b & v2b);
     union = sum(v1b | v2b);
     pp = intersection / union;
     % convolved correlation
-%     window = ones(1,7);
+%     window = ones(1,5);
 %     correlation_coefficient = corrcoef(conv(v1b, window, 'same'), conv(v2b, window, 'same'));
 %     pp = correlation_coefficient(1, 2);
 end
 function [pp] = predict_runs(v1,v2)
-    window = ones(1,14);
-    correlation_coefficient = corrcoef(conv(v1, window, 'same'), conv(v2, window, 'same'));%corrcoef(v1, v2);
+    windw = ones(1,28); %14
+    correlation_coefficient = corrcoef(conv(v1, windw, 'same'), conv(v2, windw, 'same'));%corrcoef(v1, v2);
     pp = correlation_coefficient(1, 2);
 end

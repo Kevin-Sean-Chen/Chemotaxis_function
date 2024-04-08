@@ -4,12 +4,14 @@
 % load('/projects/LEIFER/Kevin/Data_salt/data_analysis/20240224_132726_cv_staPWA.mat')
 load('/projects/LEIFER/Kevin/Data_salt/data_analysis/20240319_110114_cv_staPWA.mat')
 % load('/projects/LEIFER/Kevin/Data_salt/data_analysis/20240324_114402_cv_staPWA.mat')
+% load('/projects/LEIFER/Kevin/Data_learn/N2/ssm_analysis/20240402_110348_cv_staPWA.mat')
 
 %% ablation for null model control...
 neg_control = struct();
 neg_control(num_cv, 1, num_repeats).params = [];  % trained parameter
 neg_control(num_cv, 1, num_repeats).logp = [];  % train ll trace
 neg_control(num_cv, 1, num_repeats).test_ll = []; % test ll
+hmm_control = neg_control;  % for state control
 
 for c = 1:num_cv
     % loading train-test Data tracks
@@ -40,8 +42,18 @@ for c = 1:num_cv
             
             % putting results in
             neg_control(c, 1, r).params = mmhat;  % trained parameter
-            neg_control(c, 1, r).logp = logp;  % train ll trace
+%             neg_control(c, 1, r).logp = logp;  % train ll trace
             neg_control(c, 1, r).test_ll = testLL; % test ll
+            
+            % for state control
+            mmhat = all_record(c,1,r).params;
+            temp_wt_state = mmhat.wts_state;
+            temp_wt_state = temp_wt_state*0;
+            mmhat.wts_state = temp_wt_state;
+            testLL = staPAW_test(Data_test, mmhat, num_subsamp, len_data);      %%%%%%%% testing here %%%%%%%%
+            hmm_control(c, 1, r).params = mmhat;  % trained parameter
+%             hmm_control(c, 1, r).logp = logp;  % train ll trace
+            hmm_control(c, 1, r).test_ll = testLL; % test ll
         end
     end
 end
@@ -49,10 +61,13 @@ end
 %% state analysis
 cvi = 3;
 null_ll = [];
+state_null = [];
 for cc = 1:3
     for rr = 1:5
         temp_null = neg_control(cc,1,rr).test_ll;
         null_ll = [null_ll temp_null];
+        temp_null = hmm_control(cc,1,rr).test_ll;
+        state_null = [state_null temp_null];
     end
 end
 base_ll = mean(null_ll);
@@ -61,14 +76,18 @@ for cc = 1:3
 for rr = 1:5
     for kk = 1:4
         temp = all_record(cc,kk,rr).test_ll;
-        plot(zeros(1,length(temp))+kk + randn(1, length(temp))*0.07, temp - base_ll, 'k.')
+        plot(zeros(1,length(temp))+kk + randn(1, length(temp))*0.07, (temp - base_ll)/log(2), 'k.')
         hold on
     end
     
 
 end
 end
-plot(randn(1, length(null_ll))*0.07, null_ll - base_ll, 'k.')
+plot(randn(1, length(null_ll))*0.07, (null_ll - base_ll)/log(2), 'k.')
+set(gcf,'color','w'); set(gca,'Fontsize',20);
+ylabel('test LL (bits/s)'); xlabel('models')
+
+plot(randn(1, length(null_ll))*0.07 + 5, (state_null - base_ll)/log(2), 'k.')
 set(gcf,'color','w'); set(gca,'Fontsize',20);
 ylabel('test LL (bits/s)'); xlabel('models')
 
