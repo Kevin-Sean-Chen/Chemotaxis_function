@@ -43,7 +43,7 @@ for tt = length(xv)+1:lt
     wv = ((fliplr(K_dcp_rec)*dcp_t') + b_dcp) + (vmrand(0,K_))*180/pi;
     Pturns = (A_-C_) ./ (1 + exp( -(dc_dth)) + 0) + C_; %+sb
     
-    if rand < Pturns*7/14
+    if rand < Pturns*14/14 %7/14
         beta = 1;
         dr = gamrnd(ks_(1), thetas_(1), 1, 1);
     else
