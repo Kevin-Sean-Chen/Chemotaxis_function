@@ -3,6 +3,7 @@
 % after running inference, with the data set allXs (as,dis,dC,dcp) and the
 % trained mmhat structure, we can analyze the distributions and parameters
 %%%
+% load('/projects/LEIFER/Kevin/Data_salt/data_analysis/Data_salt0_50_staPAW.mat')
 
 %%
 % with Data structure
@@ -232,7 +233,7 @@ pix2mm = 1/31.5;
 CM = ['k','r','w','g'];%jet(stateK);  % See the help for COLORMAP to see other choices.
 figure;
 imagesc(M,'XData',[0 size(M,2)*pix2mm],'YData',[0 size(M,1)*pix2mm]); hold on
-for kk = nStates:-1:1 %1:nStates %
+for kk = 1:nStates %nStates:-1:1 %
     pos = find(bb==kk)+offset;
 %     plot(allxys(1,pos)*pix2mm, allxys(2,pos)*pix2mm,'.')%,'color',CM(kk))
     plot(allxys(1,pos)*pix2mm, allxys(2,pos)*pix2mm,'.','color',CM(kk))
@@ -336,11 +337,12 @@ xlabel('time (s)'); ylabel('pdf'); title('dwell time'); xlim([0,50])
 
 %% further analysis for autocorrelation
 % given state posterior, simulate state-dependent AR process to check autocorrelations for dr
-nlag = 60;
 [aa,bb] = max( gams_ ,[], 1 );
 sim_dr = zeros(1,length(bb));
+sim_dth = sim_dr*1;
 drt = yyf(2,1);
-for tt = 1:length(bb)
+xv = 1:length(cosBasis); wind = length(xv);
+for tt = wind+1:length(bb)
     %%% choose state!
 %     state_t = bb(tt);
     prob = gams_(:,tt);
@@ -356,6 +358,7 @@ for tt = 1:length(bb)
     K_ = x(1); B_ = x(2:5); Amp = x(6); tau = x(7); Amp_h = x(8); tau_h = x(9); K2_ = x(10);  gamma = x(11); A_=x(12); C_=x(13); b_dc=x(18); b_dcp=x(19);
     ks_ = x(14:15);  thetas_ = x(16:17); phis_ = [0,0]; %phis_ = x(18:19);
     
+    %%% for dr
     if state_t==1
         drt = gamrnd(ks_(2) + 1*drt*phis_(2)/1, thetas_(1)/1);
     else
@@ -365,18 +368,113 @@ for tt = 1:length(bb)
             drt = gamrnd(ks_(1) + 1*drt*(phis_(1))/1, thetas_(2)/1);
         end
     end
-%     if drt>dis_cutoff
-%         drt=gamrnd(ks_(2) + 0*drt*phis_(2), thetas_(2));
-%     end
+    
+    %%% for dth
+    K_dcp = Amp*exp(-xv/tau);
+    K_h = Amp_h*exp(-xv/tau_h);
+    K_dc = B_ * cosBasis';
+    dCv = xx(1,tt-wind+1:tt); dthv = yy(1,tt-wind+1:tt); dCpv = xx(2,tt-wind+1:tt);
+    wv = (1*sum(K_dcp.*dCpv) + b_dcp*1) + (vmrand(0,K_))*180/pi;
+    P_event = (A_-C_) / (1+exp( -(sum(K_dc.*dCv)*1. + 1*(sum(K_h.*abs(dthv)*180/pi)) *1 + 1*b_dc)+0) ) + C_;%Pturn_base;%length(wind)
+    if rand < P_event
+        beta = 1;
+%         vv = gamrnd(k_(1), theta_(1))/1;
+    else
+        beta = 0;
+%         vv = gamrnd(k_(2), theta_(2))/1;
+    end
+    
+    if rand < gamma
+        rt = beta*(vmrand(pi,1*K2_)*180/pi);
+    else
+        rt = beta*(vmrand(0,0)*180/pi);
+    end
+    
+    dth = wv+rt; dth = wrapToPi(dth*pi/180)*180/pi;
     sim_dr(tt) = drt;
+    sim_dth(tt) = dth;
 end
 
+%% analyze <dr,dr'>
+model = @(params, x) params(1)*exp(-1/params(2)*x) + params(3)*exp(-1/params(4)*x);% + params(5);
+
+nlag = 60;
 dr_data = yyf(2,1:100000);
 dv = dr_data(find(dr_data<dis_cutoff));
 [As_data,lgs] = autocorr(dv, nlag);
 [As_sim,lgs] = autocorr(sim_dr, nlag);
+
+%%% data fitting
+initialGuess = [.5, 1, .1, 10];
+paramsFit = lsqcurvefit(model, initialGuess, lgs*5/14, (As_data));
+yFit = model(paramsFit, lgs*5/14);
+figure; plot(lgs*5/14, yFit, 'LineWidth',3); hold on;
+plot(lgs*5/14, As_data, 'k.', 'MarkerSize',15);
+set(gcf,'color','w'); set(gca,'Fontsize',20);
+xlabel('time (s)'); ylabel('<drdr''>')
+
+%%
+%%% model prediction
 figure;
-plot(lgs*5/14, As_data); hold on
+plot(lgs*5/14, As_data, '--'); hold on
 plot(lgs(1:1:end)*5/14, As_sim(1:1:end),'k')
 set(gcf,'color','w'); set(gca,'Fontsize',20);
 xlabel('time (s)'); ylabel('<drdr''>')
+
+%% further analysis of ITI!
+pos = find(abs(yy(1,:))>50); %.7
+% pos = find(abs(sim_dth)>50); %.6
+iti = diff(pos)*5/14;  % duration in seconds
+% figure; hist(iti,100)
+bins = 0:.7:70;
+H1 = histogram(iti, bins, 'Normalization', 'pdf'); H1.Visible = 'off'; %,
+iti_cnt = H1.Values;
+iti_bin = H1.BinEdges(1:end-1) + diff(H1.BinEdges)/2;
+
+% Double exponential model function
+initialGuess = [.5, 1, .1, 100];
+paramsFit = lsqcurvefit(model, initialGuess, iti_bin, (iti_cnt));
+yFit = model(paramsFit, iti_bin);
+figure; 
+semilogy(iti_bin, yFit, 'LineWidth',3); hold on;
+semilogy(iti_bin, iti_cnt, 'k.','MarkerSize',15); xlim([0, 70]);
+a1=paramsFit(1); tau1=paramsFit(2); a2=paramsFit(3); tau2=paramsFit(4);
+tau_c = 1/(1/tau1-1/tau2)*log(a1/a2)
+set(gcf,'color','w'); set(gca,'Fontsize',20);  ylabel('probability');  xlabel('turn interval (s)')
+
+%%
+%%% model prediction
+pos = find(abs(sim_dth)>50); %.6
+iti_model = diff(pos)*5/14;  % duration in seconds
+bins_m = 0:.7:70;
+H1 = histogram(iti_model, bins_m, 'Normalization', 'pdf'); H1.Visible = 'off'; %,
+iti_cnt_m = H1.Values;
+iti_bin_m = H1.BinEdges(1:end-1) + diff(H1.BinEdges)/2;
+figure; 
+plot(iti_bin_m, iti_cnt_m, 'LineWidth',3); hold on;
+plot(iti_bin, iti_cnt, 'k-','MarkerSize',15); xlim([0, 70]);
+set(gcf,'color','w'); set(gca,'Fontsize',20);  ylabel('probability');  xlabel('turn interval (s)')
+
+%% descriptive stats plots
+figure;
+full_data = yy(1,1:200000);
+% temp_y = full_data(find(full_data<dis_cutoff));
+temp_y = full_data;
+[counts, edges] = histcounts(temp_y, 100); %nbins 60, 100
+bb = edges(1:end-1);
+logCounts = (counts)/sum(counts) * Pk_frac;
+% bar(edges(1:end-1)*fac_mms, logCounts,'FaceColor', CM(sk), 'FaceAlpha',0.5); 
+bar(edges(1:end-1)*1, logCounts,'FaceColor', CM(sk), 'FaceAlpha',0.5); 
+title('dr'); set(gca,'Fontsize',20); set(gcf,'color','w'); ylabel('probability'); %xlim([0, 0.3])
+
+%% for demo
+wind_ex = offset+(2350:2800)+0;%2800;  %1200:2200   %800:1200
+figure;
+subplot(312) 
+plot([1:length(wind_ex)]*5/14, yyf(1,wind_ex)); ylabel('d\theta');set(gca,'Fontsize',20); xlim([0,160]); hold on; xticks([])
+pos = find(abs(yyf(1,wind_ex))>50);
+plot(pos*5/14, ones(1, length(pos)),'*'); plot([0,160],[50,50],'k--'); plot([0,160],[-50,-50],'k--')
+subplot(311)
+plot([1:length(wind_ex)]*5/14, xxf(1,wind_ex)); ylabel('ppm');set(gca,'Fontsize',20); xlim([0,160]); xticks([])
+subplot(313)
+plot([1:length(wind_ex)]*5/14, yyf(2,wind_ex)*fac_mms, 'k'); ylabel('mm/s'); set(gca,'Fontsize',20);set(gcf,'color','w'); xlim([0,160])
