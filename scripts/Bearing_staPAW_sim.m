@@ -9,7 +9,7 @@
 
 %% load trained models
 load('/projects/LEIFER/Kevin/Data_salt/data_analysis/20240319_110114_cv_staPWA.mat')
-rng(42) %37
+rng(42) %37 42
 
 %% asign models
 rr = 3; %2
@@ -22,10 +22,10 @@ temp_ws([14:17]) = ones(1,4);
 % null_fit.wts = temp_ws;  % ad-hoc ablation!
 
 %%% one at a time
-% model_choice = dPAW_fit;  %
+% model_choice = dPAW_fit;  % time step=5/14, tune wv strength, remove states, compute pirouette with window
 
-model_choice = staPAW_fit; %
-% model_choice.wts_state = model_choice.wts_state*0;
+model_choice = staPAW_fit; % test with data in the same way (z-state)
+% model_choice.wts_state = model_choice.wts_state*0;  % same setup as staPAW but not transition
 
 %% environement
 mmhat = model_choice; %all_record(rr, 2, 3).params;  % two-state model
@@ -285,17 +285,17 @@ pos_state_turn = find(abs(allstate)>1.5);  %18
 pos_state = pos_state_turn;
 fix_t = 10;
 
-%% test for classic pirouette! for data
+%% test for classic pirouette! for data or dPAW
 % windp = 10; %10, 4
 % pos_state_turn = find(abs(dth_sim)>50);
-% % pos_state_turn = find(abs(yy(1,:))>50); 
+% pos_state_turn = find(abs(yy(1,:))>50); 
 % state_vec = allstate*0;
 % state_vec(pos_state_turn) = ones(1,length(pos_state_turn));
 % state_vec = conv(state_vec,ones(1,windp), 'same');
 % state_vec(find(state_vec>1)) = 1;
 
 %% iterations
-state_vec(pos_state) = ones(1,length(pos_state));
+state_vec(pos_state) = ones(1,length(pos_state)); %%% for dPAW
 trans_pos = diff(state_vec);
 trans12 = find(trans_pos>0)-0;
 trans21 = find(trans_pos<0)+0;
