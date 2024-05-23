@@ -9,10 +9,11 @@
 %% load trained models
 load('/projects/LEIFER/Kevin/Data_salt/data_analysis/20240319_110114_cv_staPWA.mat') %%% Data_salt0_50 %%%
 % load('/projects/LEIFER/Kevin/Data_salt/data_analysis/20240324_114402_cv_staPWA.mat') %%% Data_salt100_50
+% load('/projects/LEIFER/Kevin/Data_salt/data_analysis/20240520_023653_cv_staPWA.mat') %%% new Data_salt0_50_, for pirouettes demo!
 % rng(42) %37
 
 %% asign models
-rr = 1; %2
+rr = 3; %2
 dPAW_fit = all_record(rr,1,1).params;  % single state
 staPAW_fit = all_record(rr,2,1).params;  % two-state model
 temp_ws = dPAW_fit.wts;
@@ -35,7 +36,7 @@ model_choice = staPAW_fit; %dPAW_fit;  %staPAW_wo_fit; %
 alldis = extractfield(Data(:), 'dis');  % Data
 yyf = [yyf; alldis];
 
-wind_test = [1:150000];
+wind_test = [1:250000];  %150000, 250000
 offset = min(wind_test)-1;
 xx = xxf(:,wind_test);
 yy = yyf(:,wind_test);
@@ -72,8 +73,8 @@ target = [3000, 1500];  % gradient vector
 xy_sim = xys;
 
 %% defining states (change for dPAW comparison)
-pre_t = 10; %8, 2
-post_t = 10;
+pre_t = 20; %8, 2, 20
+post_t = 20;
 state_vec = gams_(1,:)*0; %gams_*0;%
 %%% staPAW states!
 pos_state_stapaw = find(gams_(1,:)>0.5); %<gams_(2,:));
@@ -95,7 +96,7 @@ fix_t = 10;
 % pos_state(pos) = [];
 
 %% test for classic pirouette! for data
-% windp = 4;
+% windp = 28;  %20,28
 % pos_state_turn = find(abs(yy(1,:))>50);
 % % pos_state_turn = find(abs(dth_sim)>50); 
 % state_vec = wind_test*0;
@@ -105,7 +106,7 @@ fix_t = 10;
 
 %% iterations
 % state_vec = zeros(2,floor(length(xx)/2)+1);  % making 2d for column difference
-state_vec(pos_state) = ones(1,length(pos_state));
+state_vec(pos_state) = ones(1,length(pos_state));  %%%% use for non-pirouette positions
 % state_vec = state_vec(randperm(length(state_vec)));
 trans_pos = diff(state_vec);
 
@@ -118,8 +119,8 @@ for bb = 8:npairs-8
     %%% pre vector
     v1 = (target - xy_sim(:, trans12(bb))');  %target
 %     v2 = vecs(:,trans12(bb)-pre_t)';   % vector based
-    v2 = (xy_sim(:,trans12(bb)) - xy_sim(:,trans12(bb)-pre_t))';  % position-based 
-    v1 = [3000 v2(2)];
+    v2 = -(xy_sim(:,trans12(bb)) - xy_sim(:,trans12(bb)-pre_t))';  % position-based 
+    v1 = [3000 v2(2)+0];
     
     Bpre = angles(v1, v2);
 
@@ -130,7 +131,7 @@ for bb = 8:npairs-8
 
 %     v1 = -(target - xys(:, trans12(bb)+fix_t)'); %target
 %     v2 = (xys(:,trans12(bb)+fix_t) - xys(:,trans12(bb)+fix_t+post_t))';  % another timed-control!
-    v1 = [3000 v2(2)];
+    v1 = [3000 v2(2)+0];
     
     Bpost = angles(v1, v2);
     

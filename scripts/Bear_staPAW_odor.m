@@ -4,9 +4,9 @@
 %%%
 %% load data
 % load('/projects/LEIFER/Kevin/Data_learn/N2/ssm_analysis/Data_nai_staPAW.mat') %%% odor naive
-% load('/projects/LEIFER/Kevin/Data_learn/N2/ssm_analysis/Data_ave_staPAW.mat') %%% odor aversive
+load('/projects/LEIFER/Kevin/Data_learn/N2/ssm_analysis/Data_ave_staPAW.mat') %%% odor aversive
 % load('/projects/LEIFER/Kevin/Data_salt/data_analysis/Data_salt100_50_staPAW2.mat') %%% 100-50 salt
-load('/projects/LEIFER/Kevin/Data_salt/data_analysis/Data_salt0_50_staPAW.mat') %%% 0-50 salt
+% % % % load('/projects/LEIFER/Kevin/Data_salt/data_analysis/Data_salt0_50_staPAW.mat') %%% 0-50 salt
 
 %% load landscape
 % Cmap = load('/projects/LEIFER/Kevin/Data_odor_flow_equ/Landscape_low.mat');
@@ -35,7 +35,7 @@ alldis = extractfield(Data, 'dis');  % Data
 yyf = [yyf; alldis];
 
 % testing
-wind_test = [1:200000]; %[1:150000];%for nai %[1:200000] [1:300000];%for ave
+wind_test = [1:300000]; %[1:150000];%for nai, NaCl_100 %[1:200000];% [1:300000];%for ave
 offset = min(wind_test)-1;
 yy = yyf(:,wind_test);
 xx = xxf(:,wind_test);
@@ -53,11 +53,11 @@ xys = allxys(:,wind_test);
 xy_sim = xys;
 
 %% defining states (change for dPAW comparison)
-pre_t = 12; %8, 2, 12
-post_t = 12;
+pre_t = 20; %8, 2, 12
+post_t = 20;
 state_vec = gams_(1,:)*0; %gams_*0;%
 %%% staPAW states!
-pos_state_stapaw = find(gams_(2,:)>0.5); %<gams_(2,:));
+pos_state_stapaw = find(gams_(1,:)>0.5); %<gams_(1,:));  %%% 2 for NaCl_100, 1 for others
 %%% mock states!
 pos_state_turn = find(abs(yy(1,:))>50);  % use this for fare comparison across models
 % pos_state_turn = find(abs(dth_sim)>50);  %50, 18
@@ -96,7 +96,7 @@ for bb = 8:npairs-8
     v1 = (target - xy_sim(:, trans12(bb))');  %target
 %     v2 = vecs(:,trans12(bb)-pre_t)';   % vector based
     v2 = -(xy_sim(:,trans12(bb)) - xy_sim(:,trans12(bb)-pre_t))';  % position-based 
-    v1 = [3000 v2(2)+0]; %[-3000 v2(2)];
+%     v1 = [3000 v2(2)+0]; %[-3000 v2(2)];
     
     Bpre = angles(v1, v2);
 
@@ -107,7 +107,7 @@ for bb = 8:npairs-8
 
 %     v1 = -(target - xys(:, trans12(bb)+fix_t)'); %target
 %     v2 = (xys(:,trans12(bb)+fix_t) - xys(:,trans12(bb)+fix_t+post_t))';  % another timed-control!
-    v1 = [3000 v2(2)+0]; %[-3000 v2(2)];
+%     v1 = [3000 v2(2)+0]; %[-3000 v2(2)];
     
     Bpost = angles(v1, v2);
     
