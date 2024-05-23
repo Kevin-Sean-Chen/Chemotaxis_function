@@ -11,7 +11,7 @@
 alldis = extractfield(Data, 'dis');  % Data
 yyf = [yyf; alldis];
 
-wind_test = [1:250000];
+wind_test = [1:150000];  %200000,  40000
 offset = min(wind_test)-1;
 xx = xxf(:,wind_test);
 yy = yyf(:,wind_test);
@@ -25,7 +25,7 @@ for ii = 1:length(Data);  allxys = [allxys  Data(ii).xy]; end
 
 %% emission analysis
 %%% load state condition
-stateK = 1;
+stateK = 2;
 x = squeeze(mmhat.wts(:,:,stateK));
 [aa,bb] = max( gams_ ,[], 1 );
 pos = find(bb==stateK)+offset;
@@ -96,7 +96,11 @@ for ss = 1:nStates
     dc_dth = filt_ddc*1 + 1*filt_dth + b_dc;
     subplot(122); 
     Pturns = (A_-C_) ./ (1 + exp( -(dc_dth)/std(dc_dth)) + 0) + C_;
-    plot(dc_dth(1:100:end)/1/std(dc_dth) , Pturns(1:100:end),'o'); ylabel('P(q=1|state)'); xlabel('projected signal'); set(gca,'Fontsize',20); hold on
+%     plot(dc_dth(1:100:end)/1/std(dc_dth) , Pturns(1:100:end),'o'); ylabel('P(q=1|state)'); xlabel('projected signal'); set(gca,'Fontsize',20); hold on
+    temp_dc_dth = dc_dth(1:50:end);
+    temp_pt = Pturns(1:50:end);
+    [~, temp_order] = sort(temp_pt);
+    plot(temp_dc_dth(temp_order)/1/std(dc_dth) , temp_pt(temp_order),'-o'); ylabel('P(q=1|state)'); xlabel('projected signal'); set(gca,'Fontsize',20); hold on
     subplot(121);
     plot(tt,K_dc_rec); xlabel('time (s)'); ylabel('weights'); set(gca,'Fontsize',20); set(gcf,'color','w'); hold on
 end
@@ -399,7 +403,7 @@ end
 model = @(params, x) params(1)*exp(-1/params(2)*x) + params(3)*exp(-1/params(4)*x);% + params(5);
 
 nlag = 60;
-dr_data = yyf(2,1:100000);
+dr_data = yyf(2,1:150000);
 dv = dr_data(find(dr_data<dis_cutoff));
 [As_data,lgs] = autocorr(dv, nlag);
 [As_sim,lgs] = autocorr(sim_dr, nlag);
@@ -457,7 +461,7 @@ set(gcf,'color','w'); set(gca,'Fontsize',20);  ylabel('probability');  xlabel('t
 
 %% descriptive stats plots
 figure;
-full_data = yy(1,1:200000);
+full_data = yy(1,1:150000);
 % temp_y = full_data(find(full_data<dis_cutoff));
 temp_y = full_data;
 [counts, edges] = histcounts(temp_y, 100); %nbins 60, 100

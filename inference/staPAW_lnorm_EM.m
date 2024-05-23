@@ -42,7 +42,7 @@ A0 = G./repmat(sum(G,2),1,nStates); % normalize so rows sum to 1
 
 % sticky priors
 alpha = 1.;  % Dirichlet shape parameter as a prior
-kappa = [100, 1.];  % .5 upweighting self-transition for stickiness
+kappa = [1, 1.];  % .5 upweighting self-transition for stickiness
 
 % basis function
 nB = 4;
@@ -93,10 +93,10 @@ while (jj <= maxiter) && (dlogp>1e-3)
     % --- run M step  -------
     
     % Update transition matrix (with stickiness) %%%%%%%%%%%%%%% TESTING %%%%%%%%%%%%%%%
-    normed_xisum = xisum ./ sum(xisum,2);
-    unormedA = kappa.*eye(nStates) + (alpha-1)*ones(nStates,nStates) + normed_xisum;
-    mmhat.A = unormedA ./ sum(unormedA,2);
-    mmhat.A = (alpha-1 + xisum) ./ (nStates*(alpha-1) + sum(xisum,2)); % normalize each row to sum to 1
+%     normed_xisum = xisum ./ sum(xisum,2);
+%     unormedA = kappa.*eye(nStates) + (alpha-1)*ones(nStates,nStates) + normed_xisum;
+%     mmhat.A = unormedA ./ sum(unormedA,2);
+%     mmhat.A = (alpha-1 + xisum) ./ (nStates*(alpha-1) + sum(xisum,2)); % normalize each row to sum to 1
     %%%
 %     expected_joints = sum([np.sum(Ezzp1, axis=0) for _, Ezzp1, _ in expectations]) + 1e-16
 %     expected_joints += self.kappa * np.eye(self.K) + (self.alpha-1) * np.ones((self.K, self.K))

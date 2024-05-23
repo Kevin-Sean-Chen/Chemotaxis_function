@@ -8,7 +8,8 @@
 addpath(genpath(pwd))   %%%% use this for cluster computation!  %%%
 
 filepath = '/projects/LEIFER/Kevin/Data_salt/data_analysis/';
-load([filepath,'Data_salt100_50_0511.mat']);     %%%%%%%% load Data structure here %%%%%%%%
+data_name = 'Data_salt100_50_0511.mat';
+load([filepath,data_name]);     %%%%%%%% load Data structure here %%%%%%%%
 
 %% scanning parameters
 num_cv = 3;  % half is enough data

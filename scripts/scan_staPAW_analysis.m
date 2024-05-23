@@ -1,10 +1,12 @@
 %% scan_staPAW_analysis
 
 %% load data
-% load('/projects/LEIFER/Kevin/Data_salt/data_analysis/20240224_132726_cv_staPWA.mat')
-load('/projects/LEIFER/Kevin/Data_salt/data_analysis/20240319_110114_cv_staPWA.mat')
-% load('/projects/LEIFER/Kevin/Data_salt/data_analysis/20240324_114402_cv_staPWA.mat')
-% load('/projects/LEIFER/Kevin/Data_learn/N2/ssm_analysis/20240402_110348_cv_staPWA.mat')
+% load('/projects/LEIFER/Kevin/Data_salt/data_analysis/20240224_132726_cv_staPWA.mat') %%% repeat 0_50
+load('/projects/LEIFER/Kevin/Data_salt/data_analysis/20240319_110114_cv_staPWA.mat') %%% Data_salt0_50 %%%
+% load('/projects/LEIFER/Kevin/Data_salt/data_analysis/20240324_114402_cv_staPWA.mat') %%% Data_salt100_50
+% load('/projects/LEIFER/Kevin/Data_learn/N2/ssm_analysis/20240402_110348_cv_staPWA.mat') %%% Data_nai and Data_ave
+% load('/projects/LEIFER/Kevin/Data_salt/data_analysis/20240520_023653_cv_staPWA.mat')  %%% Data_salt0_50_0513
+% %%% Data_salt100_50_0511
 
 %% ablation for null model control...
 neg_control = struct();

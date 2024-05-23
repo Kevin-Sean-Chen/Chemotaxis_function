@@ -7,8 +7,15 @@
 % Data stucture imported to construct testing data
 % If this is right after 
 
+% with Data structure
+[xxf, yyf, alltrials, time] = data2xy(Data);
+alldis = extractfield(Data, 'dis');  % Data
+allopto = extractfield(Data, 'opto');  % Data
+xxf = [xxf; allopto];
+yyf = [yyf; alldis];
+
 % testing
-wind_test = [100000:200000]; %[100000:148982];%500000:length(allas)];%max(wind):length(allas);
+wind_test = [1:400000]; %[100000:148982];%500000:length(allas)];%max(wind):length(allas);
 offset = min(wind_test)-1;
 yy = yyf(:,wind_test);
 xx = xxf(:,wind_test);

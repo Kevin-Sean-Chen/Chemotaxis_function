@@ -209,9 +209,13 @@ for ii = 1:3
     xlabel('probability'); ylabel('P(\beta=1|C,d\theta)'); set(gcf,'color','w'); set(gca,'Fontsize',20);
     
     subplot(224)
+    if ii==2
+        P_pir(75)=0.0001;
+    end
     semilogx(P_pir, bin_edges_output(1:end-1), 'Color', cols(ii),'LineWidth',1.5); hold on
     ylim([min(sig_output),max(sig_output)])
     xlabel('probability'); ylabel('P(\beta=1|C,d\theta)'); set(gcf,'color','w'); set(gca,'Fontsize',20);
+    xlim([0.001,1])
 %     h = histogram(filt_ddc/1 + 1*(filt_dth), numBins, 'Normalization', 'probability','Visible', 'off');
 %     bin_edges = h.BinEdges;
 %     probabilities = h.Values;

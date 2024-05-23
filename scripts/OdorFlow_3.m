@@ -32,17 +32,24 @@ Fcon = Fcon.F;
 M = Cmap.vq1;
 M = fliplr(flipud(M));  %flipped camera
 % M = flipud(M);
+%% for salt
+[rows, cols] = size(M);
+[x_, y_] = meshgrid(linspace(0, 50, cols), 1:rows);  % for   0 to 50 mM
+% [x_, y_] = meshgrid(linspace(100, 50, cols), 1:rows);  % for 100 to 50 mM
+gradient_x = x_ * 1;
+M = (y_*0+1) .* gradient_x;  figure; imagesc(M)
+
 %% pand a,b 
 poly_degree = 3;  %polynomial fitting for moving window
 filt = 14;  %window the path (has to be odd because it is +/- points around the center)
 fr = 1/14;  %1/14 seconds between each frame  (~0.0714 second for each frame)
 nn = length(Tracks); %number of worms selected
-mint = 60*2.;%.85; %minimum time incand seconds
-minx = 100*1.;  %minimum displacement (in terms of pixels) %3 for app?
-endingt = 60*30;  %only taking the first few minutes
+mint = 60*2.5;%3%.85; %minimum time incand seconds
+minx = 100*1;  %minimum displacement (in terms of pixels) %3 for app?
+endingt = 60*20;%30  %only taking the first few minutes
 pix2mm = 1/31.5;
 targ_track = 7;
-conc_thre = .8*max(max(M));
+conc_thre = .99*max(max(M));
 
 figure();
 imagesc(M,'XData',[0 size(M,2)*pix2mm],'YData',[0 size(M,1)*pix2mm]);
@@ -51,13 +58,13 @@ hold on
 cand = [];  %index of tracks as candidates for analysis
 alldists = [];
 ttt= 0;
-for i = 1:nn
+for i = 1:nn %200
     ttt = ttt+ (Tracks(i).Time(end)-Tracks(i).Time(1));
     if Tracks(i).Time(end)-Tracks(i).Time(1) > mint  %time cutoff
         displace = mean((Tracks(i).Path(:,1)-mean(Tracks(i).Path(:,1))).^2 + (Tracks(i).Path(:,2)-mean(Tracks(i).Path(:,2))).^2); %pixel displacement
         alldists = [alldists displace*pix2mm^2];  %all dispacements in mm
         if displace > minx^2  %space cutoff
-%             pos = find(Tracks(i).Path(1,2)<1000 | Tracks(i).Path(1,2)>1500);
+%             pos = find(Tracks(i).Path(1,1)>1000 & Tracks(i).Path(1,1)<1500);
             pos = find(Tracks(i).Time<endingt);  %time window cutoff (the later time points are less correct...)
             if isempty(pos)~=1
                 x_smooth = smooth(Tracks(i).Path(:,1), filt,'sgolay',poly_degree);
@@ -69,9 +76,9 @@ for i = 1:nn
 %                     for ic = 1:numel(x_smooth)-1
 %                         plot(x_smooth(ic:ic+1), y_smooth(ic:ic+1), 'Color', [gray_scale(ic) gray_scale(ic) gray_scale(ic)]);
 %                     end
-                plot(x_smooth*pix2mm, y_smooth*pix2mm,'w','LineWidth',1); hold on;
-                plot(x_smooth(1)*pix2mm, y_smooth(1)*pix2mm,'g.', 'MarkerSize',30)
-                plot(x_smooth(end)*pix2mm, y_smooth(end)*pix2mm,'r.', 'MarkerSize',30)
+                plot(x_smooth*pix2mm, y_smooth*pix2mm,'k','LineWidth',1); hold on;
+                plot(x_smooth(1)*pix2mm, y_smooth(1)*pix2mm,'g.', 'MarkerSize',30/2)
+                plot(x_smooth(end)*pix2mm, y_smooth(end)*pix2mm,'r.', 'MarkerSize',30/2)
                 cand = [cand i];
 %                 ttt = ttt+ (Tracks(i).Time(end)-Tracks(i).Time(1));
                     end

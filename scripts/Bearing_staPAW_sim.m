@@ -9,10 +9,10 @@
 
 %% load trained models
 load('/projects/LEIFER/Kevin/Data_salt/data_analysis/20240319_110114_cv_staPWA.mat')
-rng(42) %37 42
+rng(1) %37 42
 
 %% asign models
-rr = 3; %2
+rr = 3; %3
 dPAW_fit = all_record(rr,1,1).params;  % single state
 staPAW_fit = all_record(rr,2,1).params;  % two-state model
 temp_ws = dPAW_fit.wts;
@@ -25,7 +25,7 @@ temp_ws([14:17]) = ones(1,4);
 % model_choice = dPAW_fit;  % time step=5/14, tune wv strength, remove states, compute pirouette with window
 
 model_choice = staPAW_fit; % test with data in the same way (z-state)
-% model_choice.wts_state = model_choice.wts_state*0;  % same setup as staPAW but not transition
+model_choice.wts_state = model_choice.wts_state*0;  % same setup as staPAW but not transition
 
 %% environement
 mmhat = model_choice; %all_record(rr, 2, 3).params;  % two-state model
@@ -43,7 +43,7 @@ w_state_inf = mmhat.wts_state;  % inferred state-transition kernels
 nstates = size(w_inf,3);  % number of states
 basis = mmhat.basis;  % basis function for the kernels
 wind = size(basis,1);  % time window for kernel operation
-betaT = 1.5;  % testing soft-max for now
+betaT = 1.;  % testing soft-max for now
 Basis = mmhat.basis;
 perp_dist = 1;
 
@@ -267,8 +267,8 @@ dth_sim = alldths;
 % dth_sim = yy(1,:);
 
 %% defining states (change for dPAW comparison)
-pre_t = 8; %8, 2
-post_t = 8;
+pre_t = 25; %8, 2
+post_t = 25;
 state_vec = allstate*0;%gams_(1,:)*0; %gams_*0; %
 %%% staPAW states!
 % pos_state_stapaw = find(gams_(2,:)>0.8); %<gams_(2,:));
@@ -288,7 +288,7 @@ fix_t = 10;
 %% test for classic pirouette! for data or dPAW
 % windp = 10; %10, 4
 % pos_state_turn = find(abs(dth_sim)>50);
-% pos_state_turn = find(abs(yy(1,:))>50); 
+% % pos_state_turn = find(abs(yy(1,:))>50); 
 % state_vec = allstate*0;
 % state_vec(pos_state_turn) = ones(1,length(pos_state_turn));
 % state_vec = conv(state_vec,ones(1,windp), 'same');

@@ -138,7 +138,7 @@ subplot(122); imagesc(squeeze(mut_sig(2,:,:))); colorbar(); title('WV'); xtickla
 
 %% samp of samp
 % for realiability, resample the subsample more times!
-n_resamp = 5;
+n_resamp = 50;
 mut_sig_resamp = ones(2,3,n_strains);
 for rr = 1:n_resamp
     ii = 1;
@@ -230,8 +230,8 @@ for cc = 1:3
         h0 = quiver(temp_n2_ci, ii, d_ci, 0,0,  'autoScale', 'off'); hold on
         set(gcf,'color','w'); set(gca,'Fontsize',20); title('CI'); yticks([])
         subplot(132)
-%         semilogx(brw_n2, ii,'o'); hold on
-        plot(brw_n2, ii,'o'); hold on
+        semilogx(brw_n2, ii,'o'); hold on
+%         plot(brw_n2, ii,'o'); hold on
         h1 = quiver(brw_n2, ii, (d_brw), 0,0,  'autoScale', 'off'); hold on
         set(gcf,'color','w'); set(gca,'Fontsize',20); title('BRW'); yticks([])
 %         semilogx(BRW_Kc_conv(temp_param, Data) , ii, '*')
@@ -329,7 +329,7 @@ end
 
 %%
 % save('/projects/LEIFER/Kevin/Data_learn/Mutants/data_analysis/mle_mut_params7.mat','mle_mut_params')
-save('/projects/LEIFER/Kevin/Analysis/WBI_Flavell/w_neuralPal/beh_dist.mat','beh_dist','B','wtemp','Ws');
+% save('/projects/LEIFER/Kevin/Analysis/WBI_Flavell/w_neuralPal/beh_dist.mat','beh_dist','B','wtemp','Ws');
 
 %% mutant plots
 target_exp = [4,7,10,13];
@@ -418,11 +418,14 @@ function [varargout] = BRW_Kc_conv(x, Data);
         max_point = quantile(dc_dth, 0.60);  %nanmean(dc_dth) + nanstd(dc_dth);
         min_point = quantile(dc_dth, 0.40);  %nanmean(dc_dth) - nanstd(dc_dth);
 %         pir_index = (x(2)-x(7))./(1+exp(-max_point)) + x(7)  - ( (x(2)-x(7))./(1+exp(-min_point)) + x(7) );
-        M = x(2);  m = x(7); mid = (M+m)/2; range = M-m;
-        
-        pir_index = length(find(abs(dc_dth)<5))/length(dc_dth) * (x(2)-x(7))*5/14;
-%         pir_index = norm(Kc) / iqr(dc_dth);  %mad(dc_dth);
-        varargout{1} = pir_index; %norm(Kc)/nanstd(dc_dth.*1);%
+        M = x(2);  m = x(7); mid = (M+m)/2; rang = (M-m)/2;
+        max_point = log(((mid+rang*0.25) - m)/(M - (mid+rang*0.25)));
+        min_point = log(((mid-rang*0.25) - m)/(M - (mid-rang*0.25)));
+        pir_index = length(find(dc_dth<max_point | dc_dth>min_point))/length(dc_dth);
+        pir_index = length(find(abs(dc_dth)<3))/length(dc_dth);  % * (x(2)-x(7))*5/14;% *norm(Kc);
+%         pir_index = norm(Kc)/ nanstd(filt_dth.*1); % iqr(dc_dth);  %mad(dc_dth);
+        pir_index = norm(Kc)/nanstd(ddc_fit.*1) * length(find(dc_dth>0))/length(dc_dth);
+        varargout{1} = pir_index; %norm(Kc)/nanstd(ddc_fit.*1);%
         %%%
     end
 end
