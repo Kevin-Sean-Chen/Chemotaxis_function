@@ -112,7 +112,7 @@ for ss = 1:n_samps
 end
 
 %% bar for dtheta
-figure;0
+figure;
 bar([1,2,3], mean(pred_power')); hold on; 
 errorbar([1,2,3],mean(pred_power'),std(pred_power')/n_samps^0.5,'ko')
 custom_labels = {'staPAW', 'dPAW', 'control'};
