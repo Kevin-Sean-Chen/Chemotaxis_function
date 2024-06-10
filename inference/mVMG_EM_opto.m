@@ -24,7 +24,7 @@ maskf = true(1,length(yyf));
 maskf = alltrials;  %((alltrials)==0) = false;%
 
 %%% pick a window
-wind = 1:150000;
+wind = 100000:250000; %150000, 100000:250000, 100000:300000 
 xx = xxf(:,wind);
 yy = yyf(:,wind);
 mask = maskf(wind);
@@ -45,7 +45,7 @@ G = gamrnd(alpha_full*ones(nStates) + alpha_diag*eye(nStates),1); % sample gamma
 A0 = G./repmat(sum(G,2),1,nStates); % normalize so rows sum to 1
 
 % sticky priors
-alpha = 1.;  % Dirichlet shape parameter as a prior
+alpha = 1.;%1.;  % Dirichlet shape parameter as a prior
 kappa = .5;  % upweighting self-transition for stickiness
 
 % basis function
@@ -62,7 +62,7 @@ wts0(1,:,2) = [10,  randn(1,nB)*1, -10, 25, -10, 25, 20,  .5   0.1 0  1 1 0 0  r
 
 %%% transition kernels
 alpha_ij = randn(nStates,nStates, nB)*.1;  % state x state x weights
-alpha_opto = randn(nStates,nStates, nB)*.1;  % state x state x weights
+alpha_opto = randn(nStates,nStates, nB)*.001;  % state x state x weights
 lk = size(cosBasis,1);
 K_ij = zeros(nStates, nStates, lk);
 Kij_opto = K_ij*1;

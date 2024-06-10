@@ -28,7 +28,9 @@ function [logli] = logli_trans_opto(mm,xx,yy,mask)
                 K_ij_dc = (squeeze(alpha_ij(ii,jj,:))'*Basis');  % reconstruct kernel
                 Kij(ii,jj,:) = K_ij_dc;
                 K_ij_opto = (squeeze(alpha_opto(ii,jj,:))'*Basis');  % reconstruct kernel
-                logli(ii,jj,:) = log(exp(conv_kernel([dc(2:end) dc(1)], K_ij_dc)) + alter_sigmoid(conv_kernel([opto(2:end) dc(1)], K_ij_opto)) + 0*(Pij(ii,jj)));  % test with remove baseline
+                logli(ii,jj,:) = conv_kernel([dc(2:end) dc(1)], K_ij_dc) + (conv_kernel([opto(2:end) opto(1)]/5, K_ij_opto)) + 0*Pij(ii,jj);
+%                 logli(ii,jj,:) = log(exp(conv_kernel([dc(2:end) dc(1)], K_ij_dc) + conv_kernel([opto(2:end) dc(1)], K_ij_opto)) + 0*(Pij(ii,jj)));
+%                 logli(ii,jj,:) = log(exp(conv_kernel([dc(2:end) dc(1)], K_ij_dc)) + alter_sigmoid(conv_kernel([opto(2:end) dc(1)], K_ij_opto)) + 0*(Pij(ii,jj)));  % test with remove baseline
             else
                 logli(ii,jj,:) = 0 + log(Pij(ii,jj));  % remove diagonal components
             end
@@ -38,5 +40,6 @@ function [logli] = logli_trans_opto(mm,xx,yy,mask)
 end
 
 function nl = alter_sigmoid(x)
-    nl = 0.5 + 0.5*x./(1+abs(x));
+    nl = 0.5 + 0.5*x./(1+abs(x));  %nl = 10*nl;  %-100~100
+%     nl = log(1+exp(x));
 end

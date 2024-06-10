@@ -55,7 +55,8 @@ function nll = nll_MLR_(x, dc, opto, xis, Basis, mask)
                 K_ij_dc = (squeeze(alpha_ij(ii,jj,:))'*Basis');  % reconstruct kernel
                 Kij(ii,jj,:) = K_ij_dc;
                 Kij_opto = (squeeze(alpha_opto(ii,jj,:))'*Basis');
-                logP_(ii,jj,:) = log(exp(conv_kernel([dc(2:end) dc(1)], K_ij_dc)) + alter_sigmoid(conv_kernel([opto(2:end) dc(1)], Kij_opto)) + 0*(Pij(ii,jj)));
+%                 logP_(ii,jj,:) = log(exp(conv_kernel([dc(2:end) dc(1)], K_ij_dc)) + alter_sigmoid(conv_kernel([opto(2:end) dc(1)], Kij_opto)) + 0*(Pij(ii,jj)));
+                logP_(ii,jj,:) = conv_kernel([dc(2:end) dc(1)], K_ij_dc) + (conv_kernel([opto(2:end) opto(1)]/5, Kij_opto)) + 0*Pij(ii,jj);  %match this with logli_trans!!
             else
                 logP_(ii,jj,:) = 0 + log(Pij(ii,jj));
             end
