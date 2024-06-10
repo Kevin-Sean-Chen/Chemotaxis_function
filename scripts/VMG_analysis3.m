@@ -15,7 +15,7 @@ xxf = [xxf; allopto];
 yyf = [yyf; alldis];
 
 % testing
-wind_test = [1:400000]; %[100000:148982];%500000:length(allas)];%max(wind):length(allas);
+wind_test = [1:100000]; %[100000:148982];%500000:length(allas)];%max(wind):length(allas);
 offset = min(wind_test)-1;
 yy = yyf(:,wind_test);
 xx = xxf(:,wind_test);

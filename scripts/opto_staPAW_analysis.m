@@ -6,7 +6,7 @@
 neuron = 'AWC';  %'RIM' 'AWC'
 % load('/projects/LEIFER/Kevin/Publications/Chen_states_2024/odor_opto_AWC_vars.mat')
 % load('/projects/LEIFER/Kevin/Publications/Chen_states_2024/odor_opto_RIM_vars.mat')
-filename = ['/projects/LEIFER/Kevin/Publications/Chen_states_2024/odor_opto_',neuron,'_vars.mat'];
+filename = ['/projects/LEIFER/Kevin/Publications/Chen_states_2024/odor_opto_',neuron,'_vars_linear3.mat']; %. or 3
 load(filename)
 
 %% compile time seris
@@ -18,7 +18,7 @@ xxf = [xxf; allopto];
 yyf = [yyf; alldis];
 
 % testing
-wind_test = [1:500000]; %[100000:148982];%500000:length(allas)];%max(wind):length(allas);
+wind_test = [100000:300000]; %[100000:148982];%500000:length(allas)];%max(wind):length(allas);
 offset = min(wind_test)-1;
 yy = yyf(:,wind_test);
 xx = xxf(:,wind_test);
@@ -64,6 +64,7 @@ set(gcf,'color','w'); set(gca,'Fontsize',20); ylabel('dr'); xlabel('time (s)')
 
 %% conditional trigger!
 pre_z = 2;
+post_z = 1;
 opto_triggs_z_cond = [];
 opto_triggs_dth_cond = [];
 opto_triggs_dr_cond = [];
@@ -74,7 +75,8 @@ for trs = 1:length(trigg_t)
 %     pos = randi([acu_l   length(opto_t)-cua_l]);  % random control!
     [~,pre_stim_z] = max(sum(gams_(:,pos-acu_l:pos),2));
     if pre_stim_z==pre_z
-        opto_triggs_z_cond = [opto_triggs_z_cond; gams_(pre_z, pos-acu_l:pos+cua_l-1)];% - gams_(pre_z, pos_r-acu_l:pos_r+cua_l-1)];
+%         opto_triggs_z_cond = [opto_triggs_z_cond; gams_(pre_z, pos-acu_l:pos+cua_l-1)];% - gams_(pre_z, pos_r-acu_l:pos_r+cua_l-1)];
+        opto_triggs_z_cond = [opto_triggs_z_cond; gams_(post_z, pos-acu_l:pos+cua_l-1)];%
         opto_triggs_dth_cond = [opto_triggs_dth_cond; abs(yy(1,pos-acu_l:pos+cua_l-1))];% 
         opto_triggs_dr_cond = [opto_triggs_dr_cond; yy(2,pos-acu_l:pos+cua_l-1)*1/30];% 
     end
@@ -95,3 +97,40 @@ set(gcf,'color','w'); set(gca,'Fontsize',20); ylabel('|d\theta|')
 subplot(4,1,4); plot(time_v, mean(opto_triggs_dr_cond)); hold on; 
 plot(time_v, mean(opto_triggs_dr_cond)+std(opto_triggs_dr_cond)/sqrt(trs),'--'); plot(time_v, mean(opto_triggs_dr_cond)-std(opto_triggs_dr_cond)/sqrt(trs),'--')
 set(gcf,'color','w'); set(gca,'Fontsize',20); ylabel('dr'); xlabel('time (s)')
+
+%% compute on-off states
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
+prob_on = [];
+prob_off = [];
+pulse_dur = 15;
+statei = 1;
+offset = -25;  % 0 for stim, another number for spontaneous
+opto_t = xx(3,:);  %opto time series
+trigg_t = find(diff(opto_t(1:end-wl))>1);  % onset >1 off <-1
+for trs = 3:length(trigg_t)
+    pos = trigg_t(trs);
+%     pos = randi([acu_l   length(opto_t)-cua_l]);  % random control!
+    psi = gams_(statei,pos+0:pos+0+pulse_dur);
+    prob_on = [prob_on   length(find(psi>0.9))/pulse_dur];
+    psi = gams_(statei,pos+offset:pos+pulse_dur+offset);
+    prob_off = [prob_off   length(find(psi>0.9))/pulse_dur];
+end
+
+figure;
+bar([1,2], [mean(prob_on), mean(prob_off)])
+
+%% bootstrap
+reps = 50;
+samps = 500;
+boot_on_off = zeros(reps,2);
+for rr = 1:reps
+    temp = prob_on(randperm(length(prob_on)));
+    boot_on_off(rr,1) = mean(temp(1:samps));
+    temp = prob_off(randperm(length(prob_off)));
+    boot_on_off(rr,2) = mean(temp(1:samps));
+end
+
+figure;
+bar([1,2], [mean(boot_on_off(:,1)), mean(boot_on_off(:,2))]); hold on
+errorbar([1,2], [mean(boot_on_off(:,1)), mean(boot_on_off(:,2))], [std(boot_on_off(:,1)), std(boot_on_off(:,2))]/sqrt(1), 'ko')
