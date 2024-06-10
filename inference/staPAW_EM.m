@@ -17,7 +17,7 @@ maskf = true(1,length(yyf));
 maskf = alltrials;  %((alltrials)==0) = false;%
 
 %%% pick a window
-wind = 1:40000;
+wind = 1:100000; %40000
 xx = xxf(:,wind);
 yy = yyf(:,wind);
 mask = maskf(wind);

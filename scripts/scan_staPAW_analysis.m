@@ -8,6 +8,10 @@ load('/projects/LEIFER/Kevin/Data_salt/data_analysis/20240319_110114_cv_staPWA.m
 % load('/projects/LEIFER/Kevin/Data_salt/data_analysis/20240520_023653_cv_staPWA.mat')  %%% Data_salt0_50_0513
 % %%% Data_salt100_50_0511
 
+%% mutants!
+% load('/projects/LEIFER/Kevin/Data_learn/Mutants/ssm_analysis/20240603_164117_cv_staPWA.mat')  %% AIB
+load('/projects/LEIFER/Kevin/Data_learn/Mutants/ssm_analysis/20240604_031244_cv_staPWA.mat')  %% AIY
+
 %% ablation for null model control...
 neg_control = struct();
 neg_control(num_cv, 1, num_repeats).params = [];  % trained parameter

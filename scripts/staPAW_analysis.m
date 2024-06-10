@@ -11,7 +11,7 @@
 alldis = extractfield(Data, 'dis');  % Data
 yyf = [yyf; alldis];
 
-wind_test = [1:150000];  %200000,  40000
+wind_test = [1:100000];  %200000,  40000, 150000
 offset = min(wind_test)-1;
 xx = xxf(:,wind_test);
 yy = yyf(:,wind_test);
@@ -278,21 +278,33 @@ end
 %% example
 wind_ex = offset+(2200:3150)+0;%2800;  %1200:2200   %800:1200
 figure;
-subplot(311)
+subplot(411)
 yyaxis left 
 plot([1:length(wind_ex)]*5/14, yyf(1,wind_ex)); ylabel('d\theta')
 yyaxis right
 plot([1:length(wind_ex)]*5/14, xxf(1,wind_ex)); ylabel('ppm');set(gca,'Fontsize',20);
 % subplot(412)
 % plot([1:length(wind_ex)]*5/14, xxf(2,wind_ex)*30, 'k'); ylabel('ppm/mm'); set(gca,'Fontsize',20);
-subplot(312)
+subplot(412)
 plot([1:length(wind_ex)]*5/14, yyf(2,wind_ex)*fac_mms, 'k'); ylabel('mm/s'); set(gca,'Fontsize',20);
-subplot(313)
+subplot(413)
 % plot([1:length(wind)]*5/14, reshape(smooth(gams(:,wind),10),2,length(wind)))
 plot([1:length(wind_ex)]*5/14, gams_(:,wind_ex-offset))
 ylim([-0.05,1.05])
 xlabel('time (s)'); ylabel('P(Z)')
 set(gca,'Fontsize',20); set(gcf,'color','w');
+
+%%% test with P(q)
+rng(321)
+subplot(414)
+wind_conv = [wind_ex(1)-47+1:wind_ex(1)-1  wind_ex];
+[~,~,pq_pred] = model_predit_PAW(mmhat, xxf(:,wind_conv), yyf(:,wind_conv), gams_(:,wind_conv-offset),14/14);
+plot([1:length(wind_ex)]*5/14, pq_pred); hold on  %P(q)
+vec_q = pq_pred*0 + NaN;
+pos = find(pq_pred>rand(1,length(pq_pred)));
+vec_q(pos) = .1;
+plot([1:length(wind_ex)]*5/14, vec_q, '*'); ylim([0,0.3])
+xlabel('time (s)'); ylabel('P(q=1)'); set(gca,'Fontsize',20); set(gcf,'color','w');
 
 %% time evolution analysis
 bins = 11;
@@ -315,6 +327,30 @@ end
 EE = ( ((cnt_i-1)./(cnt_b.^2)) + (cnt_i.^2.*(cnt_b-1)./(cnt_b.^4)) ).^.5;
 pstatet = cnt_i./cnt_b;
 errorbar(tvec(1:end-1)+mean(diff(tvec))/2, pstatet, EE,'-o','LineWidth',2,'color',CM(kk)); hold on
+% plot(tvec(1:end-1)+mean(diff(tvec))/2, pstatet, '-o')
+ylim([0.,1.])
+end
+
+%% spatial state analysis
+bins = 11;
+[aa,bb_] = max( gams_ ,[], 1 );
+cnt_i = zeros(1,bins-1);
+cnt_b = cnt_i*1;
+this_xy = allxys(:,wind_test);
+
+% tvec = linspace(0,max(alltime),bins); zz = alltime(wind_test);
+xvec = linspace(min(this_xy(1,:)), max(this_xy(1,:)), bins); xi = this_xy(1,:); 
+figure
+for kk = 1:nStates
+for bi = 2:bins%+2
+    pos = find(xi>xvec(bi-1) & xi<xvec(bi));
+    cnt_i(bi-1) = length(find(bb_(pos)==kk));  % for state occupency
+    cnt_b(bi-1) = length(pos); 
+end
+
+EE = ( ((cnt_i-1)./(cnt_b.^2)) + (cnt_i.^2.*(cnt_b-1)./(cnt_b.^4)) ).^.5;
+pstatet = cnt_i./cnt_b;
+errorbar([xvec(1:end-1)+mean(diff(xvec))/2]*1/32, pstatet, EE,'-o','LineWidth',2,'color',CM(kk)); hold on
 % plot(tvec(1:end-1)+mean(diff(tvec))/2, pstatet, '-o')
 ylim([0.,1.])
 end
@@ -363,7 +399,7 @@ for tt = wind+1:length(bb)
     ks_ = x(14:15);  thetas_ = x(16:17); phis_ = [0,0]; %phis_ = x(18:19);
     
     %%% for dr
-    if state_t==1
+    if state_t==1  %choose 1,2
         drt = gamrnd(ks_(2) + 1*drt*phis_(2)/1, thetas_(1)/1);
     else
         if rand(1) < mean(Pturns)
