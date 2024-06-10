@@ -9,11 +9,14 @@
 
 %% load trained models
 load('/projects/LEIFER/Kevin/Data_salt/data_analysis/20240319_110114_cv_staPWA.mat')
-% load('/projects/LEIFER/Kevin/Data_salt/data_analysis/20240520_023653_cv_staPWA.mat') %%% new Data_salt0_50_
+% load('/projects/LEIFER/Kevin/Data_salt/data_analysis/20240520_023653_cv_staPWA.mat') %%% new Data_salt0_50_0513
+%%% testing re-runs
+% load('/projects/LEIFER/Kevin/Data_salt/data_analysis/20240224_132726_cv_staPWA.mat')
+% load('/projects/LEIFER/Kevin/Data_salt/data_analysis/20240527_060158_cv_staPWA.mat')  %%% works!! rang(123); rr=1;
 rng(1) %37 42 1
 
 %% asign models
-rr = 3; %3
+rr = 3; %3,1
 dPAW_fit = all_record(rr,1,1).params;  % single state
 staPAW_fit = all_record(rr,2,1).params;  % two-state model
 temp_ws = dPAW_fit.wts;
@@ -23,9 +26,9 @@ temp_ws([14:17]) = ones(1,4);
 % null_fit.wts = temp_ws;  % ad-hoc ablation!
 
 %%% one at a time
-model_choice = dPAW_fit;  % time step=5/14, tune wv strength, remove states, compute pirouette with window
+% model_choice = dPAW_fit;  % time step=5/14, tune wv strength, remove states, compute pirouette with window
 
-% model_choice = staPAW_fit; % test with data in the same way (z-state)
+model_choice = staPAW_fit; % test with data in the same way (z-state)
 % model_choice.wts_state = model_choice.wts_state*0;  % same setup as staPAW but not transition
 
 %% environement
@@ -63,7 +66,7 @@ allxy = [];
 trackss = struct();
 T = lt;
 dt = 1;
-t_step = 5/14;  % simulation steps  5, 14
+t_step = 14/14;  % simulation steps  5, 14
 
 %% chemotaxis dynamics
 figure;
@@ -99,25 +102,25 @@ kt = randi([1 2],1,T);
 for t = 2:T
     
     %%% state-transitions
-%     Tij = ones(nstates, nstates);  % state transition probability
-%     for ii = 1:nstates
-%         for jj = 1:nstates
-%             if ii == jj
-%                 Tij(ii,jj) = 0 + A_inf(ii,jj);  
-%             else
-%                 K_ij_dc = (squeeze(w_state_inf(ii,jj,:))'*Basis');  % reconstruct kernel
-%                 Tij(ii,jj) = (0+exp(sum(K_ij_dc.*dCv)*betaT))*1 + 0*A_inf(ii,jj);
-%             end
-%         end
-%     end
-%     Tij = Tij ./ (sum(Tij,2) + 1e-8);  % normalize rows
-%     temp_state = [find(rand < cumsum(Tij(kt(t-1),:)))];  % Markov transition
-%     if length(temp_state)==0
-%         kt(t) = randi(numel([2,1]));
-%     else
-%         kt(t) = temp_state(1);
-%     end
-    kt(t) = 1;  %%% for dPAW w/o states %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    Tij = ones(nstates, nstates);  % state transition probability
+    for ii = 1:nstates
+        for jj = 1:nstates
+            if ii == jj
+                Tij(ii,jj) = 0 + A_inf(ii,jj);  
+            else
+                K_ij_dc = (squeeze(w_state_inf(ii,jj,:))'*Basis');  % reconstruct kernel
+                Tij(ii,jj) = (0+exp(sum(K_ij_dc.*dCv)*betaT))*1 + 0*A_inf(ii,jj);
+            end
+        end
+    end
+    Tij = Tij ./ (sum(Tij,2) + 1e-8);  % normalize rows
+    temp_state = [find(rand < cumsum(Tij(kt(t-1),:)))];  % Markov transition
+    if length(temp_state)==0
+        kt(t) = randi(numel([2,1]));
+    else
+        kt(t) = temp_state(1);
+    end
+%     kt(t) = 1;  %%% for dPAW w/o states %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     
     %%% unwrap state parameter
     [Khat] = wts2params(mmhat.wts(:,:,floor(kt(t))), mmhat.basis');
@@ -287,16 +290,16 @@ pos_state = pos_state_turn;
 fix_t = 10;
 
 %% test for classic pirouette! for data or dPAW
-windp = 10; %10, 4
-pos_state_turn = find(abs(dth_sim)>50);
-% pos_state_turn = find(abs(yy(1,:))>50); 
-state_vec = allstate*0;
-state_vec(pos_state_turn) = ones(1,length(pos_state_turn));
-state_vec = conv(state_vec,ones(1,windp), 'same');
-state_vec(find(state_vec>1)) = 1;
+% windp = 10; %10, 4
+% pos_state_turn = find(abs(dth_sim)>50);
+% % pos_state_turn = find(abs(yy(1,:))>50); 
+% state_vec = allstate*0;
+% state_vec(pos_state_turn) = ones(1,length(pos_state_turn));
+% state_vec = conv(state_vec,ones(1,windp), 'same');
+% state_vec(find(state_vec>1)) = 1;
 
 %% iterations
-% state_vec(pos_state) = ones(1,length(pos_state)); %%% for dPAW
+state_vec(pos_state) = ones(1,length(pos_state)); %%%  % for dPAW
 trans_pos = diff(state_vec);
 trans12 = find(trans_pos>0)-0;
 trans21 = find(trans_pos<0)+0;

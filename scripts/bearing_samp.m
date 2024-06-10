@@ -18,7 +18,7 @@ bpair_dpaw = temp.Bpairs;
 %% sampling for alignment
 rng(37);
 nbin = 12;  % number of bins
-nsamp = 2400;  % number of samples
+nsamp = 2400/2;  % number of samples
 nrep = 50;  % repeats
 b_samp = zeros(4, nrep);
 
@@ -50,7 +50,7 @@ this_b = bt_dpaw; this_pair = bpair_dpaw;
 
 %%
 nbin = 12;  % number of bins
-nsamp = 1680;  % number of samples (10min)
+nsamp = 1680/5;  % number of samples (10min)
 nrep = 100;  % repeats
 b_hist = zeros(nrep, nbin);
 samp_record = [];

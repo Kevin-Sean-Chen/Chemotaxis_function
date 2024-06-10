@@ -9,7 +9,8 @@
 %% load trained models
 load('/projects/LEIFER/Kevin/Data_salt/data_analysis/20240319_110114_cv_staPWA.mat') %%% Data_salt0_50 %%%
 % load('/projects/LEIFER/Kevin/Data_salt/data_analysis/20240324_114402_cv_staPWA.mat') %%% Data_salt100_50
-% load('/projects/LEIFER/Kevin/Data_salt/data_analysis/20240520_023653_cv_staPWA.mat') %%% new Data_salt0_50_, for pirouettes demo!
+% load('/projects/LEIFER/Kevin/Data_salt/data_analysis/20240520_023653_cv_staPWA.mat') %%% new Data_salt0_50_0513, for pirouettes demo!
+% load('/projects/LEIFER/Kevin/Data_salt/data_analysis/20240527_060158_cv_staPWA.mat')
 % rng(42) %37
 
 %% asign models
@@ -36,7 +37,7 @@ model_choice = staPAW_fit; %dPAW_fit;  %staPAW_wo_fit; %
 alldis = extractfield(Data(:), 'dis');  % Data
 yyf = [yyf; alldis];
 
-wind_test = [1:250000];  %150000, 250000
+wind_test = [150000:298500];  %150000, 250000, 298000  %150000:298500
 offset = min(wind_test)-1;
 xx = xxf(:,wind_test);
 yy = yyf(:,wind_test);
@@ -115,7 +116,7 @@ trans21 = find(trans_pos<0)+0;
 npairs = min([length(trans12), length(trans21)]);
 Bpairs = zeros(2,npairs);
 vecs = diff(xy_sim,1,2);
-for bb = 8:npairs-8
+for bb = 20:npairs-20
     %%% pre vector
     v1 = (target - xy_sim(:, trans12(bb))');  %target
 %     v2 = vecs(:,trans12(bb)-pre_t)';   % vector based
