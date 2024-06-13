@@ -7,16 +7,16 @@
 % load('/projects/LEIFER/Kevin/Data_salt/data_analysis/Data_salt100_50_staPAW.mat')
 
 %% load trained models
-load('/projects/LEIFER/Kevin/Data_salt/data_analysis/20240319_110114_cv_staPWA.mat') %%% Data_salt0_50 %%%
+% load('/projects/LEIFER/Kevin/Data_salt/data_analysis/20240319_110114_cv_staPWA.mat') %%% Data_salt0_50 %%%
 % load('/projects/LEIFER/Kevin/Data_salt/data_analysis/20240324_114402_cv_staPWA.mat') %%% Data_salt100_50
-% load('/projects/LEIFER/Kevin/Data_salt/data_analysis/20240520_023653_cv_staPWA.mat') %%% new Data_salt0_50_0513, for pirouettes demo!
+load('/projects/LEIFER/Kevin/Data_salt/data_analysis/20240520_023653_cv_staPWA.mat') %%% new Data_salt0_50_0513, for pirouettes demo!
 % load('/projects/LEIFER/Kevin/Data_salt/data_analysis/20240527_060158_cv_staPWA.mat')
 % rng(42) %37
 
 %% asign models
-rr = 3; %2
+rr = 1; %2
 dPAW_fit = all_record(rr,1,1).params;  % single state
-staPAW_fit = all_record(rr,2,1).params;  % two-state model
+staPAW_fit = all_record(rr,2,2).params;  % two-state model
 temp_ws = dPAW_fit.wts;
 temp_ws([2:5]) = zeros(1,4);
 temp_ws([14:17]) = ones(1,4);
@@ -37,7 +37,7 @@ model_choice = staPAW_fit; %dPAW_fit;  %staPAW_wo_fit; %
 alldis = extractfield(Data(:), 'dis');  % Data
 yyf = [yyf; alldis];
 
-wind_test = [150000:298500];  %150000, 250000, 298000  %150000:298500
+wind_test = [1:160000];  %150000, 250000, 298000  %150000:298500
 offset = min(wind_test)-1;
 xx = xxf(:,wind_test);
 yy = yyf(:,wind_test);
@@ -74,11 +74,11 @@ target = [3000, 1500];  % gradient vector
 xy_sim = xys;
 
 %% defining states (change for dPAW comparison)
-pre_t = 20; %8, 2, 20
-post_t = 20;
+pre_t = 28; %8, 2, 20
+post_t = 2;
 state_vec = gams_(1,:)*0; %gams_*0;%
 %%% staPAW states!
-pos_state_stapaw = find(gams_(1,:)>0.5); %<gams_(2,:));
+pos_state_stapaw = find(gams_(2,:)>0.5); %<gams_(2,:));
 %%% mock states!
 pos_state_turn = find(abs(yy(1,:))>50);  % use this for fare comparison across models
 % pos_state_turn = find(abs(dth_sim)>50);  %50, 18
@@ -97,7 +97,7 @@ fix_t = 10;
 % pos_state(pos) = [];
 
 %% test for classic pirouette! for data
-% windp = 28;  %20,28
+% windp = 18;  %20,28
 % pos_state_turn = find(abs(yy(1,:))>50);
 % % pos_state_turn = find(abs(dth_sim)>50); 
 % state_vec = wind_test*0;

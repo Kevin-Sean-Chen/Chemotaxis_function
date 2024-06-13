@@ -8,10 +8,14 @@
 % load('/projects/LEIFER/Kevin/Data_salt/data_analysis/Data_salt100_50_staPAW2.mat') %%% 100-50 salt
 % % % % load('/projects/LEIFER/Kevin/Data_salt/data_analysis/Data_salt0_50_staPAW.mat') %%% 0-50 salt
 
-%%% for mutants
+% %% for mutants
 load('/projects/LEIFER/Kevin/Publications/Chen_states_2024/Data_AIZ_ave_staPAW_vars.mat') %4500
 % load('/projects/LEIFER/Kevin/Publications/Chen_states_2024/Data_AIB_app_staPAW_vars.mat')  %200000
 % load('/projects/LEIFER/Kevin/Publications/Chen_states_2024/Data_AIY_app_staPAW_vars.mat') %130000
+
+%%% new
+% load('/projects/LEIFER/Kevin/Publications/Chen_states_2024/Data_AIB_nai_staPAW_vars2.mat') %% 300000
+% load('/projects/LEIFER/Kevin/Publications/Chen_states_2024/Data_AIY_nai_staPAW_vars.mat') %% 130000
 
 %% load landscape
 % Cmap = load('/projects/LEIFER/Kevin/Data_odor_flow_equ/Landscape_low.mat');
@@ -24,7 +28,7 @@ load('/projects/LEIFER/Kevin/Publications/Chen_states_2024/Data_AIZ_ave_staPAW_v
 % M = Cmap.vq1;
 % M = fliplr(flipud(M));  %flipped camera
 
-target = [1250  2500];  %[1250 2500]%for odor %[3000 1750];  % peak of odor landscape  %
+target = [1500  2500];  %[1250 2500]%for odor %[3000 1750];  % peak of odor landscape  %
 
 %% for salt
 % [rows, cols] = size(M);
@@ -58,8 +62,8 @@ xys = allxys(:,wind_test);
 xy_sim = xys;
 
 %% defining states (change for dPAW comparison)
-pre_t = 20; %8, 2, 12, 20
-post_t = 20;
+pre_t = 28; %8, 2, 12, 20
+post_t = 20; %2 20
 state_vec = gams_(1,:)*0; %gams_*0;%
 %%% staPAW states!
 pos_state_stapaw = find(gams_(1,:)>0.5); %<gams_(1,:));  %%% 2 for NaCl_100, 1 for others

@@ -8,17 +8,18 @@
 % load('/projects/LEIFER/Kevin/Data_salt/data_analysis/Data_salt100_50_staPAW.mat')
 
 %% load trained models
-load('/projects/LEIFER/Kevin/Data_salt/data_analysis/20240319_110114_cv_staPWA.mat')
-% load('/projects/LEIFER/Kevin/Data_salt/data_analysis/20240520_023653_cv_staPWA.mat') %%% new Data_salt0_50_0513
+% load('/projects/LEIFER/Kevin/Data_salt/data_analysis/20240319_110114_cv_staPWA.mat')
+load('/projects/LEIFER/Kevin/Data_salt/data_analysis/20240520_023653_cv_staPWA.mat') %%% new Data_salt0_50_0513
 %%% testing re-runs
 % load('/projects/LEIFER/Kevin/Data_salt/data_analysis/20240224_132726_cv_staPWA.mat')
 % load('/projects/LEIFER/Kevin/Data_salt/data_analysis/20240527_060158_cv_staPWA.mat')  %%% works!! rang(123); rr=1;
-rng(1) %37 42 1
+rng(13) %37 13 
+% 42 1
 
 %% asign models
-rr = 3; %3,1
-dPAW_fit = all_record(rr,1,1).params;  % single state
-staPAW_fit = all_record(rr,2,1).params;  % two-state model
+rr = 1; %3,1
+dPAW_fit = all_record(rr,1,2).params;  % single state
+staPAW_fit = all_record(rr,2,2).params;  % two-state model  1,2,2!!
 temp_ws = dPAW_fit.wts;
 temp_ws([2:5]) = zeros(1,4);
 temp_ws([14:17]) = ones(1,4);
@@ -66,7 +67,7 @@ allxy = [];
 trackss = struct();
 T = lt;
 dt = 1;
-t_step = 14/14;  % simulation steps  5, 14
+t_step = 5/14;  % simulation steps  5, 14
 
 %% chemotaxis dynamics
 figure;
@@ -271,26 +272,26 @@ dth_sim = alldths;
 % dth_sim = yy(1,:);
 
 %% defining states (change for dPAW comparison)
-pre_t = 28; %8, 2, 28
-post_t = 28;
+pre_t = 28; %2, 47
+post_t = 2;  %2 14
 state_vec = allstate*0;%gams_(1,:)*0; %gams_*0; %
 %%% staPAW states!
 % pos_state_stapaw = find(gams_(2,:)>0.8); %<gams_(2,:));
 %%% mock states!
 % pos_state_turn = find(abs(yy(1,:))>50);  % use this for fare comparison across models
-% pos_state_turn = find(abs(dth_sim)>50);  %18
-pos_state_turn = find(abs(allstate)>1.5);  %18
+pos_state_turn = find(abs(dth_sim)>50);  %18
+pos_state_stapaw = find(abs(allstate)>1.5);  %18
 
 %%% logics
 % pos_state = setdiff(pos_state_turn, pos_state_stapaw);  % only turns not states
 % pos_state = setdiff(pos_state_stapaw, pos_state_turn);  % only state-switches not turns
 
-% pos_state = pos_state_stapaw; 
+pos_state = pos_state_stapaw; 
 pos_state = pos_state_turn;
 fix_t = 10;
 
 %% test for classic pirouette! for data or dPAW
-% windp = 10; %10, 4
+% windp = 14; %10, 4
 % pos_state_turn = find(abs(dth_sim)>50);
 % % pos_state_turn = find(abs(yy(1,:))>50); 
 % state_vec = allstate*0;
@@ -306,7 +307,7 @@ trans21 = find(trans_pos<0)+0;
 npairs = min([length(trans12), length(trans21)]);
 Bpairs = zeros(2,npairs);
 vecs = diff(xy_sim,1,2);
-for bb = 10:npairs-10
+for bb = 30:npairs-30
     %%% pre vector
     v1 = (target - xy_sim(:, trans12(bb))');  %target
 %     v2 = vecs(:,trans12(bb)-pre_t)';
