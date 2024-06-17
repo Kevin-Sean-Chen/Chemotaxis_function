@@ -18,10 +18,10 @@ load(file_dir);   %%%%%%%% load Data structure here %%%%%%%%
 [filePath_, fileName_, fileExt_] = fileparts(file_dir);
 filepath = [filePath_, '/'];
 
-Data = Data(1:100);  % sub sample for now...
+Data = Data(1:120);  % sub sample for now...
 
 %% scanning parameters
-num_cv = 3;  % half is enough data
+num_cv = 2; %3 % half is enough data
 num_states = 4;  % number of states scanned
 num_repeats = 5;  % repeat for EM selection
 num_subsamp = 20;  % testing subsamples
