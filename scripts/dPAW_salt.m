@@ -110,8 +110,47 @@ for ii = 1:nexp
 end
 set(gcf,'color','w'); set(gca,'Fontsize',20);
 
+%% time plot
+%%% plotting
+rng(18)
+% rng(5)
+nexp = 15;
+temp = randperm(100);
+selected = temp(1:nexp);
+
+figure()
+ax1 = axes;
+imagesc(ax1,M,'XData',[0 size(M,2)*1],'YData',[0 size(M,1)*1]);
+set(gcf,'color','w'); set(gca,'Fontsize',20); %xticks([]); yticks([]);
+colormap()
+hold on
+ax2 = axes;
+for ii = 1:nexp
+    temp = data_0_50(selected(ii)).xy;
+%     temp = data_100_50(selected(ii)).xy;
+    temp = temp(:,1:10:end);
+    xx = temp(1,:);
+    yy = temp(2,:);
+    ll = length(temp);
+    gg = linspace(0,1,ll);
+%     plot(xx, yy, 'Color', [grayLevel grayLevel grayLevel]);
+    patch(ax2, [xx nan]*1,[yy nan]*1,[gg nan],[gg nan], 'edgecolor', 'interp','LineWidth',2); 
+    hold on
+    plot(ax2,xx(1)*1, yy(1)*1,'g.', 'MarkerSize',25)
+    plot(ax2,xx(end)*1, yy(end)*1,'r.', 'MarkerSize',25)
+end
+xlim(ax2, [0, size(M,2)]);
+ylim(ax2, [0, size(M,1)]);
+set(gca, 'YDir','reverse')
+ax2.Visible = 'off';
+ax2.XTick = [];
+ax2.YTick = [];
+c = gray;
+colormap(ax2,c)
+colormap(ax1)
+
 %% model
-rng(42)
+rng(4)
 nexp = 15;
 figure;
 subplot(121)

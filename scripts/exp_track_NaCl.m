@@ -3,7 +3,7 @@
 
 %% load data
 load('/projects/LEIFER/Kevin/Data_salt/data_analysis/Data_salt100_50.mat')
-load('/projects/LEIFER/Kevin/Data_salt/data_analysis/Data_salt0_50_0513.mat')
+% load('/projects/LEIFER/Kevin/Data_salt/data_analysis/Data_salt0_50_0513.mat')
 
 %% for salt
 Cmap = load('/projects/LEIFER/Kevin/Data_odor_flow_equ/Landscape_low_0623_2.mat');
@@ -18,7 +18,8 @@ M = (y_*0+1) .* gradient_x;
 pix2mm = 1/30;
 
 %% examples
-data_i = Data(40:70);  %50:80
+data_i = Data([57:77]); %50-100   %62-77
+% data_i = Data(10:30); %0-50  %40:70; %50:80
 
 %%% plotting
 figure()
@@ -40,10 +41,11 @@ for ii = 1:length(data_i)
     plot(ax2,xx(end)*pix2mm, yy(end)*pix2mm,'r.', 'MarkerSize',25)
 end
 set(gca, 'YDir','reverse')
+set(gca, 'XDir', 'reverse')  %%% for 100-50
 ax2.Visible = 'off';
 ax2.XTick = [];
 ax2.YTick = [];
 c = gray;
 colormap(ax2,c)
 colormap(ax1)
-
+xlim([1,3000].*pix2mm); ylim([1,2500].*pix2mm)

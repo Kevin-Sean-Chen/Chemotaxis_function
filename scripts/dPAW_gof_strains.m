@@ -4,6 +4,8 @@
 %%% the idea is to scan through fitted parameters and measure
 %%% log-likelihood, then showcase the good and bad fits...
 
+%%
+% load('/projects/LEIFER/Kevin/Publications/Chen_learning_2023/revision/mutant_gof_vars.mat')
 %% load data
 %%% mutant fits
 % temp = load('/projects/LEIFER/Kevin/Data_learn/Mutants/data_analysis/mle_mut_params7.mat');
@@ -26,11 +28,11 @@ mle_params = temp.mle_params;
 
 %% setup numbers
 n_strains = 5;
-n_params = 13+0;
+n_params = 13+1+0;
 L = length(fileList); 
 all_ids = cell(1,L+3); % all mutants and three N2s, for ids
 
-rng(37)
+rng(13) %13 37
 
 %% looping -- rerun mutant fits
 rep = 3;
@@ -92,6 +94,8 @@ GOF = GOF([1,3,2],:);
 % end
 
 %% for N2 fitting!
+rng(37) % 42; 37!
+
 rep = 3;
 mle_params = zeros(3, n_params);
 trainLL_N2 = zeros(3,1);
@@ -99,7 +103,18 @@ testLL_N2 = zeros(3,1);
 for cc = 1:3  % condition
     %%% load data
     load(data_n2{cc});
-    data_sub = Data(1:150);  % sub-sample to compare to mutants
+    temp = randperm(length(Data));
+    data_sub = Data(temp(1:150));  %150 sub-sample to compare to mutants
+    %%% try subsampel by truncation!
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%     sub_frac = 15;
+%     for dd = 1:length(data_sub)
+%         data_sub(dd).dth = data_sub(dd).dth(1:floor(length(data_sub(dd).theta)/sub_frac));
+%         data_sub(dd).dcp = data_sub(dd).dcp(1:floor(length(data_sub(dd).theta)/sub_frac));
+%         data_sub(dd).dc = data_sub(dd).dc(1:floor(length(data_sub(dd).theta)/sub_frac));
+%         data_sub(dd).mask = data_sub(dd).mask(1:floor(length(data_sub(dd).theta)/sub_frac));
+%         data_sub(dd).mask(end) = NaN;
+%     end
     %%% training, with small repetition
     x_temp = zeros(rep,n_params);
     fv_temp = zeros(1,rep);
@@ -118,7 +133,7 @@ for cc = 1:3  % condition
     trainLL_N2(cc) = minv;
     
     % test LL
-    testLL_N2(cc) = dPAW_gof(Data(ids==2), x_MLE);
+    testLL_N2(cc) = dPAW_gof(data_sub(ids==2), x_MLE);
     all_ids{cc} = ids;
 end
 
@@ -129,7 +144,7 @@ end
 
 %% put in GOF array
 % GOF(:,1) = temp_m; %
-GOF(:,1) = testLL_N2([1,3,2]);
+GOF(:,1) = testLL_N2([1,3,2])*5/14*log(2);
 
 %% directly compute for N2
 % for cc = 1:3  % condition
@@ -141,37 +156,93 @@ GOF(:,1) = testLL_N2([1,3,2]);
 % end
 
 %% plot results
-xtickLabels = {'N2','AIA','AIB-','AIY-','AIZ-','RIA-'};
+xtickLabels = {'N2','AIA-','AIB-','AIY-','AIZ-','RIA-'};
 figure
 bar(GOF')
 xticklabels(xtickLabels); set(gcf,'color','w'); set(gca,'Fontsize',20); ylabel('gof (bits/s)')
 
 %% check the bad fits...
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-load(data_n2{1});
-% fileName = fileList(7).name; filePath = fullfile(data_path, fileName); load(filePath);
-[xxf, yyf, alltrials, time] = data2xy(Data(:));
-figure;
-hist(xxf(2,:),100)
+%% loading example
+% remember to match the test Data and the parameters!!!
+%%% for N2
+% n2_id = 3;
+% load(data_n2{n2_id});
+% [xxf, yyf, alltrials, time] = data2xy(Data(all_ids{n2_id}==2));
+% x = squeeze(mle_params(n2_id,:));
+%%% for mutant
+mut_id = 7;
+fileName = fileList(mut_id).name; filePath = fullfile(data_path, fileName); load(filePath);
+[xxf, yyf, alltrials, time] = data2xy(Data(all_ids{3+mut_id}==1));
+x = squeeze(mle_mut_params(mut_id,:));
+fileName
+
+%% model fits
+%%% unpack parameters
+K_ = x(1); A_ = x(2); B_ = x(3:6); C_ = x(7)+0.; Amp = x(8); tau = x(9); Amp_h = x(10); tau_h = x(11); K2_ = x(12);  gamma=0.2 %gamma = x(15); %
+base_dc = x(13); base_dcp = x(14);
+
+%%% process data
+dcp_fit = xxf(2,:);
+ang_fit = yyf(1,:);
+ddc_fit = xxf(1,:);
+
+%%% reconstructions
+[cosBasis, tgrid, basisPeaks] = makeRaisedCosBasis(4, [0, 8], 1.3);
+xx = 0:length(cosBasis)-1;
+K_dcp_rec = Amp*exp(-xx/tau);
+filt_dcp = conv_kernel(dcp_fit, K_dcp_rec);
+K_dc_rec = B_*cosBasis';
+filt_ddc = conv_kernel(ddc_fit, K_dc_rec);
+xx_h = 1:length(xx)*1;
+K_h_rec = Amp_h*exp(-xx_h/tau_h);
+filt_dth = conv_kernel(abs(ang_fit), K_h_rec);
+dc_dth = filt_ddc + 1*filt_dth;
+Pturns = (A_-C_) ./ (1 + exp( -(dc_dth + base_dc))) + C_; 
+Pturn_fac = sum(Pturns)/length(Pturns);
+
+%%% plotting
+figure
+subplot(121)
+nbins = 100;
+[counts, edges] = histcounts((ang_fit - filt_dcp - base_dcp), nbins);
+nCounts = (counts)/sum(counts);
+b = bar((edges(2:end)+edges(1:end-1))/2*pi/180, nCounts, 'FaceAlpha',0.8); hold on
+b.FaceColor = [0.5 0.5 0.5];   b.EdgeColor = 'none';
+bb = (edges(2:end)+edges(1:end-1))/2*pi/180;  %edges*pi/180;
+wv_dense = 1/(2*pi*besseli(0,K_^1)) * exp(K_^1*cos( bb ))*(1-Pturn_fac);
+pr_dense = (1/(2*pi*besseli(0,K2_^1)) * exp(K2_^1*cos( bb-pi ))*(gamma) + (1-gamma)/(2*pi))*Pturn_fac;
+scal_fac = sum(wv_dense+pr_dense);;
+plot(bb, ( wv_dense * 1/scal_fac), 'g','LineWidth',2); hold on
+plot(bb, ( pr_dense * 1/scal_fac), 'r--', 'LineWidth',2)
+set(gcf,'color','w'); set(gca,'Fontsize',20); xlabel('d\theta'); ylabel('pdf')
+xticks([-pi, pi]); xticklabels({'-\pi', '\pi'});
+subplot(122)
+b = bar((edges(2:end)+edges(1:end-1))/2*pi/180, nCounts, 'FaceAlpha',0.8); hold on
+b.FaceColor = [0.5 0.5 0.5];   b.EdgeColor = 'none';
+plot(bb, ( wv_dense * 1/scal_fac), 'g','LineWidth',2); hold on
+plot(bb, ( pr_dense * 1/scal_fac), 'r--', 'LineWidth',2)
+ylim([0, 0.005]); set(gcf,'color','w'); set(gca,'Fontsize',20);xlabel('d\theta');
+xticks([-pi, pi]); xticklabels({'-\pi', '\pi'});
 
 %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% function
 function [LL_fit] = dPAW_gof(Data, x)
     [xx_train, yy_train, mask_train] = data2xy(Data);
-%     nB = 4;
-%     [cosBasis, tgrid, basisPeaks] = makeRaisedCosBasis(nB, [0, 8], 1.3);
-%     ang_fit = yy_train;
-%     dcp_fit = xx_train(2,:);
-%     ddc_fit = xx_train(1,:);
-%     trials_fit = mask_train;
-% %     fval = -nLL_kernel_hist5(x, ang_fit, dcp_fit, ddc_fit, cosBasis, .1, trials_fit);
-%     fval = (-nLL_kernel_hist2(x, ang_fit, dcp_fit, ddc_fit, cosBasis, .1, trials_fit) - ...
-%             -nLL_randomwalk(x, ang_fit, dcp_fit, ddc_fit, cosBasis, .1, trials_fit) );
-%     LL_fit = fval / sum(trials_fit) / (5/14) / log(2);  % LL/s
+    nB = 4;
+    [cosBasis, tgrid, basisPeaks] = makeRaisedCosBasis(nB, [0, 8], 1.3);
+    ang_fit = yy_train;
+    dcp_fit = xx_train(2,:);
+    ddc_fit = xx_train(1,:);
+    trials_fit = mask_train;
+%     fval = -nLL_kernel_hist5(x, ang_fit, dcp_fit, ddc_fit, cosBasis, .1, trials_fit);
+    fval = (-nLL_kernel_hist5(x, ang_fit, dcp_fit, ddc_fit, cosBasis, .1, trials_fit) - ...
+            -nLL_randomwalk(x, ang_fit, dcp_fit, ddc_fit, cosBasis, .1, trials_fit) );
+    LL_fit = fval / sum(trials_fit) / (5/14) / log(2);  % LL/s
 
     %%% testing...
-    LL_fit = (-pop_nLL(x, Data) - -pop_nLL_randwalk(x, Data)) / sum(mask_train) / (5/14) / log(2);
+%     LL_fit = (-pop_nLL(x, Data) - -pop_nLL_randwalk(x, Data)) / sum(mask_train) / (5/14) / log(2);
 end
 
 function [x_MLE, fval] = MLE_mGLM(Data_train)
@@ -182,18 +253,22 @@ function [x_MLE, fval] = MLE_mGLM(Data_train)
     dcp_fit = xx_train(2,:);
     ddc_fit = xx_train(1,:);
     trials_fit = mask_train;
-%     lfun = @(x)nLL_kernel_hist5(x, ang_fit, dcp_fit, ddc_fit, cosBasis, .1, trials_fit);
-    lfun = @(x)nLL_kernel_hist2(x, ang_fit, dcp_fit, ddc_fit, cosBasis, .1, trials_fit);
+    lfun = @(x)nLL_kernel_hist5(x, ang_fit, dcp_fit, ddc_fit, cosBasis, .1, trials_fit);
+%     lfun = @(x)nLL_kernel_hist2(x, ang_fit, dcp_fit, ddc_fit, cosBasis, .1, trials_fit);
     opts = optimset('display','iter');
-%     LB = [1e-0, 1e-5, ones(1,nB)*-inf, 0.0 -inf, 1e-0, -inf, 1e-1, 1  -inf, -inf];
-%     UB = [200, 1., ones(1,nB)*inf, 0.1, inf, 50, inf, 100, 100  inf, inf];
-%     prs0 = [50, 0.2, randn(1,nB)*10, 0.01, -1, 2, 1, 25, 10 -10, -1];
-    LB = [1e-0, 1e-5, ones(1,nB)*-inf, 0.0 -inf, 1e-0, -inf, 1e-1, 1  0.2];
-    UB = [200, 1., ones(1,nB)*inf, 0.1, inf, 50, inf, 100, 100, 1];
-%     prs0 = [50, 0.2, randn(1,nB)*10, 0.01, -1, 2, 1, 25, 10 0.5];
-    prs0 = [50, 0.1, randn(1,nB)*10, 0.01, -10, 25, 10, 25, 5, 1.];
+    LB = [1e-0, 1e-5, ones(1,nB)*-inf, 0.01 -inf, 1e-0, -inf, 1e-1, 1  -inf, -inf];% 0.05];
+    UB = [200, 1., ones(1,nB)*inf, 0.5, inf, 50, inf, 100, 100  inf, inf];% 1];
+    prs0 = [50, 0.2, randn(1,nB)*10, 0.1, -1, 2, 1, 25, 10 -10, -1 ];%0.2];
+%     LB = [1e-0, 1e-5, ones(1,nB)*-inf, 0.0 -inf, 1e-0, -inf, 1e-1, 1  0.2];
+%     UB = [200, 1., ones(1,nB)*inf, 0.1, inf, 50, inf, 100, 100, 1];
+% %     prs0 = [50, 0.2, randn(1,nB)*10, 0.01, -1, 2, 1, 25, 10 0.5];
+%     prs0 = [50, 0.1, randn(1,nB)*10, 0.01, -10, 25, 10, 25, 5, 1.];
     
     prs0 = prs0 + prs0.*randn(1,length(UB))*0.01;
-    [x,fval,EXITFLAG,OUTPUT,LAMBDA,GRAD,HESSIAN] = fmincon(lfun,prs0,[],[],[],[],LB,UB,[],opts);
+    %%% tesing in-equality constraints!
+    Ai = zeros(1,length(LB));
+    Ai([2,7]) = [-1,1];
+    bi = 0;  %Ax<=b
+    [x,fval,EXITFLAG,OUTPUT,LAMBDA,GRAD,HESSIAN] = fmincon(lfun,prs0,Ai,bi,[],[],LB,UB,[],opts);
     x_MLE = x;
 end
