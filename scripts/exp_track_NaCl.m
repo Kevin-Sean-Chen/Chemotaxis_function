@@ -10,8 +10,8 @@ Cmap = load('/projects/LEIFER/Kevin/Data_odor_flow_equ/Landscape_low_0623_2.mat'
 M = Cmap.vq1;
 M = fliplr(flipud(M));
 [rows, cols] = size(M);
-[x_, y_] = meshgrid(linspace(0, 50, cols), 1:rows);  % for   0 to 50 mM
-% [x_, y_] = meshgrid(linspace(100, 50, cols), 1:rows);  % for 100 to 50 mM
+[x_, y_] = meshgrid(linspace(50, 0, cols), 1:rows);  % for   0 to 50 mM
+[x_, y_] = meshgrid(linspace(50, 100, cols), 1:rows);  % for 100 to 50 mM
 gradient_x = x_ * 1;
 M = (y_*0+1) .* gradient_x;  
 %figure; imagesc(M)
@@ -27,6 +27,7 @@ ax1 = axes;
 imagesc(ax1,M,'XData',[0 size(M,2)*pix2mm],'YData',[0 size(M,1)*pix2mm]);
 set(gcf,'color','w'); set(gca,'Fontsize',20); xticks([]); yticks([]);
 colormap()
+caxis([0 100]);
 hold on
 ax2 = axes;
 for ii = 1:length(data_i)

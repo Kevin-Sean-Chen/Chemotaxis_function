@@ -83,11 +83,12 @@ b2=bar(reshape(sim_ci, 3, 5)', 'grouped');
 
 %% for N2!
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-rng(37);  %100
+rng(13);  %100 37
 
 data_ci_n2 = zeros(1,3);
 sim_ci_n2 = zeros(1,3);
 
+specs.REP = 100;
 %% looping to compute simulation and data
 for li = 1:3
     
@@ -97,7 +98,7 @@ for li = 1:3
     ids = all_ids{li};  % retrieve training tracks
     
     %%% record data
-    data_i = Data(ids==1);
+    data_i = Data;%(ids==1);
     cii = Data2CI(data_i);
     data_ci_n2(li) = cii;
     

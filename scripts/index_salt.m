@@ -24,6 +24,7 @@ M100 = (y_*0+1) .* gradient_x;
 
 %% looping files and conditions
 rng(123)
+fields_to_load = {'Path','Time','Runs','Pirouettes'};
 % Tracks = loadtracks(folder_names{1},fields_to_load);
 temp = load('/projects/LEIFER/Kevin/Publications/Chen_learning_2023/revision/salt_data_folder.mat');
 folder_all = {temp.salt_data_50_0, temp.salt_data_50_100};

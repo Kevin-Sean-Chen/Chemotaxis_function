@@ -24,7 +24,7 @@ rng(37) %37
 %% setup
 reps = 50;  % repeated samples
 % n_samps = 30;  % number of samples  % limited by min tracsk... may want to sampled adaptively
-frac_samp = 1/3;  % now as fraction
+frac_samp = 1/2.5;  % now as fraction
 
 ci_samp_data = zeros(length(fileList), reps);
 ci_samp_sims = zeros(length(fileList), reps);
@@ -67,7 +67,7 @@ for li = 1:numel(fileList)
 end
 
 %% for N2
-rng(42)
+rng(0) %42
 
 for li = 1:3
     
@@ -78,6 +78,9 @@ for li = 1:3
     
     %%% record data
     data_i = Data(ids==1);
+    if li==1
+        data_i = Data(347:end);
+    end
     n_samps = floor(frac_samp*length(data_i));
     for rr = 1:reps
         temp = randperm(length(data_i));
@@ -91,7 +94,7 @@ for li = 1:3
     load(filePath);
     
     %%% record data 
-    n_samps = floor(frac_samp*length(data_i));
+    n_samps = floor(frac_samp*length(data_i)/1);
     for rr = 1:reps
         temp = randperm(length(N2tracks));
         track_ir = N2tracks(temp(1:n_samps));
@@ -149,7 +152,7 @@ function [CI] = Data2CI(Data)
     cii = 0;
     for ii = 1:length(Data)
         temp = Data(ii).dc;
-        if temp(end)>temp(1)
+        if temp(end)>temp(1)+0
             cii = cii + 1;
         end
     end
