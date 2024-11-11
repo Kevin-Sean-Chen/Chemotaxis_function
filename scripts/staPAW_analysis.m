@@ -110,16 +110,16 @@ figure()
 CM = ['r','k'];%['k','r','g','b'];
 dis_cutoff = 10;  % displacement cutoff
 fac_mms = 1/30;  % convert to mm displacement
-nbins = 77;  %77
+nbins = 100;  %77
 for sk = 1:nStates %nStates:-1:1 %
     stateK = sk;
     x = squeeze(mmhat.wts(:,:,stateK));
     %%% armax method
-%     [aa,bb] = max( gams_ ,[], 1 );
-%     pos = find(bb==stateK)+offset;
+    [aa,bb] = max( gams_ ,[], 1 );
+    pos = find(bb==stateK)+offset;
 %     %%% probablistic sampling method
-    rand_temp = rand(1,length(gams_));
-    pos = find(gams_(stateK,:)>rand_temp) + offset;
+%     rand_temp = rand(1,length(gams_));
+%     pos = find(gams_(stateK,:)>rand_temp) + offset;
     
     %%% asigning state and parameters
     dcp_K = xxf(2,pos); ddc_K = xxf(1,pos);  ang_K = yyf(1,pos)*1; dis_K = yyf(2,pos);

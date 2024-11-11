@@ -12,13 +12,17 @@
 %%% for CV sets
 load('/projects/LEIFER/Kevin/Data_salt/data_analysis/20240319_110114_cv_staPWA.mat')
 % load('/projects/LEIFER/Kevin/Data_salt/data_analysis/20240324_114402_cv_staPWA.mat')
-rr = 3;  % which set
+rr = 3;  % 3 which set
 mmhat = all_record(rr, 2, 3).params;  % two-state model
-[rows, cols] = size(M);
+% [rows, cols] = size(M);
+rows=2500; cols=3000;
 [x_, y_] = meshgrid(linspace(0, 50, cols), 1:rows);  % for   0 to 50 mM
 % [x_, y_] = meshgrid(linspace(100, 50, cols), 1:rows);  % for 100 to 50 mM
 gradient_x = x_ * 1;
 M = (y_*0+1) .* gradient_x;
+
+%% seed %%%
+rng(42)  %42
 
 %% generative from fitted GLM-HMM
 A_inf = mmhat.A;  % hidden Markov transition
@@ -33,7 +37,8 @@ perp_dist = 1;
 
 %% initialize vectors
 lt = 10000;  % length of simulation
-REP = 30;  % repeating simulation tracks
+% REP = 30;  % repeating simulation tracks
+REP = length(Data);
 
 alldths = [];
 alldCs = [];
@@ -62,7 +67,7 @@ tracks(1,:) = [size(M,2)*1/2 + randn()*200, randn()*200 + size(M,1)*1/2]*1. + 0.
 tracks(2,:) = tracks(1,:)+randn(1,2)*dt;%origin+randn(1,2)*vm*dt;
 ths = zeros(1,T);  ths(1:3) = randn(1,3)*360; %initial angle
 dxy = randn(1,2);  %change in each step
-origin = [size(Cmap,2)/2,size(Cmap,1)/2];
+origin = [size(M,2)/2,size(M,1)/2];
 
 %"recordings"
 dths = zeros(1,T); 
@@ -120,7 +125,7 @@ for t = 2:T
     dCpv = [(M(yil,xil) - M(yir,xir))/ 1 ,  dCpv];
     dCpv = dCpv(1:end-1);
     
-    wv = (1*sum(Kdcp.*dCpv) + base_dcp*1) + (vmrand(0,kappa))*180/pi;%kappa^1*randn;%length(wind)
+    wv = (-1*sum(Kdcp.*dCpv) + base_dcp*1) + (vmrand(0,kappa))*180/pi;%kappa^1*randn;%length(wind)
     P_event = (A-B) / (1+exp( -(sum(Kddc.*dCv)*1. + 1*(sum(Kdth.*abs(dthv)*180/pi)) *dt + 1*base_dc)+0) ) + B;%Pturn_base;%length(wind)
     if rand < P_event*t_step;
         beta = 1;
@@ -245,6 +250,36 @@ H2 = histogram(dwell_times{1}*rescale_t, bin_edges,'Normalization', 'pdf');hold 
 H1 = histogram(dwell_times{2}*rescale_t, bin_edges,'Normalization', 'pdf'); 
 set(gcf,'color','w'); set(gca,'Fontsize',20);
 xlabel('time (s)'); ylabel('pdf'); title('dwell time')
+
+%% compute chemotaxis index!
+reps = 20;  % repeats
+n_tracks = 50;  % number of tracks
+c_i_s = zeros(2,reps);  % for data and simulation in each row
+
+for rr = 1:reps
+    temp = randperm(REP);
+    data_i = Data(temp(1:n_tracks));
+    sim_i = trackss(temp(1:n_tracks));
+    n_up_data = 0;
+    n_up_sim = 0;
+    for tt = 1:n_tracks
+        if data_i(tt).dc(end) > data_i(tt).dc(1)
+            n_up_data = n_up_data+1;
+        end
+        if sim_i(tt).dc(end) > sim_i(tt).dc(2)
+            n_up_sim = n_up_sim+1;
+        end
+    end
+    c_i_s(1,rr) = n_up_data / n_tracks;
+    c_i_s(2,rr) = n_up_sim / n_tracks;
+end
+
+%%
+figure;
+bar([1,2],mean(c_i_s,2)); hold on
+errorbar([1,2],mean(c_i_s,2),std(c_i_s,1,2), 'k', 'Linestyle','none')
+set(gcf,'color','w'); set(gca,'Fontsize',20);
+xticklabels({'data','staPAW'})
 
 %% wts2params
 function [Khat] = wts2params(x,cosBasis)

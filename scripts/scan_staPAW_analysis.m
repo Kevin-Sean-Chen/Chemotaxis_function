@@ -2,15 +2,17 @@
 
 %% load data
 % load('/projects/LEIFER/Kevin/Data_salt/data_analysis/20240224_132726_cv_staPWA.mat') %%% repeat 0_50
-load('/projects/LEIFER/Kevin/Data_salt/data_analysis/20240319_110114_cv_staPWA.mat') %%% Data_salt0_50 %%%
+% load('/projects/LEIFER/Kevin/Data_salt/data_analysis/20240319_110114_cv_staPWA.mat') %%% Data_salt0_50 %%%
 % load('/projects/LEIFER/Kevin/Data_salt/data_analysis/20240324_114402_cv_staPWA.mat') %%% Data_salt100_50
 % load('/projects/LEIFER/Kevin/Data_learn/N2/ssm_analysis/20240402_110348_cv_staPWA.mat') %%% Data_nai and Data_ave
 % load('/projects/LEIFER/Kevin/Data_salt/data_analysis/20240520_023653_cv_staPWA.mat')  %%% Data_salt0_50_0513
 % %%% Data_salt100_50_0511
+load('/projects/LEIFER/Kevin/Data_salt/data_analysis/20240618_233016_cv_staPWA.mat')
 
 %% mutants!
 % load('/projects/LEIFER/Kevin/Data_learn/Mutants/ssm_analysis/20240603_164117_cv_staPWA.mat')  %% AIB
-load('/projects/LEIFER/Kevin/Data_learn/Mutants/ssm_analysis/20240604_031244_cv_staPWA.mat')  %% AIY
+% load('/projects/LEIFER/Kevin/Data_learn/Mutants/ssm_analysis/20240604_031244_cv_staPWA.mat')  %% AIY
+% %%% AIZ...
 
 %% ablation for null model control...
 neg_control = struct();
@@ -65,10 +67,10 @@ for c = 1:num_cv
 end
 
 %% state analysis
-cvi = 3;
+cvi = 2;  %3
 null_ll = [];
 state_null = [];
-for cc = 1:3
+for cc = 1:cvi
     for rr = 1:5
         temp_null = neg_control(cc,1,rr).test_ll;
         null_ll = [null_ll temp_null];
@@ -78,7 +80,7 @@ for cc = 1:3
 end
 base_ll = mean(null_ll);
 figure;
-for cc = 1:3
+for cc = 1:cvi
 for rr = 1:5
     for kk = 1:4
         temp = all_record(cc,kk,rr).test_ll;
