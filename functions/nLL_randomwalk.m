@@ -39,10 +39,11 @@ if nargin < 6
     tau_h = THETA(11);        % time scale for dth history kernel
 %     sb = THETA(12);         % baseline in the nonlinear function
     kappa_turn = THETA(12)^0.5;   % vairance of the sharp turn von Mises
-    gamma = THETA(13);        % weight for uniform angle in the turn
-    
-    base_dc = 0;%THETA(3);      % baseline for dc probability
-    base_dcp = 0;%THETA(8);     % baseline for dcp probability
+%     gamma = THETA(13);        % weight for uniform angle in the turn
+    gamma = 0.2;
+    %%% altered 061624
+    base_dc = 0;      % baseline for dc probability
+    base_dcp = 0;    % baseline for dcp probability
     
     %%% turning decision
     try

@@ -18,7 +18,8 @@ function [NLL] = nLL_kernel_hist5(THETA, dth, dcp, dc, Basis, lambda, mask)
     Amp_h = THETA(10);        % amplitude of turning history kernel
     tau_h = THETA(11);        % time scale for dth history kernel
     kappa_turn = THETA(12)^0.5;   % vairance of the sharp turn von Mises
-%     gamma = THETA(13);        % weight for uniform angle in the turn
+    
+%     gamma = THETA(15);        % weight for uniform angle in the turn
     
     base_dc = THETA(13);      % baseline for dc probability
     base_dcp = THETA(14);     % baseline for dcp probability
