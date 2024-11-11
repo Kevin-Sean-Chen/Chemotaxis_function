@@ -19,6 +19,9 @@ temp = load('/projects/LEIFER/Kevin/Publications/Chen_states_2024/bearing/model_
 bt_dpaw = temp.Bpairs(2,:);
 bpair_dpaw = temp.Bpairs;
 
+temp = load('/projects/LEIFER/Kevin/Publications/Chen_states_2024/bearing/model_compare_0513/bearing_turn_in_state.mat');
+bt_turnin = temp.Bpairs(2,:);
+bpair_turnin = temp.Bpairs;
 %%
 temp = load('/projects/LEIFER/Kevin/Publications/Chen_states_2024/bearing/model_compare_0513/turns_staPAW2.mat');
 tr_stapaw = temp.Bpairs(2,:);
@@ -94,6 +97,7 @@ this_b = bt_dpaw; this_pair = bpair_dpaw;  % dPAW
 this_b = tr_data; this_pair = tpair_data;  % turn for data
 this_b = tr_stapaw; this_pair = tpair_stapaw;  % turn for staPAW
 
+this_b = bt_turnin; this_pair = bpair_turnin;
 % this_pair = Bpairs; this_b = Bpairs(2,:);  % external data, for mutants and others
 
 rng(42)
