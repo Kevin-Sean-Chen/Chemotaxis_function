@@ -3,8 +3,8 @@
 % the fitted MLE
 
 %% load array of fitted MLE
-% mle = load('/projects/LEIFER/Kevin/Data_learn/N2/data_analysis/Kfold_mle_param3.mat');
-mle = load('/projects/LEIFER/Kevin/Data_learn/N2/data_analysis/Kfold_mle_param7.mat');
+mle = load('/projects/LEIFER/Kevin/Data_learn/N2/data_analysis/Kfold_mle_param3.mat');
+% mle = load('/projects/LEIFER/Kevin/Data_learn/N2/data_analysis/Kfold_mle_param7.mat');
 mle = mle.mle_params;
 
 %% specify simulation parameters

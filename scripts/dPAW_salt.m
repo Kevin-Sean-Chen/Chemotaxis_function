@@ -120,7 +120,7 @@ selected = temp(1:nexp);
 
 figure()
 ax1 = axes;
-imagesc(ax1,M,'XData',[0 size(M,2)*1],'YData',[0 size(M,1)*1]);
+imagesc(ax1,M0,'XData',[0 size(M0,2)*1],'YData',[0 size(M0,1)*1]);
 set(gcf,'color','w'); set(gca,'Fontsize',20); %xticks([]); yticks([]);
 colormap()
 hold on
@@ -139,8 +139,8 @@ for ii = 1:nexp
     plot(ax2,xx(1)*1, yy(1)*1,'g.', 'MarkerSize',25)
     plot(ax2,xx(end)*1, yy(end)*1,'r.', 'MarkerSize',25)
 end
-xlim(ax2, [0, size(M,2)]);
-ylim(ax2, [0, size(M,1)]);
+xlim(ax2, [0, size(M0,2)]);
+ylim(ax2, [0, size(M0,1)]);
 set(gca, 'YDir','reverse')
 ax2.Visible = 'off';
 ax2.XTick = [];
@@ -154,7 +154,7 @@ rng(4)
 nexp = 15;
 figure;
 subplot(121)
-imagesc(M0); colorbar(); hold on
+imagesc(M0); colorbar(); caxis([0 100]); hold on
 specs.M = M0;
 specs.REP = nexp;
 [tracks, CI] = param2tracks(x_0, specs, []);
@@ -165,7 +165,7 @@ for ii = 1:nexp
 end
 set(gcf,'color','w'); set(gca,'Fontsize',20);
 subplot(122)
-imagesc(M100); colorbar(); hold on
+imagesc(M100); colorbar(); caxis([0 100]); hold on
 specs.M = M100;
 specs.REP = nexp;
 [tracks, CI] = param2tracks(x_100, specs, []);
