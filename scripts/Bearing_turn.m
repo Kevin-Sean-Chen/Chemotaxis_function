@@ -15,7 +15,7 @@ load('/projects/LEIFER/Kevin/Data_salt/data_analysis/20240520_023653_cv_staPWA.m
 % rng(42) %37
 
 %% asign models
-rr = 3; %2
+rr = 1; %3%2
 dPAW_fit = all_record(rr,1,1).params;  % single state
 staPAW_fit = all_record(rr,2,1).params;  % two-state model
 temp_ws = dPAW_fit.wts;
@@ -37,7 +37,7 @@ model_choice = staPAW_fit; %dPAW_fit;  %staPAW_wo_fit; %
 alldis = extractfield(Data(:), 'dis');  % Data
 yyf = [yyf; alldis];
 
-wind_test = [1:150000];  %150000, 250000, 298000  %150000:298500
+wind_test = [1:160000];  %150000, 250000, 298000  %150000:298500
 offset = min(wind_test)-1;
 xx = xxf(:,wind_test);
 yy = yyf(:,wind_test);
@@ -57,8 +57,8 @@ target = [3000, 1500];  % gradient vector
 xy_sim = xys;
 
 %% defining states (change for dPAW comparison)
-pre_t = 4; %8, 2, 20
-post_t = 4;
+pre_t = 28; %4 %8, 2, 20
+post_t = 2; %4
 state_vec = gams_(1,:)*0; %gams_*0;%
 %%% staPAW states!
 pos_state_stapaw = find(gams_(1,:)>0.5); %<gams_(2,:));
@@ -67,12 +67,38 @@ pos_state_turn = find(abs(yy(1,:))>50);  % use this for fare comparison across m
 % pos_state_turn = find(abs(dth_sim)>50);  %50, 18
 
 %%% logics
-pos_state = setdiff(pos_state_turn, pos_state_stapaw);  % only turns not states
+% pos_state = setdiff(pos_state_turn, [pos_state_stapaw,pos_state_stapaw+1,pos_state_stapaw-1]);  % only turns not states
 % pos_state = setdiff(pos_state_stapaw, pos_state_turn);  % only state-switches not turns
 
-pos_state = pos_state_stapaw; 
-% pos_state = pos_state_turn;
-% pos_state = randi(length(yy),1,length(pos_state_turn));
+%%% emperical turn-based states
+windp = 28;  %20,28
+pos_purit = wind_test*0;
+pos_purit(pos_state_turn) = ones(1,length(pos_state_turn));
+pos_purit = conv(pos_purit,ones(1,windp), 'same');
+pos_purit = find(pos_purit>1);
+
+%%% more elaborate method to detect continued states, then remove late turn
+%%% within state OR pirouette
+diff_vec = diff(pos_purit); % pos_purit, pos_state_stapaw; % Find the differences between consecutive elements
+chunk_starts = [1, find(diff_vec ~= 1) + 1]; % Identify the start of each new chunk (where difference is not 1)
+chunk_ends = [chunk_starts(2:end) - 1, length(vec)];
+chunks = arrayfun(@(s, e) pos_purit(s:e), chunk_starts, chunk_ends, 'UniformOutput', false); % Extract each chunk
+%%
+pos_turn_not_state = [];
+for ii = 1:length(chunks)
+    pos_i = chunks{ii};
+    if length(pos_i)>1
+        pos_turn_in_state = find(abs(yy(1,pos_i))>50);
+        pos_turn_not_state = [pos_turn_not_state   pos_i(1)*1+pos_turn_in_state(2:end-1)];
+    end
+end
+%%%
+
+%%% assinging positions
+% pos_state = pos_state_stapaw;  % staPAW
+pos_state = pos_turn_not_state;  % turn within state, but not last
+% pos_state = pos_state_turn;  % turns
+% pos_state = randi(length(yy),1,length(pos_state_turn));  % random
 fix_t = 10;
 
 %%% test remove reversal
@@ -90,8 +116,8 @@ fix_t = 10;
 
 %% iterations
 % state_vec = zeros(2,floor(length(xx)/2)+1);  % making 2d for column difference
-state_vec(pos_state) = ones(1,length(pos_state));  %%%% use for non-pirouette positions
-% state_vec = state_vec(randperm(length(state_vec)));
+% state_vec = state_vec(randperm(length(state_vec))); % randperm control
+state_vec(pos_state) = ones(1,length(pos_state));  %%%% use for non-pirouette positions %%%
 trans_pos = diff(state_vec);
 
 trans12 = find(trans_pos>0)-0;

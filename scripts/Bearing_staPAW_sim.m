@@ -17,7 +17,7 @@ rng(13) %37 13
 % 42 1
 
 %% asign models
-rr = 1; %3,1
+rr = 2; %3,1
 dPAW_fit = all_record(rr,1,2).params;  % single state
 staPAW_fit = all_record(rr,2,2).params;  % two-state model  1,2,2!!
 temp_ws = dPAW_fit.wts;
@@ -27,9 +27,9 @@ temp_ws([14:17]) = ones(1,4);
 % null_fit.wts = temp_ws;  % ad-hoc ablation!
 
 %%% one at a time
-% model_choice = dPAW_fit;  % time step=5/14, tune wv strength, remove states, compute pirouette with window
+model_choice = dPAW_fit;  % time step=5/14, tune wv strength, remove states, compute pirouette with window
 
-model_choice = staPAW_fit; % test with data in the same way (z-state)
+% model_choice = staPAW_fit; % test with data in the same way (z-state)
 % model_choice.wts_state = model_choice.wts_state*0;  % same setup as staPAW but not transition
 
 %% environement
@@ -103,25 +103,25 @@ kt = randi([1 2],1,T);
 for t = 2:T
     
     %%% state-transitions
-    Tij = ones(nstates, nstates);  % state transition probability
-    for ii = 1:nstates
-        for jj = 1:nstates
-            if ii == jj
-                Tij(ii,jj) = 0 + A_inf(ii,jj);  
-            else
-                K_ij_dc = (squeeze(w_state_inf(ii,jj,:))'*Basis');  % reconstruct kernel
-                Tij(ii,jj) = (0+exp(sum(K_ij_dc.*dCv)*betaT))*1 + 0*A_inf(ii,jj);
-            end
-        end
-    end
-    Tij = Tij ./ (sum(Tij,2) + 1e-8);  % normalize rows
-    temp_state = [find(rand < cumsum(Tij(kt(t-1),:)))];  % Markov transition
-    if length(temp_state)==0
-        kt(t) = randi(numel([2,1]));
-    else
-        kt(t) = temp_state(1);
-    end
-%     kt(t) = 1;  %%% for dPAW w/o states %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%     Tij = ones(nstates, nstates);  % state transition probability
+%     for ii = 1:nstates
+%         for jj = 1:nstates
+%             if ii == jj
+%                 Tij(ii,jj) = 0 + A_inf(ii,jj);  
+%             else
+%                 K_ij_dc = (squeeze(w_state_inf(ii,jj,:))'*Basis');  % reconstruct kernel
+%                 Tij(ii,jj) = (0+exp(sum(K_ij_dc.*dCv)*betaT))*1 + 0*A_inf(ii,jj);
+%             end
+%         end
+%     end
+%     Tij = Tij ./ (sum(Tij,2) + 1e-8);  % normalize rows
+%     temp_state = [find(rand < cumsum(Tij(kt(t-1),:)))];  % Markov transition
+%     if length(temp_state)==0
+%         kt(t) = randi(numel([2,1]));
+%     else
+%         kt(t) = temp_state(1);
+%     end
+    kt(t) = 1;  %%% for dPAW w/o states %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     
     %%% unwrap state parameter
     [Khat] = wts2params(mmhat.wts(:,:,floor(kt(t))), mmhat.basis');
@@ -273,7 +273,7 @@ dth_sim = alldths;
 
 %% defining states (change for dPAW comparison)
 pre_t = 28; %2, 47
-post_t = 2;  %2 14
+post_t = 2;  %2 14  % 14 for per turn
 state_vec = allstate*0;%gams_(1,:)*0; %gams_*0; %
 %%% staPAW states!
 % pos_state_stapaw = find(gams_(2,:)>0.8); %<gams_(2,:));
