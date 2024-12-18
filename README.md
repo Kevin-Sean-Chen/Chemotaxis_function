@@ -2,7 +2,7 @@
 
 This is a repo for behavioral modeling for worm odor-navigation reported in the paper: https://arxiv.org/abs/2311.07117 (Chen et al. 2023). 
 The repo analyzes behavioral trajectories that are output from the high-throughput worm tracking pipeline in the Leifer lab (https://github.com/Kevin-Sean-Chen/leifer-Behavior-Triggered-Averaging-Tracker-new)
-The corresponding data for figure making and analysis can be found in figshare: 10.6084/m9.figshare.24764403
+The corresponding data for figure making and analysis can be found in figshare: [10.6084/m9.figshare.24764403](https://doi.org/10.6084/m9.figshare.24764403) 
 
 ## Making figures
 
