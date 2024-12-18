@@ -62,8 +62,6 @@ for ii = 1:ntracks
         [xil, yil] = plate_bound(M, subs(dd-0,1)+perp_dir(1), subs(dd-0,2)+perp_dir(2));
         [xir, yir] = plate_bound(M, subs(dd-0,1)-perp_dir(1), subs(dd-0,2)-perp_dir(2));
         dCp(dd) = (M(yil,xil) - M(yir,xir));
-%         dCp(dd) = (M(floor(subs(dd-l_window,2)+perp_dir(2)*perp_dist), floor(subs(dd-l_window,1)+perp_dir(1)*perp_dist))...
-%                  - M(floor(subs(dd-l_window,2)-perp_dir(2)*perp_dist), floor(subs(dd-l_window,1)-perp_dir(1)*perp_dist))) / 1;  %computing normal direction dcp
 
         %%% forward concentration
         dCs(dd) = M(floor(subs(dd-0,2)), floor(subs(dd-0,1)));
@@ -86,9 +84,6 @@ for ii = 1:ntracks
     timev = timev((l_window+2):end);  % one index off because of the derivative
     opto_i = opto_i((l_window+2):end);
     
-%     pos = find(dds>dis_thr); %remove sharp jumps
-%     trials(pos) = nan;
-%     trials(1) = nan; trials(end) = nan;
     trials(1:50) = NaN; trials(end) = NaN;
     
     % store as structure
@@ -105,6 +100,5 @@ for ii = 1:ntracks
     Data(ii).opto = opto_i;  %opto-stimuli
     
 end
-
 
 end

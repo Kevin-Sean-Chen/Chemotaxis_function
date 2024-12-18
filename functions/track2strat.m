@@ -18,11 +18,6 @@ turn_dn = 1;
 
 for c = 1:length(tracks)
     
-    %%% find runs
-%     prs = find(abs(tracks(c).dth) > turn_thre);  % finding sharp turns
-%     inter_pr = diff(prs);
-%     pos = find(inter_pr < tc_thre);  % finding close consecutive turns
-%     prs((pos)+1) = [];
     %%% testing burst detection
     prs = (abs(tracks(c).dth) > turn_thre);
     burst = conv(prs,ones(1,round(tc_thre)));%,'same');
@@ -50,29 +45,15 @@ for c = 1:length(tracks)
             else
                 prs = [];%[pos_init(1:end)'   pos_fina(1:end-1)'];
             end
-%             if pos_init(1)>pos_fina(1)
-%                 prs = [pos_init(1:end)'   pos_fina(2:end)'];
-%             else
-%                 prs = [];%[pos_init(1:end)'   pos_fina(1:end-1)'];  % ignore weird case for now...
-%             end
         end
     else
         prs = [];
     end
         
-%     try
-%         prs = [pos_init(1:end)'   pos_fina(1:end)'];
-%     catch
-% %         prs = [pos_init'   pos_fina(1:end)'];
-%         prs = [];
-%     end
-    %%%
-    
     paths = tracks(c).xy';
     runs = [];
     if size(prs,1) > 2
         for ri = 1:length(prs)-1
-%             runs = [runs; [prs(ri)  prs(ri+1)]];  % run are in between turns
               runs = [runs; [prs(ri,2)-dC_window*1  prs(ri+1,1)]];   % the last pr end to next pr on
         end
     end
@@ -93,19 +74,10 @@ for c = 1:length(tracks)
     end
     end
     
-
-    %%% find turns
-%     dC_window = 10;%10*5/14;
-%     prs = find(abs(tracks(c).dth) > 100);  % finding sharp turns
-%     inter_pr = diff(prs);
-%     pos = find(inter_pr < 100);  % finding close consecutive turns, with longer interval here.
-%     prs((pos)+1) = [];
     
     %%% computing turns (weathervaning)
     if isempty(prs)==0
     for tt = 1:size(prs,2)-1
-%         c_i = max((prs(tt)-round(dC_window)*1), 1);  %initiation time 
-%         c_f = min((prs(tt+1)+round(dC_window)*1), length(paths));  %exiting time...  note that in sumulation we don't have an explicit piroutte state!!!
         c_i = max((prs(tt,1)-round(dC_window)*0), 1);  %initiation time 
         c_f = min((prs(tt,2)-round(dC_window)*1), length(paths)); 
         
