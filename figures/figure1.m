@@ -49,7 +49,7 @@ colormap(ax1)
 % extracted with script "BRW_WV_CI.m"
 
 %% load analyzed data
-load(fullfile(datadir,'data4plots', 'BWCs.mat'))
+load(fullfile(datadir,'data4plots', 'BWCs2.mat'))
 
 %% plotting bars
 app_ = BWCs{1}'; nai_ = BWCs{2}'; ave_ = BWCs{3}';  % loading the summary statistics

@@ -4,135 +4,126 @@
 datadir = fullfile('/projects/LEIFER/Kevin/Publications/','Chen_learning_2023');
 
 %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% Figure 6
-% extracted from script 'mutant_fit.m' and 'mutant_var.m'
+%% Figure 6b,c
+% extracted from script 'Path_triggered.m'
 
-%% load full data
-load(fullfile(datadir,'data4plots', 'mutant_fit_vars_std.mat'));  % containing all required fields of data
+%% load data
+load(fullfile(datadir,'data4plots', 'app_trigs.mat'));
+load(fullfile(datadir,'data4plots', 'nai_trigs.mat'));
+load(fullfile(datadir,'data4plots', 'ave_trigs.mat'));
 
-%%
-%% arrow plots
-figure
-N2_param = squeeze(mle_params(2,:,:));  % loading N2 fitted parameters
-N2_param = N2_param([1,3,2],:);
-arrowHeadSize = 2;
-ii = 3*5;  % all conditions
-jj = 1;
-test = zeros(3,5);
-for cc = 1:3
-    for ss = 1:5
-        %%% load data
-        load(data_mut{cc,ss});
-        Data_n2_i = load(data_n2{cc});
-        
-        %%% plot arrow
-        temp_param = squeeze(mut_param(cc,ss,:))';
-        temp_n2_param = N2_param(cc,:);
-        temp_n2_ci = N2_ci(cc);
-        
-        %%% convolution
-        d_brw = BRW_Kc_conv(temp_param, Data) - BRW_Kc_conv(temp_n2_param, Data_n2_i.Data); 
-        d_wv =  WV_Kcp_conv(temp_param, Data) - WV_Kcp_conv(temp_n2_param, Data_n2_i.Data); 
-        d_ci = CIs(cc,ss) - temp_n2_ci;
-        test(cc,ss) = d_brw;
-        
-        %%% N2 measurements
-        Data_n2_i = load(data_n2{cc});
-        brw_n2 = BRW_Kc_conv(temp_n2_param, Data_n2_i.Data);
-        wv_n2 = WV_Kcp_conv(temp_n2_param, Data_n2_i.Data);
-        
-        subplot(131)
-        plot(N2_ci(cc), ii,'o'); hold on
-        h0 = quiver(temp_n2_ci, ii, d_ci, 0,0,  'autoScale', 'off'); hold on
-        set(gcf,'color','w'); set(gca,'Fontsize',20); title('CI'); yticks([])
-        subplot(132)
-        semilogx(brw_n2, ii,'o'); hold on
-%         plot(brw_n2, ii,'o'); hold on
-        h1 = quiver(brw_n2, ii, (d_brw), 0,0,  'autoScale', 'off'); hold on
-        set(gcf,'color','w'); set(gca,'Fontsize',20); title('BRW'); yticks([])
-        subplot(133)
-        plot(wv_n2, ii,'o'); hold on
-        h2 = quiver(wv_n2, ii, d_wv, 0,0,  'autoScale', 'off'); hold on
-        set(gcf,'color','w'); set(gca,'Fontsize',20); title('WV'); yticks([])
-        ii = ii-1;
-        
-    end    
-end
+%% analysis parameters
+poly_degree = 3;  %polynomial fitting for moving window
+filt = 14;  %window the path (has to be odd because it is +/- points around the center)
+fr = 1/14;  %1/14 seconds between each frame  (~0.0714 second for each frame)
+bin = 7;  %down-sampling
+windt = 14 * (1/(bin*fr)); %time window in seconds
+acst = 4 * (1/(bin*fr));  % acausal window
 
-%% linear contribution analysis
-P = ones(n_strains, n_strains);  % neuron x neuron perturbation matrix
-P(1:size(P,1)+1:end) = 0;
-B = zeros(2, n_strains);  % behavior x neuron
-Ws = zeros(3,2, n_strains);  % condition x behavior x neuron
-xtickLabels = {'AIA','AIB','AIY','AIZ','RIA'};
-ytickLabels = {'BRW','WV'};
-ttls = {'appetitive', 'aversive', 'naive'};
-
-%%% color scheme
-numColors = 256;  % Number of colors in the colormap
-r = [linspace(1, 1, numColors), linspace(1, 0.5, numColors)];  % Red component
-g = [linspace(0, 1, numColors), linspace(0.5, 1, numColors)];  % Green component
-b = [linspace(0, 1, numColors), linspace(1, 1, numColors)];  % Blue component
-customMap = [r', g', b'];
+%% bar plot
+all_ang_trigs = {app_up_trigs, app_down_trigs, nai_up_trigs, nai_down_trigs, ave_up_trigs, ave_down_trigs};
+dang_means = zeros(1,6);
+dang_stds = zeros(1,6);
 
 figure
-for cc = 1:3
-    for ss = 1:5    
-        %%% normalized index
-        load(data_mut{cc,ss});
-        temp_param = squeeze(mut_param(cc,ss,:))';
-        B(1,ss) = BRW_Kc_conv(temp_param, Data);
-        B(2,ss) = WV_Kcp_conv(temp_param, Data);
-    end
-    B = B./vecnorm(B,1,2);  % normalize behavior readout?
-    wtemp = B/P;%B*inv(P);
-    Ws(cc,:,:) = wtemp;
+for ii = 1:6
+    temp_trigs = all_ang_trigs{ii};
+    temp = mean(abs(temp_trigs(:,acst:acst+14)),2) - mean(abs(temp_trigs(:,1:acst)),2);  % post - pre absolute average
+    temp = temp/(fr*bin);   % per time unit
+    dang_means(ii) = mean(temp);
+    dang_stds(ii) = std(temp)/sqrt(length(temp));
     
-    subplot(1,3,cc)
-    imagesc(wtemp); xticklabels(xtickLabels); yticklabels(ytickLabels); xticks([1:n_strains]); yticks([1:2]); title(ttls(cc)); caxis([-0.3,.3])
-    set(gcf,'color','w'); set(gca,'Fontsize',20);
-%     caxis([-max(abs(wtemp(:))), max(abs(wtemp(:)))]);
+    bar(ii, dang_means(ii)); hold on
+    errorbar(ii, dang_means(ii), dang_stds(ii), 'k.')
 end
 
-%% functions required
-function [varargout] = BRW_Kc_conv(x, Data);
-    [cosBasis, tgrid, basisPeaks] = makeRaisedCosBasis(4, [0, 8], 1.3);
-    tt = 0:length(cosBasis)-1;
-    Kc = x(3:6)*cosBasis';
-    [xx_train, yy_train, mask_train] = data2xy(Data);%(Data(1:400));%(Data(idvec(1:400)));
-    ddc_fit = xx_train(1,:);
-    trials_fit = ones(1,length(mask_train));
-    trials_fit(find(mask_train==0)) = NaN;
-%     brw = nanstd(conv_kernel(ddc_fit.*trials_fit, Kc));
-    K_h_rec = x(10)*exp(-tt/x(11));
-    filt_dth = conv_kernel(abs(yy_train), K_h_rec);
-    filt_dc = conv_kernel(ddc_fit.*trials_fit, Kc/1);
-    dc_dth = filt_dc+filt_dth*1;
-    compute_nl = (x(2)-x(7))./(1+exp(-dc_dth - 0*(filt_dth))) + x(7);
-    test_nl = (x(2)-x(7))./(1+exp(-ddc_fit - 0*(filt_dth))) + x(7);
-    if nargout > 1
-        varargout{1} = norm(Kc)/nanstd(ddc_fit.*1);%norm(Kc);   %(nanstd(compute_nl));% - nanstd(filt_dc);
-        temp = (conv_kernel(ddc_fit.*trials_fit, Kc));
-        varargout{2} = dc_dth;
+%% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Figure 6d
+% extracted from script 'Hess4MLE_opto.m'
+
+%% load analyzed kernels
+load(fullfile(datadir,'data4plots', 'opto_K_mle_std.mat'));
+
+%% plotting Ks
+ttl = {'appetitive','naive','aversive'};
+col = {'b','k','r'};
+[cosBasis, tgrid, basisPeaks] = makeRaisedCosBasis(4, [0, 8], 1.3);
+tt = [1:length(cosBasis)]*5/14;
+K = size(mle_params_opto,1);
+figure
+for cc = 1:3
+    subplot(1,3,cc);
+    mlee = squeeze(nanmedian(mle_params_opto(cc,:,:),3));  %((mle_params_opto(cc,:,5))); %
+    y_odor = mlee(3:6)*cosBasis';
+    y_opto = mlee(7:10)*cosBasis';
+    mle_hess_odor = MLE_std_opto(cc,3:6)*1;%4/sqrt(length(Data));   % odor
+    mle_hess_opto = MLE_std_opto(cc,7:10)*1;  % opto
+    
+    standardError_odor = mle_hess_odor*cosBasis';
+    yyaxis left; 
+    plot(tt,y_odor,col{cc},'LineWidth',3); ylimr = get(gca,'Ylim');ratio = ylimr(1)/ylimr(2);
+    ylabel('K_{c}');
+    hold on
+    % Create the shaded area
+    xArea = [tt, fliplr(tt)];
+    yArea = [y_odor + standardError_odor, fliplr(y_odor - standardError_odor)];
+    fill(xArea, yArea, 'k', 'FaceAlpha', 0.6, 'EdgeColor', 'none');
+    hold off
+    
+    yyaxis right
+    standardError_opto = mle_hess_opto*cosBasis';
+    plot(tt,y_opto,'Color',col{cc},'LineWidth',1); yliml = get(gca,'Ylim');% ,'Alpha', 0.3)
+    ylabel('K_{opto}');
+    hold on
+    % Create the shaded area
+    xArea = [tt, fliplr(tt)];
+    yArea = [y_opto + standardError_opto, fliplr(y_opto - standardError_opto)];
+    fill(xArea, yArea, 'k', 'FaceAlpha', 0.3, 'EdgeColor', 'none');
+    hold off
+    
+    if yliml(2)*ratio<yliml(1)
+        set(gca,'Ylim',[yliml(2)*ratio yliml(2)])
     else
-        varargout{1} = norm(Kc)/nanstd(ddc_fit.*1);%norm(Kc);   %(nanstd(compute_nl));% - nanstd(filt_dc);
+        set(gca,'Ylim',[yliml(1) yliml(1)/ratio])
     end
+
+    xlabel('time (s)');
+    set(gca,'FontSize',20); set(gcf,'color','w'); title(ttl{cc})
 end
 
-function [varargout] = WV_Kcp_conv(x, Data)
-    [cosBasis, tgrid, basisPeaks] = makeRaisedCosBasis(4, [0, 8], 1.3);
-    tt = 0:length(cosBasis)-1;
-    Kcp = x(8)*exp(-tt/x(9));
-    [xx_train, yy_train, mask_train] = data2xy(Data);%(Data(1:400));%(Data(idvec(1:400)));
-    dcp_fit = xx_train(2,:);
-    trials_fit = ones(1,length(mask_train));
-    trials_fit(find(mask_train==0)) = NaN;
-%     wv = nanstd(conv_kernel(dcp_fit.*trials_fit, Kcp));
-    if nargout > 1
-        varargout{1} = nanstd(conv_kernel(dcp_fit.*trials_fit, Kcp));
-        temp = (conv_kernel(dcp_fit.*trials_fit, Kcp));
-        varargout{2} = temp(~isnan(temp));
-    else
-        varargout{1} = nanstd(conv_kernel(dcp_fit.*trials_fit, Kcp));
+%% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Figure 5e
+% extracted from script 'Path_triggered.m'
+
+%% load data
+% same triggered traces as 5b
+all_ang_trigs = {app_up_trigs, app_down_trigs, nai_up_trigs, nai_down_trigs, ave_up_trigs, ave_down_trigs};
+trig_plot = reshape(all_ang_trigs,2,3)';
+
+titles = {'appetitive', 'naive', 'aversive'};
+t_vec = [-acst:windt]*((bin*fr));
+line_symb = {'-','--'};
+
+%% plottomg
+for ii = 1:3
+    figure;
+    title(titles{ii})
+    patch([0 5 5 0], [20 20, 60 60], [0.7 0.7 0.9])
+    hold on
+    for jj = 1:2
+        % load data and compute mean and sem
+        trig_angs = trig_plot{ii,jj};
+        mean_ang = mean(abs(trig_angs)) / (fr*bin);
+        std_ang = std(abs(trig_angs) / (fr*bin)) / sqrt(size(trig_angs,1));
+        % plotting
+        plot(t_vec, mean_ang, 'k','LineStyle',line_symb{jj}, 'LineWidth',3)
+        hold on
+        xArea = [t_vec, fliplr(t_vec)];
+        yArea = [mean_ang + std_ang, fliplr(mean_ang - std_ang)];
+        fill(xArea, yArea, 'k', 'FaceAlpha', 0.3, 'EdgeColor', 'none');
+        xlabel('time (s)')
+        ylabel('angular speed (|deg|/s)')
+        set(gca,'FontSize',20); set(gcf,'color','w');
+        ylim([20,60])
     end
 end

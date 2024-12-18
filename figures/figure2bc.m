@@ -1,10 +1,10 @@
-% Figure 2d,e
+% Figure 2b,c
 % USER INSTRUCTION: download and unzip the demo data pack Chen_learning_2023.zip from figshare to a local directory of your choice, and modify datadir below accordingly. If you don't modify datadir, this script assumes it's in your system's default Downloads directory.
 % datadir = fullfile(getenv('USERPROFILE'),'Downloads','Chen_learn_2023');
 datadir = fullfile('/projects/LEIFER/Kevin/Publications/','Chen_learning_2023');
 
 %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% Figure 2e
+%% Figure 2b
 % extracted from script 'simulation_MLE.m'
 
 %% load data
@@ -62,7 +62,7 @@ set(gcf,'color','w');
 title('simulation with MLE parameters')
 
 %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% Figure 2e
+%% Figure 2c
 % extracted from script 'simulation_MLE.m'
 
 %% load data

@@ -4,226 +4,329 @@
 datadir = fullfile('/projects/LEIFER/Kevin/Publications/','Chen_learning_2023');
 
 %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% Figure 3
-% extracted from script 'mVM_analysis.m'
+%% Figure 3 c
+% extracted from script 'exp_track_NaCl.m'
+% example tracks for salt chemotaxis
 
-%% load all data, with fully trained parameters
-load(fullfile(datadir,'data4plots', 'classify_learn3_vars7.mat'));
-datas = {fullfile(datadir,'data4plots', 'Data_app_test2.mat'),...
-         fullfile(datadir,'data4plots', 'Data_nai_test2.mat'),...
-         fullfile(datadir,'data4plots', 'Data_ave_test2.mat')};
+%% load data
+load(fullfile(datadir,'data4plots', 'Data_salt100_50.mat'))
+% load(fullfile(datadir,'data4plots', 'Data_salt0_50_0513.mat'))
 
-param_mle = mle_params;  % directly import
-% ids = params_mat.ids;  % load id for training
+%% for salt linear gradient
+Cmap = load(fullfile(datadir,'data4plots', 'Landscape_low_0623_2.mat'));
+M = Cmap.vq1;
+M = fliplr(flipud(M));
+[rows, cols] = size(M);
+[x_, y_] = meshgrid(linspace(50, 0, cols), 1:rows);  % for   0 to 50 mM
+[x_, y_] = meshgrid(linspace(50, 100, cols), 1:rows);  % for 100 to 50 mM
+gradient_x = x_ * 1;
+M = (y_*0+1) .* gradient_x;  
+%figure; imagesc(M)
+pix2mm = 1/30;
 
-%% assign mle parameters
-time_scale = 5/14;
-[cosBasis, tgrid, basisPeaks] = makeRaisedCosBasis(4, [0, 8], 1.3);
-t_vec = 1:length(cosBasis)-1;
+%% example tracks
+data_i = Data([57:77]);
+% data_i = Data(10:30);
 
-K1_mle = median(squeeze(param_mle(:,:,1)), 1);
-K2_mle = median(squeeze(param_mle(:,:,12)), 1);
-A_mle = median(squeeze(param_mle(:,:,2)), 1);
-C_mle = median(squeeze(param_mle(:,:,7)), 1);
-Ah_mle = median(squeeze(param_mle(:,:,10)), 1);
-th_mle = median(squeeze(param_mle(:,:,11)), 1);
-alpha_mle = squeeze(median((param_mle(:,:,3:6)), 1))';
-b_mle = median(squeeze(param_mle(:,:,13)), 1);
-Kc_mle = zeros(3, size(cosBasis,1));
-for ii = 1:3
-    Kc_mle(ii,:) = alpha_mle(:,ii)'* cosBasis';
+%%% plotting
+figure()
+ax1 = axes;
+imagesc(ax1,M,'XData',[0 size(M,2)*pix2mm],'YData',[0 size(M,1)*pix2mm]);
+set(gcf,'color','w'); set(gca,'Fontsize',20); xticks([]); yticks([]);
+colormap()
+caxis([0 100]);
+hold on
+ax2 = axes;
+for ii = 1:length(data_i)
+    xx = data_i(ii).xy(1,:);
+    yy = data_i(ii).xy(2,:);
+    ll = length(data_i(ii).xy);
+    gg = linspace(0,1,ll);
+%     plot(xx, yy, 'Color', [grayLevel grayLevel grayLevel]);
+    patch(ax2, [xx nan]*pix2mm,[yy nan]*pix2mm,[gg nan],[gg nan], 'edgecolor', 'interp','LineWidth',2); 
+    hold on
+    plot(ax2,xx(1)*pix2mm, yy(1)*pix2mm,'g.', 'MarkerSize',25)
+    plot(ax2,xx(end)*pix2mm, yy(end)*pix2mm,'r.', 'MarkerSize',25)
 end
+set(gca, 'YDir','reverse')
+set(gca, 'XDir', 'reverse')  %%% for 100-50
+ax2.Visible = 'off';
+ax2.XTick = [];
+ax2.YTick = [];
+c = gray;
+colormap(ax2,c)
+colormap(ax1)
+xlim([1,3000].*pix2mm); ylim([1,2500].*pix2mm)
 
-%% simple plots
-% learn_bar_plot(K1_mle, '\kappa_{wv}')
-% learn_bar_plot(K2_mle, '\kappa_{pr}')
-learn_bar_plot(C_mle*time_scale, 'baseline turn rate (per s)')
+%% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Figure 3 d
+% extracted from script 'index_salt.m'
+% compute indeces for salt chemotaxis
 
-%% multi-plots
+%% linear salt environment
+rows=2500; cols=3000;
+[x_, y_] = meshgrid(linspace(0, 50, cols), 1:rows);  % for   0 to 50 mM
+gradient_x = x_ * 1;
+M0 = (y_*0+1) .* gradient_x;
+[x_, y_] = meshgrid(linspace(100, 50, cols), 1:rows);  % for 100 to 50 mM
+gradient_x = x_ * 1;
+M100 = (y_*0+1) .* gradient_x;
+
+[ci_, brw_index, wv_index] = compute_index(Tracks(1:end), M0, 15);
+
+%% looping files and conditions
+rng(123)
+fields_to_load = {'Path','Time','Runs','Pirouettes'};
+temp = load(fullfile(datadir,'data4plots', 'salt_data_folder.mat'));
+folder_all = {temp.salt_data_50_0, temp.salt_data_50_100};
+track_learn_all = cell(1,2);
+BWCs = cell(1,2);
+cols = ['b','k','r'];
+rep_samp = 10;
+n_samps = 500;
 figure
-subplot(121)
-learn_bar_plot(K1_mle, '\kappa_{wv}',0)
-subplot(122)
-learn_bar_plot(C_mle*time_scale, 'min turn rate (per s)',0)
-% subplot(141)
-% learn_bar_plot(K1_mle, '\kappa_{wv}',0)
-% subplot(142)
-% learn_bar_plot(K2_mle, '\kappa_{brw}',0)
-% subplot(143)
-% learn_bar_plot(A_mle*time_scale, 'max turn rate (per s)',0)
-% subplot(144)
-% learn_bar_plot(C_mle*time_scale, 'min turn rate (per s)',0)
-
-%% histogram and turning curves; with normalization
-numBins = 100;
-desiredPointsPerBin = 1000;
-xx_cond = linspace(-30,30, numBins);
-cols = ['b', 'k', 'r'];
-figure
-for ii = 1:3
-    %%% load data
-    load(datas{ii});
-    [xx_train, yy_train, mask_train] = data2xy(Data(1:end));
-    ddc_fit = xx_train(1,:);
-    ang_fit = yy_train(1,:);
-    trials_fit = ones(1,length(mask_train));
-    trials_fit(find(mask_train==0)) = NaN;
-    ddc_fit = ddc_fit(2:end);
-    ang_fit = ang_fit(1:end-1);
-    trials_fit = trials_fit(2:end);
-    
-    %%% calculation of turn
-    filt_ddc = conv_kernel(ddc_fit.*trials_fit, Kc_mle(ii, :));
-    K_h_rec = Ah_mle(ii)*exp(-t_vec/th_mle(ii));
-    filt_dth = conv_kernel(abs(ang_fit).*trials_fit, K_h_rec);
-    dc_dth_raw = filt_ddc + 1*(filt_dth);
-    dc_dth = dc_dth_raw; %
-
-    %%% plots
-    subplot(223)
-    h = histogram(dc_dth, xx_cond, 'Normalization', 'probability','Visible', 'off');
-    bin_edges_input = h.BinEdges;
-    probabilities_input = h.Values/sum(h.Values);
-    plot(bin_edges_input(1:end-1), probabilities_input, 'Color', cols(ii),'LineWidth',1.5); hold on
-    xlim([min(xx_cond), max(xx_cond)])
-    xlabel('filtered signal'); ylabel('probability'); set(gcf,'color','w'); set(gca,'Fontsize',20);
-    
-    subplot(221)
-    P_pir_F = ( (A_mle(ii)-C_mle(ii))./(1+exp(-bin_edges_input(1:end-1)))+C_mle(ii) )*time_scale;
-    plot(bin_edges_input(1:end-1), P_pir_F,'Color',cols(ii),'LineWidth',1.5); hold on
-    xlim([min(xx_cond), max(xx_cond)])
-    xlabel('filtered signal'); ylabel('P(\beta=1|C,d\theta)'); set(gcf,'color','w'); set(gca,'Fontsize',20);
-    
-    subplot(222)
-    sig_output = ((A_mle(ii)-C_mle(ii))./(1+exp(-dc_dth_raw*1))+C_mle(ii))*time_scale;
-    yy_cond = linspace(min(sig_output),max(sig_output),numBins);
-    yy_cond = linspace(0, 0.1,numBins);
-    h = histogram(sig_output, yy_cond, 'Normalization', 'probability','Visible', 'off');
-    bin_edges_output = h.BinEdges;
-    probabilities_output = h.Values/sum(h.Values);
-    P_pir = probabilities_output;       %.*probabilities_input; %.*(P_pir_F); %
-    P_pir = P_pir/sum(P_pir);
-    plot(P_pir, bin_edges_output(1:end-1), 'Color', cols(ii),'LineWidth',1.5); hold on
-    ylim([0, 0.1])
-    xlabel('probability'); ylabel('P(\beta=1|C,d\theta)'); set(gcf,'color','w'); set(gca,'Fontsize',20);
-    
-    subplot(224)
-    semilogx(P_pir, bin_edges_output(1:end-1), 'Color', cols(ii),'LineWidth',1.5); hold on
-    ylim([min(sig_output),max(sig_output)])
-    xlabel('probability'); ylabel('P(\beta=1|C,d\theta)'); set(gcf,'color','w'); set(gca,'Fontsize',20);
-%     h = histogram(filt_ddc/1 + 1*(filt_dth), numBins, 'Normalization', 'probability','Visible', 'off');
-%     bin_edges = h.BinEdges;
-%     probabilities = h.Values;
-%     plot(bin_edges(1:end-1), probabilities, 'Color', cols(ii),'LineWidth',1.5); hold on
-%     xlabel('raw filtered signal'); ylabel('probability'); set(gcf,'color','w'); set(gca,'Fontsize',20);
-end
-
-%% emperical vs. model turn probability (histogram method!)
-model_Pturn = zeros(1,3);
-exp_Pturn = zeros(1,3);
-turn_thr = 150;
-gamm = 0.20;
-nbins = 50;
-d2r = pi/180;
-
-figure
-for ii = 1:3
-    %%% load data
-    load(datas{ii});
-%     idvec = randperm(length(Data));
-
-    %%% test with the same CV testing data
-%     Data = Data(data_ids(ii,:)); % control the number of tracks 
-    indices = ids{ii};  % indices for CV (pre-assigned!)
-    test_set = (indices==kth);   %%% this matters!!
-    train_set = ~test_set;
-    Data_train = Data(train_set);
-    %%%
-    
-    [xx_train, yy_train, mask_train] = data2xy(Data_train);%(Data(1:400));%(Data(idvec(1:400)));
-    ddc_fit = xx_train(1,:);
-    trials_fit = ones(1,length(mask_train));
-    trials_fit(find(mask_train==0)) = NaN;
-    ang_fit = yy_train;
-    
-    % emperical
-    exp_Pturn(ii) = length(find(abs(ang_fit)>turn_thr)) / (length(ang_fit)-sum(isnan(trials_fit)));
-    
-    % model
-    filt_ddc = conv_kernel(ddc_fit.*trials_fit, Kc_mle(ii, :));
-    K_h_rec = Ah_mle(ii)*exp(-t_vec/th_mle(ii));
-    filt_dth = conv_kernel(abs(ang_fit), K_h_rec);
-    dc_dth = (filt_ddc + filt_dth + b_mle(ii)*0);
-    Pturns = (A_mle(ii)-C_mle(ii))./ (1 + exp( -(dc_dth) )) + C_mle(ii);
-    P_beta = nansum(Pturns) / (length(Pturns)-sum(isnan(Pturns)));
-    [n, edges] = histcounts(yy_train, nbins, 'Normalization', 'probability');
-    bb = edges(1:end-1)*pi/180;
-    pos = find(abs(bb) > turn_thr*pi/180);
-    scal = sum(1/(2*pi*besseli(0,K1_mle(ii)^1)) * exp(K1_mle(ii)^1*cos( bb )) * (1-P_beta)  + ... 
-       ( 1/(2*pi*besseli(0,K2_mle(ii)^1)) * exp(K2_mle(ii)^1*cos( bb-pi ))*(gamm) + (1-gamm)/(2*pi) ) *P_beta );
-    p_thr_beta = (1/(2*pi*besseli(0,K2_mle(ii)^1)) * exp(K2_mle(ii)^1*cos( bb-pi ))*(gamm) + (1-gamm)/(2*pi) ) * P_beta / scal;
-    model_Pturn(ii) = sum(p_thr_beta(pos));
-    exp_Pturn(ii) = sum(n(pos));
-
-end
-
-% figure
-% bar([exp_Pturn; model_Pturn]')
-learn_bar_plot([exp_Pturn; model_Pturn], 'turn/s')
-
-%% angular density plots
-nbins = 100;
-ii = 2;
-gamm = 0.2;
-load(datas{ii});
-figure
-[xx_train, yy_train, mask_train] = data2xy(Data);
-%%% turn P
-filt_ddc = conv_kernel(ddc_fit.*trials_fit, Kc_mle(ii, :));
-K_h_rec = Ah_mle(ii)*exp(-t_vec/th_mle(ii));
-filt_dth = conv_kernel(abs(ang_fit), K_h_rec);
-dc_dth = (filt_ddc + filt_dth + b_mle(ii)*0);
-Pturns = (A_mle(ii)-C_mle(ii))./ (1 + exp( -(dc_dth) )) + C_mle(ii);
-P_beta = nansum(Pturns) / (length(Pturns)-sum(isnan(Pturns)));
-% dth histogram
-hh = histogram(yy_train, nbins, 'Normalization', 'probability', 'EdgeColor', 'none', 'FaceAlpha', 0.7); hold on
-bb = hh.BinEdges(1:end-1)*pi/180;
-scal = sum(1/(2*pi*besseli(0,K1_mle(ii)^1)) * exp(K1_mle(ii)^1*cos( bb )) * (1-P_beta)  + ... 
-       ( 1/(2*pi*besseli(0,K2_mle(ii)^1)) * exp(K2_mle(ii)^1*cos( bb-pi ))*(gamm) + (1-gamm)/(2*pi) ) *P_beta );
-plot( bb*180/pi, 1/(2*pi*besseli(0,K1_mle(ii)^1)) * exp(K1_mle(ii)^1*cos( bb )) * (1-P_beta)*1/scal, 'b'); hold on
-plot( bb*180/pi, ( 1/(2*pi*besseli(0,K2_mle(ii)^1)) * exp(K2_mle(ii)^1*cos( bb-pi ))*(gamm) + (1-gamm)/(2*pi) ) *P_beta*1/scal,'r');
-
-%% direct concentration analysis
-numBins = 30;
-cols = ['b', 'k', 'r'];
-figure
-for ii = 1:3
-    %%% load data
-    load(datas{ii});
-    dcs = zeros(1,length(Data));
-    for jj = 1:length(Data)
-        dcs(jj) = Data(jj).dc(end) - Data(jj).dc(1);
+for cc = 1:2
+    folder_names = folder_all{cc};
+    BWC = zeros(length(folder_names), 3);
+    sub_learn_tracks = cell(1,length(folder_names));
+    Tracks = loadtracks(folder_names,fields_to_load);
+    for ff = 1:rep_samp
+        samp_id = randperm(length(Tracks));
+        Tracks_i = Tracks(samp_id(1:n_samps));
+        if cc == 1
+            [ci_, brw_index, wv_index] = compute_index(Tracks_i, M0, 20);
+            BWC(ff,:) = [ci_, brw_index, wv_index];
+        else
+            [ci_, brw_index, wv_index] = compute_index(Tracks_i, M100, 15);
+            BWC(ff,:) = [ci_, brw_index, -wv_index];
+        end
+        
+        sub_learn_tracks{ff} = Tracks;
     end
-    hh = histogram(dcs, numBins, 'Normalization', 'probability', 'EdgeColor', 'none', 'FaceAlpha', 0.5); hold on
+    
+    plot(BWC',cols(cc)); hold on
+    BWCs{cc} = BWC;
+    track_learn_all{cc} = sub_learn_tracks;
 end
 
+%% bar plot
+figure
+m_0 = mean(BWCs{1},1);
+m_100 = mean(BWCs{2},1);
+s_0 = std(BWCs{1},[],1)/sqrt(rep_samp);
+s_100 = std(BWCs{2},[],1)/sqrt(rep_samp);
+
+hBar = bar([m_0; m_100]');
+
+for k1 = 1:2
+    ctr(k1,:) = bsxfun(@plus, hBar(k1).XData, hBar(k1).XOffset');     
+    ydt(k1,:) = hBar(k1).YData;  hold on
+end
+hold on 
+errorbar(ctr, ydt, [m_0;m_100]*0,[s_0;s_100], '.k')         
+hold off
+ylabel('Index')
+names = {'CI'; 'BRW'; 'WV'};
+set(gca,'xticklabel',names,'FontSize',20)
+set(gcf,'color','w');
+legend([hBar(1), hBar(2)], '0-50','50-100')
+ylim([-1,1])
+
+%% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Figure 3 g,h
+% extracted from script 'dPAW_salt.m'
+% here we load in Data for 0-50 and 100-50 mM salt chemotaxis
+% load in the fitted dPAW parameters runned with Chemotaxis_model_pop.m
+% script and saved in the folder
+% We compare kernels, tracks, and simulated CI
+
+%% load fits and data
+temp = load(fullfile(datadir,'data4plots', 'dPAW_salt50_100_0511.mat'));
+x_100 = temp.x;
+data100_fit = temp.Data_fit;
+temp = load(fullfile(datadir,'data4plots', 'dPAW_salt0_50_0513_2.mat'));
+x_0 = temp.x;
+data0_fit = temp.Data_fit;
+
+%% process kernels
+xxs = {x_0, x_100};
+figure;
+for ii = 1:2
+    [K_dc_rec, K_dcp_rec] = dPAW_x2k(xxs{ii});
+    tt = [1:length(K_dc_rec)].*5/14;
+    subplot(121)
+    plot(tt, K_dc_rec); hold on
+    xlim([0,12]); xlabel('time (s)'); ylabel('weights'); set(gcf,'color','w'); set(gca,'Fontsize',20);
+    subplot(122)
+    plot(tt, K_dcp_rec); hold on
+    xlim([0,12]); xlabel('time (s)'); ylabel('weights'); set(gcf,'color','w'); set(gca,'Fontsize',20);
+end
+
+%% compute CI for data
+temp = load(fullfile(datadir,'data4plots', 'Data_salt100_50_0511.mat'));
+data_100_50 = temp.Data;
+temp = load(fullfile(datadir,'data4plots', 'Data_salt0_50.mat'));
+data_0_50 = temp.Data;
+
+CI_data = zeros(1,2);
+CI_data(1) = Data2CI(data0_fit);
+CI_data(2) = Data2CI(data100_fit);
+CI_data
+
+%% sim tracks (fig. 3h)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% plot function
-function learn_bar_plot(ap_na_av, y_name, hh)
-    if nargin==2
-        figure;
-    else
-        disp('hold on')
+%% landscape
+rows=2500; cols=3000;
+[x_, y_] = meshgrid(linspace(0, 50, cols), 1:rows);  % for   0 to 50 mM
+gradient_x = x_ * 1;
+M0 = (y_*0+1) .* gradient_x;
+[x_, y_] = meshgrid(linspace(100, 50, cols), 1:rows);  % for 100 to 50 mM
+gradient_x = x_ * 1;
+M100 = (y_*0+1) .* gradient_x;
+
+%% specs for sim
+rng(42)
+clear specs
+specs = struct();
+specs.M = M0;
+specs.fr = 14/5;
+[cosBasis, tgrid, basisPeaks] = makeRaisedCosBasis(4, [0, 8], 1.3);
+specs.cosBasis = cosBasis;
+specs.T = floor(30*60*14/5);
+specs.dt = 1;
+specs.REP = 100;
+reps = 10;
+
+CI_sim = zeros(reps, 2);
+for rr = 1:reps
+    rr
+    [tracks, CI] = param2tracks(x_0, specs, []);
+    CI_sim(rr, 1) = CI;
+    specs.M = M100;
+    [tracks, CI] = param2tracks(x_100, specs, []);
+    CI_sim(rr, 2) = CI;
+end
+
+%% plot results
+figure;
+bar([1,2], mean(CI_sim,1)); hold on
+errorbar([1,2], mean(CI_sim,1), std(CI_sim,1,1),'.k')
+plot([1,2], CI_data, 'ro')
+names = {'0-50'; '50-100'};
+ylabel('CI')
+set(gca,'xtick',[1:2],'xticklabel',names,'FontSize',20); set(gcf,'color','w');
+
+%% showcase tracks (fig. 3g)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% data
+rng(18)
+nexp = 15;
+temp = randperm(100);
+selected = temp(1:nexp);
+figure;
+subplot(121)
+imagesc(M0); colorbar(); hold on
+for ii = 1:nexp
+    temp = data_0_50(selected(ii)).xy;
+    plot(temp(1,:), temp(2,:),'k', 'LineWidth',1.5); hold on
+    plot(temp(1,1), temp(2,1), 'g.','MarkerSize',13); plot(temp(1,end), temp(2,end), 'r.','MarkerSize',13);
+end
+set(gcf,'color','w'); set(gca,'Fontsize',20);
+rng(5)
+temp = randperm(100);
+selected = temp(1:nexp);
+subplot(122)
+imagesc(M100); colorbar(); hold on
+for ii = 1:nexp
+    temp = data_100_50(selected(ii)).xy;
+    plot(temp(1,:), temp(2,:),'k', 'LineWidth',1.5); hold on
+    plot(temp(1,1), temp(2,1), 'g.','MarkerSize',13); plot(temp(1,end), temp(2,end), 'r.','MarkerSize',13);
+end
+set(gcf,'color','w'); set(gca,'Fontsize',20);
+
+%% time plot
+%%% plotting
+rng(18)
+nexp = 15;
+temp = randperm(100);
+selected = temp(1:nexp);
+
+figure()
+ax1 = axes;
+imagesc(ax1,M0,'XData',[0 size(M0,2)*1],'YData',[0 size(M0,1)*1]);
+set(gcf,'color','w'); set(gca,'Fontsize',20); %xticks([]); yticks([]);
+colormap()
+hold on
+ax2 = axes;
+for ii = 1:nexp
+    temp = data_0_50(selected(ii)).xy;
+%     temp = data_100_50(selected(ii)).xy;
+    temp = temp(:,1:10:end);
+    xx = temp(1,:);
+    yy = temp(2,:);
+    ll = length(temp);
+    gg = linspace(0,1,ll);
+%     plot(xx, yy, 'Color', [grayLevel grayLevel grayLevel]);
+    patch(ax2, [xx nan]*1,[yy nan]*1,[gg nan],[gg nan], 'edgecolor', 'interp','LineWidth',2); 
+    hold on
+    plot(ax2,xx(1)*1, yy(1)*1,'g.', 'MarkerSize',25)
+    plot(ax2,xx(end)*1, yy(end)*1,'r.', 'MarkerSize',25)
+end
+xlim(ax2, [0, size(M0,2)]);
+ylim(ax2, [0, size(M0,1)]);
+set(gca, 'YDir','reverse')
+ax2.Visible = 'off';
+ax2.XTick = [];
+ax2.YTick = [];
+c = gray;
+colormap(ax2,c)
+colormap(ax1)
+
+%% model
+rng(4)
+nexp = 15;
+figure;
+subplot(121)
+imagesc(M0); colorbar(); caxis([0 100]); hold on
+specs.M = M0;
+specs.REP = nexp;
+[tracks, CI] = param2tracks(x_0, specs, []);
+for ii = 1:nexp
+    temp = tracks(ii).xy;
+    plot(temp(1,:), temp(2,:),'k', 'LineWidth',1.5); hold on
+    plot(temp(1,1), temp(2,1), 'g.','MarkerSize',13); plot(temp(1,end), temp(2,end), 'r.','MarkerSize',13);
+end
+set(gcf,'color','w'); set(gca,'Fontsize',20);
+subplot(122)
+imagesc(M100); colorbar(); caxis([0 100]); hold on
+specs.M = M100;
+specs.REP = nexp;
+[tracks, CI] = param2tracks(x_100, specs, []);
+for ii = 1:nexp
+    temp = tracks(ii).xy;
+    plot(temp(1,:), temp(2,:),'k', 'LineWidth',1.5); hold on
+    plot(temp(1,1), temp(2,1), 'g.','MarkerSize',13); plot(temp(1,end), temp(2,end), 'r.','MarkerSize',13);
+end
+set(gcf,'color','w'); set(gca,'Fontsize',20);
+
+%% local functions
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function [K_dc_rec, K_dcp_rec] = dPAW_x2k(x);
+    [cosBasis, tgrid, basisPeaks] = makeRaisedCosBasis(4, [0, 8], 1.3);
+    K_ = x(1); A_ = x(2); B_ = x(3:6); C_ = x(7); Amp = x(8); tau = x(9); Amp_h = x(10); tau_h = x(11); K2_ = x(12);  gamma = x(13);
+    base_dc = 0;  base_dcp = 0;
+    xx = 0:length(cosBasis)-1;
+    K_dcp_rec = Amp*exp(-xx/tau);
+    K_dc_rec = B_*cosBasis';
+end
+
+function [ci] = Data2CI(Data)
+    cii = 0;
+    for ii = 1:length(Data)
+        temp = Data(ii).dc;
+        if temp(end)>temp(1)
+            cii = cii + 1;
+        end
     end
-    
-    cols = ['b','k','r'];
-    for ii = 1:3
-        bar(ii, ap_na_av(:,ii), 'FaceColor',cols(ii));
-        hold on
-    end
-    xticks(1:3);
-    xticklabels( {'appetitive' 'naive', 'aversive'});
-    % set(gca, 'XTickLabel', {'appetitive' 'naive', 'aversive'})
-    ylabel(y_name)
-    set(gcf,'color','w'); set(gca,'Fontsize',20);
+    ci = 2*cii/length(Data) - 1;
 end
