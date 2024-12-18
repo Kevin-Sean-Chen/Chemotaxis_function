@@ -3,7 +3,7 @@
 % the fitted MLE
 
 %% load array of fitted MLE
-mle = load('/projects/LEIFER/Kevin/Data_learn/N2/data_analysis/Kfold_mle_param3.mat');
+mle = load('/projects/LEIFER/Kevin/Data_learn/N2/data_analysis/Kfold_mle_param3.mat'); %3
 % mle = load('/projects/LEIFER/Kevin/Data_learn/N2/data_analysis/Kfold_mle_param7.mat');
 mle = mle.mle_params;
 
@@ -24,12 +24,13 @@ specs.dt = 1;
 specs.REP = 100;
 
 %% simulation loop
+rng(37) %32 13
 kfold = size(mle,1);
 CIs = zeros(3, kfold);
 BWs = zeros(3,kfold, 2);
 for ci = 1:3
-    for ki = 1:kfold
-        x = squeeze(mle(ki,ci,:))';  %squeeze(median(mle(:,ci,:),1))';  % 
+    parfor ki = 1:10%kfold
+        x = squeeze(median(mle(:,ci,:),1))';  % squeeze(mle(ki,ci,:))';  %
         [tracks, CI] = param2tracks(x, specs, []);  % check if alldis is given from data
         
         [brw_index, wv_index] = track2strat(tracks, M);
@@ -48,11 +49,11 @@ bar(CIs)
 
 figure;
 ctr = [1,2,3];
-hBar = bar(median(CIs'));
+hBar = bar(mean(CIs'));
 for kl = 1:3
-    bar(ctr(kl), median(CIs(kl,:)))
+    bar(ctr(kl), mean(CIs(kl,:)))
     hold on
-    errorbar(ctr(kl), median(CIs(kl,:)), std(CIs(kl,:))/sqrt(kfold), '.k')               
+    errorbar(ctr(kl), mean(CIs(kl,:)), std(CIs(kl,:))/sqrt(kfold), '.k')               
 end
 names = {'appetitive'; 'naive'; 'aversive'};
 ylabel('CI')

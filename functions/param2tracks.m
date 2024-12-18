@@ -69,8 +69,8 @@ function [simdata, CI] = param2tracks(x, specs, v_dist)
         perp_dist = 1;
         tracks = zeros(T,2);
         %%% from middle
-%         tracks(1,:) = [size(M,2)*1/2 + randn()*100, randn()*100 + size(M,1)*1/2]*1. + 0.*[size(M,2)*rand(), size(M,1)*5/8];%origin; %initial position
-        tracks(1,:) = [size(M,2)*1/2 + randn()*0, randn()*0 + size(M,1)*1/2]*1. + 0.*[size(M,2)*rand(), size(M,1)*5/8];
+        tracks(1,:) = [size(M,2)*1/2 + randn()*100, randn()*100 + size(M,1)*1/2]*1. + 0.*[size(M,2)*rand(), size(M,1)*5/8];%origin; %initial position
+%         tracks(1,:) = [size(M,2)*1/2 + randn()*0, randn()*0 + size(M,1)*1/2]*1. + 0.*[size(M,2)*rand(), size(M,1)*5/8];
 
         tracks(2,:) = tracks(1,:)+randn(1,2)*vm*dt;%origin+randn(1,2)*vm*dt;
         ths = zeros(1,T);  ths(1:3) = randn(1,3)*360; %initial angle
@@ -99,7 +99,7 @@ function [simdata, CI] = param2tracks(x, specs, v_dist)
             dCpv = [(M(yil,xil) - M(yir,xir))/ 1 ,  dCpv];
             dCpv = dCpv(1:end-1);
             %%% actions
-            wv = (-1*sum(Kdcp.*dCpv) + 0*1) + (vmrand(0,kappa))*180/pi;%kappa^1*randn;%length(wind)
+            wv = (1*sum(Kdcp.*dCpv) + 0*1) + (vmrand(0,kappa))*180/pi;%kappa^1*randn;%length(wind)
             P_event = (A - Pturn_base) / (1+exp( -(sum(Kddc.*dCv)*1. + (sum(Kdth.*abs(dthv)*1)) *dt + 0)+0) ) + Pturn_base;%length(wind)
             P_event = P_event*5/14;  % rate per sec
             if rand < P_event*1

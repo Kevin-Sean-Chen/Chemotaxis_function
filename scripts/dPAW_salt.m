@@ -60,10 +60,9 @@ specs.cosBasis = cosBasis;
 specs.T = floor(30*60*14/5);
 specs.dt = 1;
 specs.REP = 100;
-reps = 5;
+reps = 10;
 
 CI_sim = zeros(reps, 2);
-
 for rr = 1:reps
     rr
     [tracks, CI] = param2tracks(x_0, specs, []);

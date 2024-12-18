@@ -35,7 +35,7 @@ Fcon = Fcon.F;
 
 %% looping files and conditions
 % Tracks = loadtracks(folder_names{1},fields_to_load);
-temp = load('/projects/LEIFER/Kevin/Data_learn/N2/data_analysis/learn_folders5.mat');
+temp = load('/projects/LEIFER/Kevin/Data_learn/N2/data_analysis/learn_folders4.mat'); % 4,5, _final
 folder_all = {temp.folder_app, temp.folder_nai, temp.folder_ave};
 % BWC = zeros(length(folder_names), 3);
 track_learn_all = cell(1,3);
@@ -64,7 +64,7 @@ end
 
 %% compute for AVE without repeats!
 temp = load('/projects/LEIFER/Kevin/Data_learn/N2/data_analysis/Data_ave_wo_repeat.mat');
-fold_wo = temp.folder_ave_wo_rep;
+fold_wo = temp.folder_ave_wo_rep; %{temp.folder_ave_wo_rep{[1:3,5:7]}}; %
 fold_rep = folder_all{3};
 fold_compare = {fold_wo, fold_rep};
 BWC_ave = cell(1,2);
