@@ -1,5 +1,5 @@
 % mGLM
-%%% mixture GLM debugging with ground truth generative model
+%%% mixture GLM infernece with ground truth generative model
 %% define variables
 lt = 50000; % length of simulation / data
 nB = 4;  % number of basis function for the kernel
