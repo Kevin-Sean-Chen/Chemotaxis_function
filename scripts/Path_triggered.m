@@ -1,4 +1,5 @@
 %%% Path_triggered
+% scripts to load raw data or processed ones to analyze optogenetic response
 clear
 clc
 
@@ -67,8 +68,7 @@ for ii = 1:nn
             if (pos(pp)+windt)<length(stim) && pos(pp)-acst>1
                 wind = floor((pos(pp)-acst):(pos(pp)+windt));
                 tempa = angs(wind);
-%                 turn_i(find(abs(temp)>turn_thr)) = 1;
-                trig_angs = [trig_angs; tempa]; %turn_i]; %
+                trig_angs = [trig_angs; tempa];
 
                 %%% record turn direction upon impulse
                 if M(floor(subs(wind(1)+10,2)), floor(subs(wind(1)+10,1))) - M(floor(subs(wind(end),2)), floor(subs(wind(end),1)))<0 && ...
@@ -96,7 +96,7 @@ xArea = [t_vec, fliplr(t_vec)];
 yArea = [mean_ang + std_ang, fliplr(mean_ang - std_ang)];
 fill(xArea, yArea, 'k', 'FaceAlpha', 0.3, 'EdgeColor', 'none');
 
-%%% CI upon impulse!
+%%% CI upon impulse
 (n_up-n_down)/(n_up+n_down)
 
 %% triggered plot
@@ -153,30 +153,3 @@ for ii = 1:3
     bar(ii, jang_means(ii)); hold on
     errorbar(ii, jang_means(ii), jang_stds(ii), 'k.')
 end
-
-%% Raster stateanalysis
-test = [app_down_trigs;app_up_trigs];
-bin_raster = test;
-bin_raster = test*0;bin_raster(abs(test)>50) = 1;
-figure;imagesc(bin_raster)
-figure;plot(mean(bin_raster,1))
-
-%%
-load('/projects/LEIFER/Kevin/Publications/Chen_states_2024/state_fit/two_states.mat')
-yy2 = abs(yy(1,:));
-pos = find(yy2>100);
-durs = diff(pos);
-figure; hist(durs,100)
-[aa,bb] = hist(durs,100);
-figure;plot(bb*5/14,aa)
-
-%%
-figure
-patch([0 5 5 0], [0.03 .03, .1 .1], [0.7 0.7 0.9])
-hold on;
-plot(t_vec,mean(bin_raster,1)')
-set(gcf,'color','w'); set(gca,'Fontsize',20);
-xlabel('time (s)')
-ylabel('P(turn)')
-ylim([0.03,0.1])
-xlim([-4 14]);

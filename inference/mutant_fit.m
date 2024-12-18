@@ -65,7 +65,7 @@ for li = 1:numel(fileList)
             ci2 = ci2 + 1;
         end
     end
-    CIs(li) = (cii/ci1 + c_down/ci2);%/ (cii + abs(c_down));
+    CIs(li) = (cii/ci1 + c_down/ci2);
 end
 CIs = reshape(CIs,[3,n_strains]);
 figure;
@@ -111,7 +111,6 @@ for ss = 1:n_strains  % strain
         fileName = fileList(ii).name;
         filePath = fullfile(data_path, fileName);
         load(filePath);
-%         load(data_mut{cc,ss});
         Data_n2_i = load(data_n2{cc});
         temp_param = squeeze(mut_param(cc,ss,:))';
         temp_n2_param = N2_param(cc,:);

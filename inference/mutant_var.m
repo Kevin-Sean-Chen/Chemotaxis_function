@@ -16,7 +16,6 @@ n2_ci_std = load('/projects/LEIFER/Kevin/Data_learn/Mutants/data_analysis/N2_CI_
 N2_ci = [n2_ci_std.m_ap(1),    n2_ci_std.m_av(1)   n2_ci_std.m_na(1)];
 N2_ci_std = [n2_ci_std.s_ap(1),  n2_ci_std.s_av(1)   n2_ci_std.s_na(1)];
 %%% Hess computed from Hess4MLE, loading the result here
-% load('/projects/LEIFER/Kevin/Data_learn/Mutants/data_analysis/N2_params.mat')
 load('/projects/LEIFER/Kevin/Data_learn/Mutants/data_analysis/N2_params7.mat')
 
 %% CI
@@ -47,7 +46,7 @@ for li = 1:numel(fileList)
             ci2 = ci2 + 1;
         end
     end
-    CIsamp(1,li,ss) = (cii/ci1 + c_down/ci2);%/ (cii + abs(c_down));
+    CIsamp(1,li,ss) = (cii/ci1 + c_down/ci2);
     end
 end
 
@@ -72,7 +71,7 @@ for cc = 1:3
         %%% tests
         [h, p] = ttest2(n2_samps, mut_samps);
         p
-        %%% IMPORTANT: Bonferroni correction for multiple tests
+        %%% Bonferroni correction for multiple tests
         if p<0.05/(5)
             mut_ci_sig(cc,ss) = 1;
         end
@@ -180,7 +179,7 @@ WV_Kcp_conv(N2_std(cc,:), Data_n2_i.Data)
 
 %% arrow plots with error bars
 figure
-% N2_ci = [0.42, 0.02, 0.21];  %%%  compute this with the same way above!!!
+% N2_ci = [0.42, 0.02, 0.21];  % compute this with the same way above
 arrowHeadSize = 2;
 ii = 15;
 jj = 1;
@@ -221,7 +220,6 @@ for cc = 1:3
         set(gcf,'color','w'); set(gca,'Fontsize',20); title('BRW'); yticks([])
 
         subplot(133)
-%         plot(-temp_n2_param(8), ii,'o'); hold on
         plot(wv_n2, ii,'o'); hold on
         h2 = quiver(wv_n2, ii, d_wv, 0,0,  'autoScale', 'off'); hold on
         errorbar(WV_Kcp_conv(temp_param, Data), ii, WV_Kcp_conv(temp_std, Data),'Horizontal',  'Color', 'k');

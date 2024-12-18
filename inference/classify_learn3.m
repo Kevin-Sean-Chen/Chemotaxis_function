@@ -90,13 +90,6 @@ for ki = 1:K
     Mdls{ki} = fitcnb(mss,labels,'ClassNames',{'app','nai','ave'});
 end
 
-%% debugging info rate
-% -pop_nLL(x_MLE, Data_train) 
-% -pop_nLL_randwalk(x_null, Data_train) 
-% % -pop_nLL_rand2(x_null,Data_train)
-% -pop_nLL_kc(x_wo_Kc, Data_train)
-% -pop_nLL_kcp(x_wo_Kcp, Data_train)
-
 %% %%%%%%%  TESTING  %%%%%%% 
 %%% testing with MLEs
 scal = 9;  % data length portions
@@ -196,13 +189,8 @@ end
 end
 cv_nbc = squeeze(mean(cv_nbc,1)); 
 
-%%
+%% plot cross-validated performance as a function of data length
 figure;
-% tlt = data_len; %squeeze(mean(data_len,2));
-% plot(tlt(:)*5/14/60/60,cv_class(:),'o')
-% xlabel('data length (hour)')
-% ylabel('class')
-
 rtime = squeeze(mean(mean(mean(data_len,1),2),4))*5/14/60/60;
 figure;
 plot(rtime, mean(mean(cv_perf,3)),'k-o')
@@ -278,7 +266,8 @@ for nn = 1:3
     xticklabels([]);
 end
 
-%%
+%% functionals
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function [x_MLE, fval] = MLE_mGLM(Data_train)
     [xx_train, yy_train, mask_train] = data2xy(Data_train);
     nB = 4;
