@@ -1,17 +1,9 @@
 % index_salt
+% script to load salt chemotaxis data and compute the chemotaxis index
 clear
 clc
 
-%% load data
-addpath('C:\Users\Kevin\Documents\GitHub\leifer-Behavior-Triggered-Averaging-Tracker_new\Experimental Analysis')
-addpath('C:\Users\Kevin\Desktop\Chemotaxis_function')
-
-%batch analysis
-fields_to_load = {'Path','Time','Runs','Pirouettes'};
-folder_names = getfoldersGUI();
-Tracks = loadtracks(folder_names,fields_to_load);
-
-%% landscape
+%% create linear gradient environment
 rows=2500; cols=3000;
 [x_, y_] = meshgrid(linspace(0, 50, cols), 1:rows);  % for   0 to 50 mM
 gradient_x = x_ * 1;
@@ -25,7 +17,6 @@ M100 = (y_*0+1) .* gradient_x;
 %% looping files and conditions
 rng(123)
 fields_to_load = {'Path','Time','Runs','Pirouettes'};
-% Tracks = loadtracks(folder_names{1},fields_to_load);
 temp = load('/projects/LEIFER/Kevin/Publications/Chen_learning_2023/revision/salt_data_folder.mat');
 folder_all = {temp.salt_data_50_0, temp.salt_data_50_100};
 track_learn_all = cell(1,2);
@@ -39,8 +30,7 @@ for cc = 1:2
     BWC = zeros(length(folder_names), 3);
     sub_learn_tracks = cell(1,length(folder_names));
     Tracks = loadtracks(folder_names,fields_to_load);
-    for ff = 1:rep_samp%length(folder_names)
-%         Tracks = loadtracks(folder_names{ff},fields_to_load);
+    for ff = 1:rep_samp
         samp_id = randperm(length(Tracks));
         Tracks_i = Tracks(samp_id(1:n_samps));
         if cc == 1
@@ -73,13 +63,10 @@ for k1 = 1:2
     ydt(k1,:) = hBar(k1).YData;  hold on
 %     plot(ctr(k1,:), data_cell{k1},'ko')
 end
-% set(hBar, {'DisplayName'}, {'App','Naive','Ave'}')
 hold on
-% errorbar(ctr, ydt, [s_ap;s_na;s_av]', '.r')  
 errorbar(ctr, ydt, [m_0;m_100]*0,[s_0;s_100], '.k')         
 hold off
 ylabel('Index')
-% set(gca,'linewidth',2,'FontSize',20)
 names = {'CI'; 'BRW'; 'WV'};
 set(gca,'xticklabel',names,'FontSize',20)
 set(gcf,'color','w');

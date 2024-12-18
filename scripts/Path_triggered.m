@@ -7,7 +7,6 @@ addpath('C:\Users\Kevin\Documents\GitHub\leifer-Behavior-Triggered-Averaging-Tra
 addpath('C:\Users\Kevin\Desktop\Chemotaxis_function')
 
 %batch analysis
-% fields_to_load = {'Path','Time','Runs','Pirouettes','SmoothSpeed','AngSpeed','SmoothX','SmoothY','Behaviors', 'LEDVoltages'};
 fields_to_load = {'Path','SmoothX','SmoothY', 'LEDVoltages'};
 folder_names = getfoldersGUI();
 Tracks = loadtracks(folder_names,fields_to_load);
@@ -70,8 +69,6 @@ for ii = 1:nn
                 tempa = angs(wind);
 %                 turn_i(find(abs(temp)>turn_thr)) = 1;
                 trig_angs = [trig_angs; tempa]; %turn_i]; %
-             
-%                 plot(subs(wind,1),subs(wind,2)); hold on
 
                 %%% record turn direction upon impulse
                 if M(floor(subs(wind(1)+10,2)), floor(subs(wind(1)+10,1))) - M(floor(subs(wind(end),2)), floor(subs(wind(end),1)))<0 && ...
@@ -79,8 +76,6 @@ for ii = 1:nn
                     n_up = n_up+1;
                 elseif max(abs(tempa(10:20)))>turn_thr
                     n_down = n_down+1;
-%                 else 
-%                     break
                 end
                 %%%
             end
@@ -92,7 +87,6 @@ for ii = 1:nn
 end
 
 figure;
-% plot([-acst:windt]*((bin*fr)), mean(abs(trig_angs)) / (fr*bin))
 t_vec = [-acst:windt]*((bin*fr));
 mean_ang = mean(abs(trig_angs)) / (fr*bin);
 std_ang = std(abs(trig_angs) / (fr*bin)) / sqrt(size(trig_angs,1));
@@ -110,7 +104,6 @@ figure
 title('aversive; up gradient')
 patch([0 5 5 0], [20 20, 60 60], [0.7 0.7 0.9])
 hold on
-% plot([-acst:windt]*((bin*fr)), mean(abs(trig_angs)) / (fr*bin))
 plot(t_vec, mean_ang, 'k', 'LineWidth',3)
 hold on
 xArea = [t_vec, fliplr(t_vec)];

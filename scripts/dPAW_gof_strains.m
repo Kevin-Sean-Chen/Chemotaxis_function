@@ -32,7 +32,7 @@ n_params = 13+1+0;
 L = length(fileList); 
 all_ids = cell(1,L+3); % all mutants and three N2s, for ids
 
-rng(13) %13 37
+rng(13)
 
 %% looping -- rerun mutant fits
 rep = 3;
@@ -69,29 +69,11 @@ for li = 1:numel(fileList)
     all_ids{li+3} = ids;  % record cv index
 end
 
-%%
+%% build GOF matrix
 GOF = zeros(3, n_strains + 1);
 temp = squeeze(reshape(testLL,[3, n_strains, 1]));
 GOF(:,2:end) = temp*5/14*log(2);
 GOF = GOF([1,3,2],:);
-
-%% directly compute for mutants
-% mut_param = reshape(mle_mut_params,[3,n_strains,n_params]);
-% L = length(fileList);  % K-fold cross-validation
-% GOF = zeros(3, n_strains + 1);  % +1 for N2 as the first
-% ii = 1;
-% for ss = 2:n_strains+1  % strain
-%     for cc = 1:3  % condition
-%         %%% load data
-%         fileName = fileList(ii).name;
-%         filePath = fullfile(data_path, fileName);
-%         load(filePath);
-%         ii = ii+1;
-%         
-%         %%% fit params
-%         GOF(cc,ss) = dPAW_gof(Data(floor(length(Data)/1):end), squeeze(mut_param(cc,ss-1,:)));
-%     end
-% end
 
 %% for N2 fitting!
 rng(37) % 42; 37!
@@ -105,17 +87,7 @@ for cc = 1:3  % condition
     load(data_n2{cc});
     temp = randperm(length(Data));
     data_sub = Data(temp(1:150));  %150 sub-sample to compare to mutants
-    %%% try subsampel by truncation!
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%     sub_frac = 15;
-%     for dd = 1:length(data_sub)
-%         data_sub(dd).dth = data_sub(dd).dth(1:floor(length(data_sub(dd).theta)/sub_frac));
-%         data_sub(dd).dcp = data_sub(dd).dcp(1:floor(length(data_sub(dd).theta)/sub_frac));
-%         data_sub(dd).dc = data_sub(dd).dc(1:floor(length(data_sub(dd).theta)/sub_frac));
-%         data_sub(dd).mask = data_sub(dd).mask(1:floor(length(data_sub(dd).theta)/sub_frac));
-%         data_sub(dd).mask(end) = NaN;
-%     end
-    %%% training, with small repetition
+
     x_temp = zeros(rep,n_params);
     fv_temp = zeros(1,rep);
     data_id = 1:length(data_sub);
@@ -161,7 +133,7 @@ figure
 bar(GOF')
 xticklabels(xtickLabels); set(gcf,'color','w'); set(gca,'Fontsize',20); ylabel('gof (bits/s)')
 
-%% check the bad fits...
+%% check the bad fits
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% loading example
 % remember to match the test Data and the parameters!!!
@@ -254,16 +226,11 @@ function [x_MLE, fval] = MLE_mGLM(Data_train)
     ddc_fit = xx_train(1,:);
     trials_fit = mask_train;
     lfun = @(x)nLL_kernel_hist5(x, ang_fit, dcp_fit, ddc_fit, cosBasis, .1, trials_fit);
-%     lfun = @(x)nLL_kernel_hist2(x, ang_fit, dcp_fit, ddc_fit, cosBasis, .1, trials_fit);
     opts = optimset('display','iter');
     LB = [1e-0, 1e-5, ones(1,nB)*-inf, 0.01 -inf, 1e-0, -inf, 1e-1, 1  -inf, -inf];% 0.05];
     UB = [200, 1., ones(1,nB)*inf, 0.5, inf, 50, inf, 100, 100  inf, inf];% 1];
     prs0 = [50, 0.2, randn(1,nB)*10, 0.1, -1, 2, 1, 25, 10 -10, -1 ];%0.2];
-%     LB = [1e-0, 1e-5, ones(1,nB)*-inf, 0.0 -inf, 1e-0, -inf, 1e-1, 1  0.2];
-%     UB = [200, 1., ones(1,nB)*inf, 0.1, inf, 50, inf, 100, 100, 1];
-% %     prs0 = [50, 0.2, randn(1,nB)*10, 0.01, -1, 2, 1, 25, 10 0.5];
-%     prs0 = [50, 0.1, randn(1,nB)*10, 0.01, -10, 25, 10, 25, 5, 1.];
-    
+
     prs0 = prs0 + prs0.*randn(1,length(UB))*0.01;
     %%% tesing in-equality constraints!
     Ai = zeros(1,length(LB));

@@ -1,5 +1,6 @@
-%% mGLM fitting
+%% mGLM fitting with one-step back
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% point-wise fitting without considering kernels
 %%
 Cmap = load('/projects/LEIFER/Kevin/Data_odor_flow_equ/20211013_biased_110mM/Landscape.mat');
 Fcon = load('/projects/LEIFER/Kevin/Data_odor_flow_equ/20211013_biased_110mM/OdorFx.mat');

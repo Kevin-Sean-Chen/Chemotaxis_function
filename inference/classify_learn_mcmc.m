@@ -1,6 +1,6 @@
 % classifiy_learn
 %%% classify learning conditions given parameter samples
-
+% this classfication is based on the mcmc sampling of parameters
 %% load mcmc sample parameters
 test = load('/projects/LEIFER/Kevin/Data_learn/N2/data_analysis/app_mcmc.mat');
 m_app = test.m_bound;

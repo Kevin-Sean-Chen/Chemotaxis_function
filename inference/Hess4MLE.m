@@ -29,7 +29,7 @@ MLE_std(ii,:) = real(standard_errors)';
 
 end
 
-%%
+%% plot MLE of parameters
 figure
 plot(MLE_std','-o')
 
@@ -82,7 +82,7 @@ for cc = 1:3
     title(ttl{cc})
 end
 
-%%
+%% plot MLE with confidence
 figure
 xx = [1,2,3];
 param_id = 1;  % the element for plot

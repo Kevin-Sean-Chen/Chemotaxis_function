@@ -59,22 +59,17 @@ for sk = nStates:-1:1 %1:nStates %
     dv_k = dis_K(find(dis_K<dis_cutoff));
     Pturns = [1 Pturns];
     p_turn_k = Pturns(find(dis_K<dis_cutoff));
-%     hh = histogram(dis_K, nbins, 'Normalization', 'probability', 'EdgeColor', 'none', 'FaceAlpha', 0.7); hold on
     [counts, edges] = histcounts(dv_k, bbv);%nbins);
-%     bbv = edges(1:end-1);
     logCounts = (counts)/sum(counts) * 1; %Pk_frac
     nbbv = (bbv(1:end-1)+bbv(2:end))/2;
     bar(nbbv*fac_mms, logCounts,'FaceColor', CM(sk), 'FaceAlpha',0.5, 'EdgeColor','none'); hold on
-%     bbv = edges+0.1;  %hh.BinEdges(1:end-1);
     gam_p = gampdf(bbv, ks_(1), thetas_(1)) * Pturn_fac;
     gam_w = gampdf(bbv, ks_(2)*1.0, thetas_(2)) * (1-Pturn_fac);
     scal_fac = sum(gam_p + gam_w);
     plot(bbv*fac_mms, gam_p* 1/scal_fac * 1, '--', 'Color',CM(sk), 'LineWidth',2)  %Pk_frac
     plot(bbv*fac_mms, gam_w* 1/scal_fac * 1, 'Color',CM(sk), 'LineWidth',2)  %Pk_frac
     title('dr'); set(gca,'Fontsize',20); set(gcf,'color','w'); ylabel('probability'); xlim([0 0.4])
-%     plot(bb*fac_mms, (gam_p+gam_w)/scal_fac*Pk_frac,'k--')
     marge_sum = marge_sum + (gam_p+gam_w)/scal_fac*Pk_frac;
-    
     
 end
 
@@ -98,9 +93,6 @@ for sk = nStates:-1:1 %1:nStates %
     stateK = sk;
     x = squeeze(mmhat.wts(:,:,stateK));
     %%% armax method
-%     [aa,bb] = max( gams_ ,[], 1 );
-%     pos = find(bb==stateK)+offset;
-%     %%% probablistic sampling method
     rand_temp = rand(1,length(gams_));
     pos = find(gams_(stateK,:)>rand_temp) + offset;
     
@@ -126,7 +118,6 @@ for sk = nStates:-1:1 %1:nStates %
     wv_dense = 1/(2*pi*besseli(0,K_^1)) * exp(K_^1*cos( bb ))*(1-Pturn_fac);
     pr_dense = (1/(2*pi*besseli(0,K2_^1)) * exp(K2_^1*cos( bb-pi ))*(gamma) + (1-gamma)/(2*pi))*Pturn_fac;
     scal_fac = sum(wv_dense+pr_dense);
-%     rescale_factor = max(logCounts)/max(wv_dense/1);
     plot(bb, ( wv_dense * 1/scal_fac *1), CM(sk), 'LineWidth',2); hold on  %Pk_frac
     plot(bb, ( pr_dense * 1/scal_fac *1), '--', 'Color',CM(sk), 'LineWidth',2)  %Pk_frac
     title('d\theta'); set(gca,'Fontsize',20); set(gcf,'color','w');
@@ -143,13 +134,3 @@ bb = edges(1:end-1);
 logCounts = (counts)/sum(counts) * 1;
 bar((edges(2:end)+edges(1:end-1))/2*pi/180, logCounts,'FaceColor', 'k', 'FaceAlpha',0.5, 'EdgeColor','none');
 title('d\theta'); set(gca,'Fontsize',20); set(gcf,'color','w');
-
-
-%% sampling
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%
-% [dth_pred, dr_pred] = model_predit_PAW(mmhat, xx, yy, gams_);
-% 
-% %%
-% figure;hist(dth_pred,100)
-% figure;hist(dr_pred,100)

@@ -1,12 +1,11 @@
 % classifiy_learn
 %%% classify learning conditions given parameter samples
 %%% with proper K-fold cross-validation in earch loop
-
 %% load tracks from each condition
 % load data files
 datas = {'/projects/LEIFER/Kevin/Data_learn/N2/data_analysis/Data_app_test2.mat',...
          '/projects/LEIFER/Kevin/Data_learn/N2/data_analysis/Data_nai_test2.mat',...
-         '/projects/LEIFER/Kevin/Data_learn/N2/data_analysis/Data_ave_test2.mat'};  %4;2
+         '/projects/LEIFER/Kevin/Data_learn/N2/data_analysis/Data_ave_test2.mat'};
      
 %% loop through K-folds, conditions, and scaling
 rep = 5;  % repetition per fold to make sure that it is the better fit
@@ -129,37 +128,21 @@ for ci = 1:cond  % C conditions
         [xx_test, yy_test, mask_test] = data2xy(Data_test);
         
         %%% testing null models
-%         x_null = [x_MLE(1:2), zeros(1,4),x_MLE(7),0, 1, 0, 1, x_MLE(12),x_MLE(13)];
-%         x_null = [x_MLE(1:2),zeros(1,4), x_MLE(7:13)];
-%         x_null = [x_MLE(1:7),zeros(1,4), x_MLE(12:13)];
-%         x_null = [x_MLE(1),mean([x_MLE(2),x_MLE(7)]),zeros(1,4),mean([x_MLE(2),x_MLE(7)]),zeros(1,4), x_MLE(12:13)];
-%         pturn = length(find(abs(yy_test)>100))/length(yy_test);
-%         x_null = [x_MLE(1), pturn, zeros(1,4), pturn, zeros(1,4), x_MLE(12:13)];
         info_norm_factor = (sum(mask_test)*(5/14)) * log(2);
         
         x_null = squeeze(null_params(ki, ci, :))';  % individually fitted null model parameters
-%         x_null = [x_MLE(1:2), zeros(1,4), x_MLE(7), zeros(1,4), x_MLE(12:13)];
         testLL(ki,ci,1) = -(pop_nLL(x_MLE, Data_test) - pop_nLL_randwalk(x_null, Data_test) ) / info_norm_factor;  % full model - randomwalk
 %         testLL(ki,ci,1) = -(pop_nLL(x_MLE, Data_test) - pop_nLL(x_null, Data_test) ) / info_norm_factor;
         
         x_wo_Kc = [x_wo_Kc(1:2), zeros(1,4), x_wo_Kc(7:13)];
-%         x_wo_Kc = squeeze(kc_control_params(ki, ci, :))';
-%         testLL(ki,ci,2) = -(pop_nLL(x_wo_Kc, Data_test) - pop_nLL_randwalk(x_null, Data_test) ) / info_norm_factor;   % model w/o Kc - random
         testLL(ki,ci,2) = -(pop_nLL(x_MLE, Data_test) - pop_nLL(x_wo_Kc, Data_test) ) / info_norm_factor; % zero-out kernels
-%         testLL(ki,ci,2) = -(pop_nLL(x_MLE, Data_test) - pop_nLL_kc(x_wo_Kc, Data_test) ) / info_norm_factor; % compare to without kernel
-%         testLL(ki,ci,2) = -(pop_nLL_kc(x_wo_Kc, Data_test) - pop_nLL_randwalk(x_null, Data_test) ) / info_norm_factor; 
-        
+       
         x_wo_Kcp = [x_wo_Kcp(1:7),zeros(1,2), x_wo_Kcp(10:13)];
-%         x_wo_Kcp = squeeze(kcp_control_params(ki, ci, :))';
-%         testLL(ki,ci,3) = -(pop_nLL(x_wo_Kcp, Data_test) - pop_nLL_randwalk(x_null, Data_test) ) / info_norm_factor;  % model w/o Kcp - random
         testLL(ki,ci,3) = -(pop_nLL(x_MLE, Data_test) - pop_nLL(x_wo_Kcp, Data_test) ) / info_norm_factor;
-%         testLL(ki,ci,3) = -(pop_nLL(x_MLE, Data_test) - pop_nLL_kcp(x_wo_Kcp, Data_test) ) / info_norm_factor;
-%         testLL(ki,ci,3) = -(pop_nLL_kcp(x_wo_Kcp, Data_test) - pop_nLL_randwalk(x_null, Data_test) ) / info_norm_factor; 
         
         % testing scaled with time and bootstrap
         for ri = 1:rep_samp
             scal_vec = floor(linspace(1, min_scal*length(Data_test), scal));
-            %fliplr(floor(min_scal./[1:scal].*length(Data_test)));  % scaled data length, can do proper tiled timing sampling in the future..........
             data_select_vec = [1:length(Data_test)];
             for si = 1:scal
                 samps = randsample(data_select_vec, scal_vec(si));  % sample without replacement
@@ -207,7 +190,6 @@ for ki = 1:K
     for si = 1:scal
         samps = randsample(data_select_vec, scal_vec(si));  % sample without replacement
         predicted_labels = predict(Mdls{ki}, dc_test(samps)');
-%         cv_nbc(ki, si, ri) = sum(predicted_labels == labels(samps)) / numel(scal_vec(si));
         cv_nbc(ki, si, ri) = sum(cellfun(@isequal, predicted_labels, labels(samps))) / (scal_vec(si));
     end
 end
@@ -223,8 +205,6 @@ figure;
 
 rtime = squeeze(mean(mean(mean(data_len,1),2),4))*5/14/60/60;
 figure;
-% plot(rtime, mean(cv_perf,3),'-o')
-% hold on
 plot(rtime, mean(mean(cv_perf,3)),'k-o')
 hold on
 errorbar(rtime, mean(mean(cv_perf,3)), std(mean(cv_perf,3))/sqrt(K), '.k')
@@ -299,48 +279,6 @@ for nn = 1:3
 end
 
 %%
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% classify with log-likelihood!
-% load mle parameters
-% mle_params = zeros(3,13);
-% test = load('/projects/LEIFER/Kevin/Data_learn/app_param_new.mat');
-% mle_params(1,:) = test.x;
-% test = load('/projects/LEIFER/Kevin/Data_learn/nai_param_new.mat');
-% mle_params(2,:) = test.x;
-% test = load('/projects/LEIFER/Kevin/Data_learn/ave_param_new.mat');
-% mle_params(3,:) = test.x;
-%      
-% % CV settings
-% rep = 20;  % repeat cross-validations
-% scal = 5;  % data length portions
-% cv_class = zeros(rep,scal);  % repeats x data length
-% datals = cv_class*1;  % record actual data length
-% cv_perf = zeros(3,scal);  % record performance (%) across repeats
-% 
-% for dd = 1:3
-%     load(datas{dd})
-%     Datai = Data(1:end);  % load Data structure
-%     scal_vec = fliplr(floor(.5./[1:scal].*length(Datai)));  % scaled data length
-%     data_select_vec = [1:length(Datai)];  % select from track ID
-% for rr = 1:rep
-%     for sc = 1:scal
-%         samps = randsample(data_select_vec, scal_vec(sc));  % sample without replacement
-%         cv_class(rr, sc) = argmaxLL(Datai(samps), mle_params, cosBasis);  % selection
-%         [xx, yy, mm] = data2xy(Datai(samps));  % concatenate data
-%         datals(rr, sc) = length(yy);
-%     end    
-% end
-% 
-% for sc = 1:scal
-%     cv_perf(dd,sc) = length(find(cv_class(:,sc)==dd))/rep;
-% end
-%     
-% end
-% 
-% cv_class
-
-%%
 function [x_MLE, fval] = MLE_mGLM(Data_train)
     [xx_train, yy_train, mask_train] = data2xy(Data_train);
     nB = 4;
@@ -354,9 +292,6 @@ function [x_MLE, fval] = MLE_mGLM(Data_train)
     LB = [1e-0, 1e-5, ones(1,nB)*-inf, 0.0 -inf, 1e-0, -inf, 1e-1, 1e-0*10, 0.2];
     UB = [200, 1., ones(1,nB)*inf, 0.1, inf, 50, inf, 100, 50, 1];
     prs0 = [50, 0.1, randn(1,nB)*10, 0.01, -10, 25, 10, 25, 5, 1.];
-%     LB = [1e-0, 1e-5, ones(1,nB)*-inf, 0.0 -inf, 1e-0, -inf, 1e-1, 1e-0*10, -inf];
-%     UB = [200, 1., ones(1,nB)*inf, 0.1, inf, 50, inf, 100, 50, inf];
-%     prs0 = [50, 0.1, randn(1,nB)*10, 0.01, -10, 25, 10, 25, 5, 0];
     prs0 = prs0 + prs0.*randn(1,length(UB))*0.1;
     [x,fval,EXITFLAG,OUTPUT,LAMBDA,GRAD,HESSIAN] = fmincon(lfun,prs0,[],[],[],[],LB,UB,[],opts);
     x_MLE = x;
@@ -435,11 +370,6 @@ function [NLL] = pop_nLL_kc(THETA, D)
     ddc_fit = xx_train(1,:);
     trials_fit = mask_train;
     NLL = nLL_wo_kc(THETA, ang_fit, dcp_fit, ddc_fit, cosBasis, .1, trials_fit);
-%     NLL = 0;
-%     ntracks = length(D);
-%     for nn = 1:ntracks
-%         NLL = NLL + nLL_wo_kc(THETA, D(nn).dth, D(nn).dcp, D(nn).dc, D(nn).Basis, D(nn).lambda, D(nn).mask);%/Z; % sum across tracks normalize by time
-%     end
 end
 
 function [NLL] = pop_nLL_kcp(THETA, D)
@@ -451,11 +381,6 @@ function [NLL] = pop_nLL_kcp(THETA, D)
     ddc_fit = xx_train(1,:);
     trials_fit = mask_train;
     NLL = nLL_wo_kcp(THETA, ang_fit, dcp_fit, ddc_fit, cosBasis, .1, trials_fit);
-%     NLL = 0;
-%     ntracks = length(D);
-%     for nn = 1:ntracks
-%         NLL = NLL + nLL_wo_kcp(THETA, D(nn).dth, D(nn).dcp, D(nn).dc, D(nn).Basis, D(nn).lambda, D(nn).mask);%/Z; % sum across tracks normalize by time
-%     end
 end
 
 function [NLL] = pop_nLL_rand2(THETA, D)
@@ -482,10 +407,6 @@ function predict_lambda = argmaxLL(data, mle_params)
     for c = 1:3
         lls(c) = -nLL_kernel_hist2(mle_params(c,:), ang_fit, dcp_fit, ddc_fit, Basis, .1, trials_fit) / length(xx);  % normalize by length?
         
-%         mle_c = mle_params(c,:);
-%         x_null = [mle_c(1:2), zeros(1,4),mle_c(7),0, 1, 0, 1, mle_c(12),mle_c(13)];
-%         lls(c) = - ( nLL_kernel_hist2(mle_c, ang_fit, dcp_fit, ddc_fit, Basis, .1, trials_fit) - ...
-%                      nLL_kernel_hist2(x_null, ang_fit, dcp_fit, ddc_fit, Basis, .1, trials_fit) ) / length(xx);   % gain of info compared to random walk
     end
 %     lls
     predict_lambda = argmax(lls);

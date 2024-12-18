@@ -1,15 +1,6 @@
 %%% compare kernels
-
+% simple script to load the fitted parameters to compare kernels across conditions
 %% load inferred parameters
-% old inference
-% x = load('/projects/LEIFER/Kevin/Figures/Cosyne23/app_infer.mat');
-% x_app = x.x;
-% x = load('/projects/LEIFER/Kevin/Figures/Cosyne23/nai_infer.mat');
-% x_nai = x.x;
-% x = load('/projects/LEIFER/Kevin/Figures/Cosyne23/ave_infer.mat');
-% x_ave = x.x;
-
-% updated
 x = load('/projects/LEIFER/Kevin/Data_learn/N2/data_analysis/Kfold_mle_param4.mat');
 x_app = squeeze(mean(x.mle_params(:,1,:),1))';
 x_nai = squeeze(mean(x.mle_params(:,2,:),1))';
@@ -39,6 +30,7 @@ plot(xx,-Kdcp); hold on
 xlim([0,5])
 set(gcf,'color','w'); set(gca,'Fontsize',20);
 xlabel('time (s)'); ylabel('weight'); title('K_{dC^{\perp}}')
+
 %% function
 function [Kdc,Kdcp] = x2k(x,cosBasis)
     

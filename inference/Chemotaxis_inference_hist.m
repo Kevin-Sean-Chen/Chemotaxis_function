@@ -1,5 +1,6 @@
 %% mGLM fitting
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% continuous script for extracting time series and fitting mGLM with history kernels
 %% load tracks and maps
 %%% given Paths as cells with all 2D-trajectories
 %%% and Fcon as a function that maps 2D position to an odor value readout

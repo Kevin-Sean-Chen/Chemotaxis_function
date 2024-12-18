@@ -18,7 +18,7 @@ data_n2 = {'/projects/LEIFER/Kevin/Data_learn/N2/data_analysis/Data_app_test2.ma
          '/projects/LEIFER/Kevin/Data_learn/N2/data_analysis/Data_nai_test2.mat'};
      
 %% prep
-rng(42)  %42 for var0; 42 for var4?
+rng(42)
 clear specs
 specs = struct();
 
@@ -32,7 +32,7 @@ specs.fr = 14/5;
 specs.cosBasis = cosBasis;
 specs.T = floor(30*60*14/5);
 specs.dt = 1;
-specs.REP = 100; %300
+specs.REP = 100;
 
 data_ci = zeros(1,length(fileList));
 sim_ci = zeros(1,length(fileList));
@@ -60,14 +60,13 @@ for li = 1:numel(fileList)
     
     %%% save tracks
     filename4track =  sprintf('%stracks_%d.mat',save2path,li);
-    save(filename4track, 'tracks'); %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% important to comment out to prevent replacement! %% bootstrap later!
+    save(filename4track, 'tracks'); %% important to comment out to prevent replacement! use it to bootstrap later
 end
 
 %% plotting
 figure
 plot(data_ci(:), sim_ci(:),'o')
 xlim([0 1]); ylim([0 1])
-
 
 figure;
 % cols = ['b','r','k'];
@@ -76,14 +75,10 @@ b1=bar(reshape(data_ci, 3, 5)', 'grouped');
 subplot(212); 
 % hold on
 b2=bar(reshape(sim_ci, 3, 5)', 'grouped');
-% for k = 1:length(b2)
-%     b2(k).FaceAlpha = 0.5;
-%     b2(k).FaceColor = cols(k);
-% end
 
 %% for N2!
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-rng(13);  %100 37
+rng(13);
 
 data_ci_n2 = zeros(1,3);
 sim_ci_n2 = zeros(1,3);
@@ -110,7 +105,7 @@ for li = 1:3
     
     %%% save tracks
     filename4track =  sprintf('%sN2tracks_%d.mat',save2path,li);
-    save(filename4track, 'N2tracks'); %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% important to comment out to prevent replacement! %% bootstrap later!
+    save(filename4track, 'N2tracks'); % important to comment out to prevent replacement! use it to bootstrap later
 end
 
 %% plotting
@@ -136,22 +131,6 @@ function [CI] = Data2CI(Data)
     end
     CI = 2*cii/length(Data) - 1;
     
-    %%% wCI
-    %%% wCI
-%     cii = 0;  c_down = 0;
-%     ci1 = 0;  ci2 = 0;
-%     for ii = 1:length(Data)
-%         dC = Data(ii).dc(end) - Data(ii).dc(1);
-%         c0 = Data(ii).dc(1);
-%         if  dC > 0
-%             cii = cii + dC/(100-c0);
-%             ci1 = ci1 + 1;
-%         else
-%             c_down = c_down + dC/(c0-10);
-%             ci2 = ci2 + 1;
-%         end
-%     end
-%     CI = (cii/ci1 + c_down/ci2);
 end
 
 function alldis = post_compute_dis(Data)

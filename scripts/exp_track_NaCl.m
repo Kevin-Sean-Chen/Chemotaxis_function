@@ -18,8 +18,8 @@ M = (y_*0+1) .* gradient_x;
 pix2mm = 1/30;
 
 %% examples
-data_i = Data([57:77]); %50-100   %62-77
-% data_i = Data(10:30); %0-50  %40:70; %50:80
+data_i = Data([57:77]);
+% data_i = Data(10:30);
 
 %%% plotting
 figure()
@@ -35,7 +35,6 @@ for ii = 1:length(data_i)
     yy = data_i(ii).xy(2,:);
     ll = length(data_i(ii).xy);
     gg = linspace(0,1,ll);
-%     plot(xx, yy, 'Color', [grayLevel grayLevel grayLevel]);
     patch(ax2, [xx nan]*pix2mm,[yy nan]*pix2mm,[gg nan],[gg nan], 'edgecolor', 'interp','LineWidth',2); 
     hold on
     plot(ax2,xx(1)*pix2mm, yy(1)*pix2mm,'g.', 'MarkerSize',25)

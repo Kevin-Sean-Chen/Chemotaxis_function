@@ -33,25 +33,6 @@ for ii = 1:3
     Kc_mle(ii,:) = alpha_mle(:,ii)'* cosBasis';
 end
 
-%% test with just one fold
-% kth = 2;
-% time_scale = 5/14;
-% [cosBasis, tgrid, basisPeaks] = makeRaisedCosBasis(4, [0, 8], 1.3);
-% t_vec = 1:length(cosBasis)-1;
-% param_mle = params_mat.mle_params;
-% K1_mle = squeeze(param_mle(kth,:,1));
-% K2_mle = squeeze(param_mle(kth,:,12));
-% A_mle = squeeze(param_mle(kth,:,2));
-% C_mle = squeeze(param_mle(kth,:,7));
-% Ah_mle = squeeze(param_mle(kth,:,10));
-% th_mle = squeeze(param_mle(kth,:,11));
-% alpha_mle = squeeze(param_mle(kth,:,3:6))';
-% b_mle = squeeze(param_mle(kth,:,13));
-% Kc_mle = zeros(3, size(cosBasis,1));
-% for ii = 1:3
-%     Kc_mle(ii,:) = alpha_mle(:,ii)'* cosBasis';
-% end
-
 %% simple plots
 % learn_bar_plot(K1_mle, '\kappa_{wv}')
 % learn_bar_plot(K2_mle, '\kappa_{pr}')
@@ -88,20 +69,11 @@ subplot(121)
 learn_bar_plot(K1_mle, '\kappa_{wv}',0)
 subplot(122)
 learn_bar_plot(C_mle*time_scale, 'min turn rate (per s)',0)
-% subplot(141)
-% learn_bar_plot(K1_mle, '\kappa_{wv}',0)
-% subplot(142)
-% learn_bar_plot(K2_mle, '\kappa_{brw}',0)
-% subplot(143)
-% learn_bar_plot(A_mle*time_scale, 'max turn rate (per s)',0)
-% subplot(144)
-% learn_bar_plot(C_mle*time_scale, 'min turn rate (per s)',0)
 
 %% histogram and turning curves
 total_turns = zeros(1,3);
 numBins = 50;
-xx_cond = linspace(-250,50,100); %linspace(min(dc_dth),max(dc_dth),100);
-% xx_cond = linspace(-1,1,100);
+xx_cond = linspace(-250,50,100);
 cols = ['b', 'k', 'r'];
 figure
 for ii = 1:3
@@ -119,37 +91,22 @@ for ii = 1:3
     filt_dth = conv_kernel(abs(ang_fit), K_h_rec);
 %     dc_dth = (filt_ddc + b_mle(ii)*0 + filt_dth)/norm(Kc_mle(ii, :));
     dc_dth = filt_ddc/norm(Kc_mle(ii, :)) + 1*(filt_dth);
-%     dc_dth = (dc_dth-nanmean(dc_dth)) ./ nanvar(dc_dth);  % test with z-scoring
-%     if ii ==1 
-%         dc_dth = -( filt_ddc/norm(Kc_mle(ii, :)) + 1*(filt_dth) );
-%     else
-%         dc_dth = ( filt_ddc/norm(Kc_mle(ii, :)) + 1*(filt_dth) );%/norm(K_h_rec)*1;
-%     end
 
     subplot(212)
-%     histogram(dc_dth + mean(filt_dth)*0, 'FaceColor', cols(ii),'Normalization', 'probability'); hold on
-%     histogram(dc_dth, numBins, 'Normalization', 'probability', 'EdgeColor', 'none', 'FaceColor', cols(ii), 'FaceAlpha', 0.7); hold on
     h = histogram(dc_dth, numBins, 'Normalization', 'pdf','Visible', 'off');
     bin_edges = h.BinEdges;
     probabilities = h.Values;
     semilogy(bin_edges(1:end-1), probabilities, 'Color', cols(ii)); hold on
-%     plot(bin_edges(1:end-1), probabilities, 'Color', cols(ii)); hold on
     xlim([min(xx_cond), max(xx_cond)])
     subplot(211)
-%     plot(xx_cond, ( (A_mle(ii)-C_mle(ii))./(1+exp(-xx_cond))+C_mle(ii) )*time_scale,'Color',cols(ii)); hold on
     plot(xx_cond, ( (A_mle(ii)-C_mle(ii))./(1+exp(-(xx_cond*norm(Kc_mle(ii, :)) + 1*nanmean(filt_dth))))+C_mle(ii) )*time_scale,'Color',cols(ii)); hold on
-%     scatter(dc_dth + 0*(filt_dth), ( (A_mle(ii)-C_mle(ii))./(1+exp(-(dc_dth*norm(Kc_mle(ii, :)) + 0*(filt_dth) )))+C_mle(ii) )*time_scale,'Marker', '.','MarkerFaceColor',cols(ii),'MarkerFaceAlpha', 0.5); hold on
-%     dc_dth_scaled = filt_ddc + filt_dth;
-%     plot(dc_dth, (A_mle(ii)-C_mle(ii))./(1+exp(-dc_dth_scaled))+C_mle(ii),'.'); hold on
     xlim([min(xx_cond), max(xx_cond)])
 end
 
 %% histogram and turning curves; with normalization!!!
 numBins = 100;
 desiredPointsPerBin = 1000;
-% xx_cond = linspace(-6,6,100);
 xx_cond = linspace(-30,30, numBins);
-% yy_cond = linspace(0,0.1,30);
 cols = ['b', 'k', 'r'];
 figure
 for ii = 1:3
@@ -159,7 +116,6 @@ for ii = 1:3
     ddc_fit = xx_train(1,:);
     ang_fit = yy_train(1,:);
     trials_fit = ones(1,length(mask_train));
-%     trials_fit(find(mask_train==0)) = NaN;
     ddc_fit = ddc_fit(2:end);
     ang_fit = ang_fit(1:end-1);
     trials_fit = trials_fit(2:end);
@@ -170,15 +126,6 @@ for ii = 1:3
     filt_dth = conv_kernel(abs(ang_fit).*trials_fit, K_h_rec);
     dc_dth_raw = filt_ddc + 1*(filt_dth);
     dc_dth = dc_dth_raw; %
-%     dc_dth = (dc_dth_raw-nanmean(dc_dth_raw)) ./ (nanstd(dc_dth_raw)*1);  % test with z-scoring
-%     dc_dth = randn(1,10000)*10;
-    
-    %%% adjust bins
-%     quantiles = linspace(0, 1, numBins + 0);
-%     xx_cond = quantile(dc_dth, quantiles);
-%     xx_cond = linspace(max([-20,min(dc_dth)]),min([20,max(dc_dth)]),numBins);
-%     xx_cond = linspace(nanmean(dc_dth)-nanstd(dc_dth)*1. , nanmean(dc_dth)+nanstd(dc_dth)*1., numBins);
-%     xx_cond = linspace(min(dc_dth),max(dc_dth),numBins);
 
     %%% plots
     subplot(223)
@@ -216,11 +163,6 @@ for ii = 1:3
     ylim([min(sig_output),max(sig_output)])
     xlabel('probability'); ylabel('P(\beta=1|C,d\theta)'); set(gcf,'color','w'); set(gca,'Fontsize',20);
     xlim([0.001,1])
-%     h = histogram(filt_ddc/1 + 1*(filt_dth), numBins, 'Normalization', 'probability','Visible', 'off');
-%     bin_edges = h.BinEdges;
-%     probabilities = h.Values;
-%     plot(bin_edges(1:end-1), probabilities, 'Color', cols(ii),'LineWidth',1.5); hold on
-%     xlabel('raw filtered signal'); ylabel('probability'); set(gcf,'color','w'); set(gca,'Fontsize',20);
 end
 
 %% emperical vs. model turn probability
@@ -237,7 +179,6 @@ for ii = 1:3
 %     idvec = randperm(length(Data));
     
     %%% test with the same CV testing data
-%     Data = Data(data_ids(ii,:)); % control the number of tracks 
     indices = ids{ii};  % indices for CV (pre-assigned!)
     test_set = (indices==kth);
     train_set = ~test_set;
@@ -260,13 +201,10 @@ for ii = 1:3
     dc_dth = (filt_ddc + filt_dth + b_mle(ii)*0);
     Pturns = (A_mle(ii)-C_mle(ii))./ (1 + exp( -(dc_dth) )) + C_mle(ii);
     Pturns = Pturns*1;
-%     p_thr_beta = 2*pi*besseli(0,K2_mle(ii)^1) * exp(K2_mle(ii)^1*cos( ang_fit*d2r-pi ))*(0.1) + (1-0.1)/(2*pi);
     model_Pturn(ii) = nansum(Pturns) / (length(Pturns)-sum(isnan(Pturns))) * ((180-turn_thr)/180*(1-gamm)+gamm); %%%%% estimate the P(>thr|beta=1) density!!!
 
 end
 
-% figure
-% bar([exp_Pturn; model_Pturn]')
 learn_bar_plot([exp_Pturn; model_Pturn], 'turn/s')
 
 %% emperical vs. model turn probability (histogram method!)
@@ -283,8 +221,7 @@ for ii = 1:3
     load(datas{ii});
 %     idvec = randperm(length(Data));
 
-    %%% test with the same CV testing data
-%     Data = Data(data_ids(ii,:)); % control the number of tracks 
+    %%% test with the same CV testing data 
     indices = ids{ii};  % indices for CV (pre-assigned!)
     test_set = (indices==kth);   %%% this matters!!
     train_set = ~test_set;
@@ -318,8 +255,6 @@ for ii = 1:3
 
 end
 
-% figure
-% bar([exp_Pturn; model_Pturn]')
 learn_bar_plot([exp_Pturn; model_Pturn], 'turn/s')
 
 %% angular density plots
@@ -355,7 +290,6 @@ for ii = 1:3
     for jj = 1:length(Data)
         dcs(jj) = Data(jj).dc(end) - Data(jj).dc(1);
     end
-%     [xx_train, yy_train, mask_train] = data2xy(Data(1:444));
     hh = histogram(dcs, numBins, 'Normalization', 'probability', 'EdgeColor', 'none', 'FaceAlpha', 0.5); hold on
 end
 
@@ -375,7 +309,6 @@ function learn_bar_plot(ap_na_av, y_name, hh)
     end
     xticks(1:3);
     xticklabels( {'appetitive' 'naive', 'aversive'});
-    % set(gca, 'XTickLabel', {'appetitive' 'naive', 'aversive'})
     ylabel(y_name)
     set(gcf,'color','w'); set(gca,'Fontsize',20);
 end

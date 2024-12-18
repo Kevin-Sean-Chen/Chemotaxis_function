@@ -1,4 +1,6 @@
 %% BRW_WV_CI
+% script to iterate across data and compute the index for chemotaxis, BRW,
+% and WV strategies. Can either pool from specific data, or from the folder names
 clear
 clc
 
@@ -11,10 +13,7 @@ fields_to_load = {'Path','Time','Runs','Pirouettes'};
 folder_names = getfoldersGUI();
 Tracks = loadtracks(folder_names,fields_to_load);
 
-%%
-Cmap = load('/projects/LEIFER/Kevin/Data_odor_flow_equ/Landscape_low.mat');
-Fcon = load('/projects/LEIFER/Kevin/Data_odor_flow_equ/OdorFx_low.mat');
-Cmap = load('/projects/LEIFER/Kevin/Data_odor_flow_equ/Landscape_low_0623.mat')
+%% load environment
 Cmap = load('/projects/LEIFER/Kevin/Data_odor_flow_equ/Landscape_low_0623_2.mat')
 M = Cmap.vq1;
 M = fliplr(flipud(M));
@@ -28,16 +27,11 @@ Fcon = load('/projects/LEIFER/Kevin/Data_odor_flow_equ/20211029_GWN_app+_MEK110m
 Cmap = load('/projects/LEIFER/Kevin/Data_odor_flow_equ/20220113_GWN_app+_MEK110mM_gasphase_30ml_200air/Landscape.mat');
 Fcon = load('/projects/LEIFER/Kevin/Data_odor_flow_equ/20220113_GWN_app+_MEK110mM_gasphase_30ml_200air/OdorFx.mat');
 
-% Cmap = load('/projects/LEIFER/Kevin/Data_odor_flow_equ/Landscape_low.mat');
-% Fcon = load('/projects/LEIFER/Kevin/Data_odor_flow_equ/OdorFx_low.mat');
-
 Fcon = Fcon.F;
 
 %% looping files and conditions
-% Tracks = loadtracks(folder_names{1},fields_to_load);
-temp = load('/projects/LEIFER/Kevin/Data_learn/N2/data_analysis/learn_folders4.mat'); % 4,5, _final
+temp = load('/projects/LEIFER/Kevin/Data_learn/N2/data_analysis/learn_folders_final.mat');
 folder_all = {temp.folder_app, temp.folder_nai, temp.folder_ave};
-% BWC = zeros(length(folder_names), 3);
 track_learn_all = cell(1,3);
 BWCs = cell(1,3);
 cols = ['b','k','r'];
@@ -49,7 +43,7 @@ for cc = 1:3
     for ff = 1:length(folder_names)
         Tracks = loadtracks(folder_names{ff},fields_to_load);
         if cc == 1
-            [ci_, brw_index, wv_index] = compute_index(Tracks, M, 20); %20
+            [ci_, brw_index, wv_index] = compute_index(Tracks, M, 20);
         else
             [ci_, brw_index, wv_index] = compute_index(Tracks, M, 30);
         end
@@ -62,9 +56,9 @@ for cc = 1:3
     track_learn_all{cc} = sub_learn_tracks;
 end
 
-%% compute for AVE without repeats!
+%% compute for AVE without repeats
 temp = load('/projects/LEIFER/Kevin/Data_learn/N2/data_analysis/Data_ave_wo_repeat.mat');
-fold_wo = temp.folder_ave_wo_rep; %{temp.folder_ave_wo_rep{[1:3,5:7]}}; %
+fold_wo = temp.folder_ave_wo_rep; 
 fold_rep = folder_all{3};
 fold_compare = {fold_wo, fold_rep};
 BWC_ave = cell(1,2);
@@ -80,6 +74,7 @@ for cc = 1:2
     plot(BWC',cols(cc)); hold on
     BWC_ave{cc} = BWC;
 end
+
 %% bar plot
 wo_rep = BWC_ave{1}';  w_rep = BWC_ave{2}';
 figure
@@ -130,7 +125,7 @@ for c = 1:length(Tracks)
     for rr = 1:size(runs,1)
         path_i = paths(runs(rr,1):runs(rr,2),:);  %segment of running
         dC = Fcon(path_i(1,1) , path_i(1,2)) - Fcon(path_i(end,1) , path_i(end,2));  %delta C
-        if dC>=0  %up gradient  %%%%%%%%% hack for now to invert concentration~~~
+        if dC>=0
             run_up = [run_up length(path_i)*dC];  %record run length
         elseif dC<0
             run_dn = [run_dn length(path_i)*abs(dC)]; 
@@ -160,7 +155,6 @@ for c = 1:length(Tracks)
         ci_low = ci_low+abs(dC);
     end
     
-%     c
     end
     
 end
@@ -175,44 +169,7 @@ disp(['BRW: ',num2str(brw_index)]);
 disp(['WV: ',num2str(wv_index)]);
 disp(['CI: ',num2str(ci_)]);
 
-%% groups
-app_ = [0.09  0.21  0.35 ;
-        0.15  0.16  0.34;
-        0.09  0.16  0.32]';
-nai_ = [0.08  0.09  0.15;
-        0.13  0.07  0.26;
-        0.13  0.069  0.21;
-        0.09  0.1  0.25]';
-ave_ = [0.04  0.14  0.19;
-        0.01  0.18  0.25;
-        0.03  0.21  0.25]';
-
-    
-%%% low C
-app_ = [0.12, 0.16, 0.39;
-        0.08, 0.15, 0.32;
-        0.14  0.11,  0.38]';
-nai_ = [0.08,0.07,0.26;
-       0.10  0.071  0.20;
-       0.08, 0.065, 0.21]';
-%         0.09, 0.13, 0.24]';
-ave_ = [0.05,-0.0008,0.08;
-        0.02 , 0.02, 0.1;
-        0.06, 0.0, 0.04;
-        0.07, 0.04, 0.23]';
-
-figure();
-plot(app_,'b-o','linewidth',2); hold on
-plot(nai_,'k-o','linewidth',2); hold on
-plot(ave_,'r-o','linewidth',2); hold on
-% plot([0.083  0.08  0.21],'k-*','linewidth',2)
-plot([0.06  0.1  0.22],'r-*','linewidth',2)
-names = {'BRW'; 'WV'; 'CI'};
-ylabel('Index')
-set(gca,'xtick',[1:3],'xticklabel',names,'FontSize',20)
-set(gcf,'color','w');
-
-%% bar plot
+%% bar plot for all indices
 app_ = BWCs{1}'; nai_ = BWCs{2}'; ave_ = BWCs{3}';
 figure
 m_ap = mean(app_');

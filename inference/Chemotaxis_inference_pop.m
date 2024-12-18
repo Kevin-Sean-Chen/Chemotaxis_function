@@ -1,5 +1,6 @@
 %% mGLM fitting with population of tracks
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% with kernel operation on population data
 %% load tracks and maps
 % Odor map
 Cmap = load('/projects/LEIFER/Kevin/Data_odor_flow_equ/Landscape_low.mat');

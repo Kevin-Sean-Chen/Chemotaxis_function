@@ -8,7 +8,7 @@ addpath('C:\Users\Kevin\Documents\GitHub\leifer-Behavior-Triggered-Averaging-Tra
 addpath('C:\Users\Kevin\Desktop\Chemotaxis_function')
 
 %batch analysis
-fields_to_load = {'Path','Time','Runs','Pirouettes','SmoothSpeed','AngSpeed','SmoothX','SmoothY'};%,'Behaviors'};
+fields_to_load = {'Path','Time','Runs','Pirouettes','SmoothSpeed','AngSpeed','SmoothX','SmoothY'};
 
 main_folder=('/projects/LEIFER/Kevin/Data_learn/N2');
 cd(main_folder)
@@ -30,12 +30,12 @@ poly_degree = 3;  %polynomial fitting for moving window
 filt = 7;  %window the path (has to be odd because it is +/- points around the center)
 fr = 1/14;  %1/14 seconds between each frame  (~0.0714 second for each frame)
 nn = length(Tracks); %number of worms selected
-mint = 60*5;% 5 10 %minimum time in seconds
-minx = 450;% 450 250 500;  %minimum displacement (in terms of pixels)
+mint = 60*5; %minimum time in seconds
+minx = 450;  %minimum displacement (in terms of pixels)
 endingt = 60*30;  %only taking the first few minutes
 pix2mm = 1/31.5;
 targ_track = 7;
-conc_thre = 30;%0.8*max(max(M));
+conc_thre = 30; %0.8*max(max(M));
 
 figure();
 imagesc(M,'XData',[0 size(M,2)*pix2mm],'YData',[0 size(M,1)*pix2mm]);
@@ -47,7 +47,6 @@ for i = 1:nn
         displace = mean((Tracks(i).Path(:,1)-mean(Tracks(i).Path(:,1))).^2 + (Tracks(i).Path(:,2)-mean(Tracks(i).Path(:,2))).^2); %pixel displacement
         alldists = [alldists displace*pix2mm^2];  %all dispacements in mm
         if displace > minx^2  %space cutoff
-%             pos = find(Tracks(i).Path(1,2)<1000 | Tracks(i).Path(1,2)>1500);
             pos = find(Tracks(i).Time<endingt);  %time window cutoff (the later time points are less correct...)
             if isempty(pos)~=1
                 x_smooth = smooth(Tracks(i).Path(:,1), filt,'sgolay',poly_degree);
@@ -106,7 +105,6 @@ for ii = 1:length(exp_track)
     yy = exp_track(ii).y';
     ll = length(exp_track(ii).x);
     gg = linspace(0,1,ll);
-%     plot(xx, yy, 'Color', [grayLevel grayLevel grayLevel]);
     patch(ax2, [xx nan]*pix2mm,[yy nan]*pix2mm,[gg nan],[gg nan], 'edgecolor', 'interp','LineWidth',2); 
     hold on
     plot(ax2,xx(1)*pix2mm, yy(1)*pix2mm,'g.', 'MarkerSize',25)
@@ -119,10 +117,10 @@ ax2.YTick = [];
 c = gray;
 colormap(ax2,c)
 colormap(ax1)
+
 %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% example time series, after running Data structure
-% load with APP condition and run the inference_pop code to get Data structue
+%% example time series for the model schematic. (after running Data structure)
 load('/projects/LEIFER/Kevin/Data_learn/N2/data_analysis/Data_exp_dcdthdxy.mat');
 id = 5;
 wind = [650:1780];
@@ -137,7 +135,6 @@ end
 time_x = [1:n]*5/14;
 
 figure;
-% imagesc(M,'XData',[0 size(M,2)*pix2mm],'YData',[0 size(M,1)*pix2mm]); hold on
 ax1 = axes;
 imagesc(ax1,M,'XData',[0 size(M,2)*pix2mm],'YData',[0 size(M,1)*pix2mm]);
 colormap()
@@ -149,8 +146,6 @@ ll = length(xx);
 gg = fliplr(linspace(0,1,ll));%linspace(0,1,ll);
 patch(ax2, [xx nan]*pix2mm,[yy nan]*pix2mm,[gg nan],[gg nan], 'edgecolor', 'interp','LineWidth', 5); hold on
     
-% p = plot(Data(id).xy(1,wind)*pix2mm, Data(id).xy(2,wind)*pix2mm, 'LineWidth',2)
-% set(p.Edge, 'ColorBinding','interpolated', 'ColorData',ccd)
 plot(ax2,Data(id).xy(1,wind(1))*pix2mm, Data(id).xy(2,wind(1))*pix2mm, 'g.','MarkerSize',40)
 plot(ax2,Data(id).xy(1,wind(end))*pix2mm, Data(id).xy(2,wind(end))*pix2mm, 'r.','MarkerSize',40)
 set(gca, 'YDir','reverse')

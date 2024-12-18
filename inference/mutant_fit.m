@@ -60,13 +60,11 @@ for li = 1:numel(fileList)
         if  dC > 0
             cii = cii + dC/(100-c0);
             ci1 = ci1 + 1;
-%             cii = cii + 1;
         else
             c_down = c_down + dC/(c0-10);
             ci2 = ci2 + 1;
         end
     end
-%     CIs(li) = cii/di;
     CIs(li) = (cii/ci1 + c_down/ci2);%/ (cii + abs(c_down));
 end
 CIs = reshape(CIs,[3,n_strains]);
@@ -145,9 +143,6 @@ for rr = 1:n_resamp
     ii = 1;
     for ss = 1:n_strains
         for cc = 1:3
-%             fileName = fileList(ii).name;
-%             filePath = fullfile(data_path, fileName);
-%             load(filePath);
             load(data_mut{cc,ss});
             Data_n2_i = load(data_n2{cc});
             temp_param = squeeze(mut_param(cc,ss,:))';
@@ -164,13 +159,6 @@ end
 figure;
 subplot(121); imagesc(squeeze(mut_sig_resamp(1,:,:))); colorbar(); title('BRW'); xticklabels(xtickLabels); yticklabels(ytickLabels); xticks([1:n_strains]);yticks([1:3]);%colormap(jet(256))
 subplot(122); imagesc(squeeze(mut_sig_resamp(2,:,:))); colorbar(); title('WV'); xticklabels(xtickLabels); yticklabels(ytickLabels); xticks([1:n_strains]);yticks([1:3]);%colormap(jet(256))
-
-%% tests
-% [~, samp1] = BRW_Kc_conv(temp_param, Data);
-% [~, samp2] = BRW_Kc_conv(temp_n2_param, Data_n2_i.Data);
-% 
-% figure;
-% hist(samp1,100); hold on; hist(samp2,100);
 
 %% make strain x condition mutant filenames
 data_mut = cell(3,5);
@@ -207,21 +195,13 @@ for cc = 1:3
         temp_n2_param = N2_param(cc,:);
         temp_n2_ci = N2_ci(cc);
         
-        %%% norm
-%         d_brw = (BRW_id(temp_param) - BRW_id(temp_n2_param));  % BRW index comparison
-%         d_wv =  WV_id(temp_param) -  WV_id(temp_n2_param);  % WV index comparison
-        
         %%% convolution
-%         d_brw = mut_idex2(1,cc,ss);
-%         d_wv = mut_idex2(2,cc,ss);
         d_brw = BRW_Kc_conv(temp_param, Data) - BRW_Kc_conv(temp_n2_param, Data_n2_i.Data); 
         d_wv =  WV_Kcp_conv(temp_param, Data) - WV_Kcp_conv(temp_n2_param, Data_n2_i.Data); 
         d_ci = CIs(cc,ss) - temp_n2_ci;
         test(cc,ss) = d_brw;
         
         %%% N2 measurements
-%         brw_n2 = BRW_id(temp_n2_param);
-%         wv_n2 = WV_id(temp_n2_param);
         Data_n2_i = load(data_n2{cc});
         brw_n2 = BRW_Kc_conv(temp_n2_param, Data_n2_i.Data);
         wv_n2 = WV_Kcp_conv(temp_n2_param, Data_n2_i.Data);
@@ -232,24 +212,13 @@ for cc = 1:3
         set(gcf,'color','w'); set(gca,'Fontsize',20); title('CI'); yticks([])
         subplot(132)
         semilogx(brw_n2, ii,'o'); hold on
-%         plot(brw_n2, ii,'o'); hold on
         h1 = quiver(brw_n2, ii, (d_brw), 0,0,  'autoScale', 'off'); hold on
         set(gcf,'color','w'); set(gca,'Fontsize',20); title('BRW'); yticks([])
-%         semilogx(BRW_Kc_conv(temp_param, Data) , ii, '*')
-%         h1.MaxHeadSize = 10000000;
-%         set(h, 'UData', arrowLength * d_brw, 'VData', arrowLength * 0);
-%         h.AutoScaleFactor = arrow_size*d_brw;
-%         h.MaxHeadSize  = 5;
+
         subplot(133)
-%         plot(-temp_n2_param(8), ii,'o'); hold on
         plot(wv_n2, ii,'o'); hold on
         h2 = quiver(wv_n2, ii, d_wv, 0,0,  'autoScale', 'off'); hold on
         set(gcf,'color','w'); set(gca,'Fontsize',20); title('WV'); yticks([])
-%         semilogx(WV_Kcp_conv(temp_param, Data) , ii, '*')
-%         h2.MaxHeadSize = arrowHeadSize/abs(d_wv);
-%         set(h, 'UData', arrowLength * d_wv, 'VData', arrowLength * 0);
-%         h.AutoScaleFactor = arrow_size*d_wv;
-%         h.MaxHeadSize  = 0.5;
         ii = ii-1;
         
     end    
@@ -321,16 +290,9 @@ for ii = 1:5
     for jj = 1:5
         ivec = squeeze(mut_param(cc,ii,:))';
         jvec = squeeze(mut_param(cc,jj,:))';
-%         beh_dist(ii,jj) = sum((B(:,ii)-B(:,jj)).^2);
         beh_dist(ii,jj) = sum((ivec - jvec).^2) / (norm(ivec));%*norm(jvec));
-%         correlation_matrix = corrcoef(ivec, jvec);
-%         beh_dist(ii,jj) = correlation_matrix(1, 2);
     end
 end
-
-%%
-% save('/projects/LEIFER/Kevin/Data_learn/Mutants/data_analysis/mle_mut_params7.mat','mle_mut_params')
-% save('/projects/LEIFER/Kevin/Analysis/WBI_Flavell/w_neuralPal/beh_dist.mat','beh_dist','B','wtemp','Ws');
 
 %% mutant plots
 target_exp = [4,7,10,13];
@@ -363,11 +325,7 @@ function [x_MLE, fval] = MLE_mGLM(Data_train)
     ddc_fit = xx_train(1,:);
     trials_fit = mask_train;
     lfun = @(x)nLL_kernel_hist5(x, ang_fit, dcp_fit, ddc_fit, cosBasis, .1, trials_fit);
-%     lfun = @(x)nLL_kernel_hist2(x, ang_fit, dcp_fit, ddc_fit, cosBasis, 1, trials_fit);
     opts = optimset('display','iter');
-%     LB = [1e-0, 1e-5, ones(1,nB)*-inf, 0.0 -inf, 1e-0, -inf, 1e-1, 1e-0*10, 0.1];
-%     UB = [200, 1., ones(1,nB)*inf, 0.1, inf, 50, inf, 100, 50, 1];
-%     prs0 = [50, 0.1, randn(1,nB)*10, 0.01, -1, 25, 1, 25, 5, 1.];
     LB = [1e-0, 1e-5, ones(1,nB)*-inf, 0.0 -inf, 1e-0, -inf, 1e-1, 1  -inf, -inf];
     UB = [200, 1., ones(1,nB)*inf, 0.1, inf, 50, inf, 100, 100  inf, inf];
     prs0 = [50, 0.2, randn(1,nB)*10, 0.01, -1, 2, 1, 25, 10 -10, -1];
@@ -398,7 +356,6 @@ function [varargout] = BRW_Kc_conv(x, Data);
     ddc_fit = xx_train(1,:);
     trials_fit = ones(1,length(mask_train));
     trials_fit(find(mask_train==0)) = NaN;
-%     brw = nanstd(conv_kernel(ddc_fit.*trials_fit, Kc));
     K_h_rec = x(10)*exp(-tt/x(11));
     filt_dth = conv_kernel(abs(yy_train), K_h_rec);
     filt_dc = conv_kernel(ddc_fit.*trials_fit, Kc/1);
@@ -406,25 +363,20 @@ function [varargout] = BRW_Kc_conv(x, Data);
     compute_nl = (x(2)-x(7))./(1+exp(-dc_dth - 0*(filt_dth))) + x(7);
     test_nl = (x(2)-x(7))./(1+exp(-ddc_fit - 0*(filt_dth))) + x(7);
     if nargout > 1
-%         varargout{1} = 1/nanstd((ddc_fit.*trials_fit)) * nanstd(conv_kernel(ddc_fit.*trials_fit, Kc));
         varargout{1} = norm(Kc)/nanstd(ddc_fit.*1);%norm(Kc);   %(nanstd(compute_nl));% - nanstd(filt_dc);
         temp = (conv_kernel(ddc_fit.*trials_fit, Kc));
-%         varargout{2} = temp(~isnan(temp));
         varargout{2} = dc_dth;
     else
-%         varargout{1} = 1/nanstd((ddc_fit.*trials_fit)) * nanstd(conv_kernel(ddc_fit.*trials_fit, Kc));
         varargout{1} = norm(Kc)/nanstd(ddc_fit.*1);%norm(Kc);   %(nanstd(compute_nl));% - nanstd(filt_dc);
         
         %%% test with Iino method %%%
         max_point = quantile(dc_dth, 0.60);  %nanmean(dc_dth) + nanstd(dc_dth);
         min_point = quantile(dc_dth, 0.40);  %nanmean(dc_dth) - nanstd(dc_dth);
-%         pir_index = (x(2)-x(7))./(1+exp(-max_point)) + x(7)  - ( (x(2)-x(7))./(1+exp(-min_point)) + x(7) );
         M = x(2);  m = x(7); mid = (M+m)/2; rang = (M-m)/2;
         max_point = log(((mid+rang*0.25) - m)/(M - (mid+rang*0.25)));
         min_point = log(((mid-rang*0.25) - m)/(M - (mid-rang*0.25)));
         pir_index = length(find(dc_dth<max_point | dc_dth>min_point))/length(dc_dth);
-        pir_index = length(find(abs(dc_dth)<3))/length(dc_dth);  % * (x(2)-x(7))*5/14;% *norm(Kc);
-%         pir_index = norm(Kc)/ nanstd(filt_dth.*1); % iqr(dc_dth);  %mad(dc_dth);
+        pir_index = length(find(abs(dc_dth)<3))/length(dc_dth); 
         pir_index = norm(Kc)/nanstd(ddc_fit.*1) * length(find(dc_dth>0))/length(dc_dth);
         varargout{1} = norm(Kc)/nanstd(ddc_fit.*1);%pir_index; %
         %%%
@@ -472,16 +424,5 @@ function [h_brw, h_wv] = significant_test(x1, Data1, x2, Data2);
     end
     [h_brw, p] = ttest2(samp_brw(1,:), samp_brw(2,:), alpha);
     [h_wv, p] = ttest2(samp_wv(1,:), samp_wv(2,:), alpha);
-%%%%%% direct method
-%     alpha = 0.001; % Significance level
-%     %%% for BRW
-%     [~,samp1_brw] = BRW_Kc_conv(x1, Data1);
-%     [~,samp2_brw] = BRW_Kc_conv(x2, Data2);
-%     [h_brw, p] = vartest2(samp1_brw(1:end), samp2_brw(1:end), alpha, 'Both');
-% %     [h_brw, p] = vartest(samp1_brw, var(samp2_brw));
-%     %%% for WV
-%     [~,samp1_wv] = WV_Kcp_conv(x1, Data1);
-%     [~,samp2_wv] = WV_Kcp_conv(x2, Data2);
-%     [h_wv, p] = vartest2(samp1_wv(1:1000), samp2_wv(1:1000), alpha, 'Both');
-% %     [h_wv, p] = vartest(samp1_wv, var(samp2_wv));
+
 end
