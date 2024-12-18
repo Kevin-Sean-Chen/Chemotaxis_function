@@ -49,7 +49,6 @@ plot(K_s_rec); hold on; plot(K_s,'--');
 %%% nonlinear function
 function [P] = NL(F,beta)
     P = 1./(1+exp(-beta*F));
-%     P = exp(-beta*F);
 end
 
 %%% stochastic choice
@@ -60,7 +59,6 @@ function [b] = choice(P)
     else
         b = 0;
     end
-%     b = poissrnd(P);
 end
 
 %%% objective: negative Log-likelihood=
@@ -77,15 +75,13 @@ function [NLL] = nll(THETA, dth, stim, cosBasis)
     K_s = (alpha_s*cosBasis');
 
     %%% probability
-    % convolution method?
+    % convolution method
 %     F = conv(dth, K_h, 'same') + conv(stim, K_s, 'same');
 %     P = NL(F, beta);
-    % design matrix method?
+    % design matrix method
     A = (convmtx((dth),length(K_h)));
     B = (convmtx((stim),length(K_s)));
     F = A'*K_h' + B'*K_s' + base;
-%     rev = floor(length(K_h)/2);
-%     F = F(rev:end-(length(K_h)-rev));
     F = F(1:length(dth));
     F(1:length(K_h)) = 0;
     P = NL(F,beta);
@@ -94,7 +90,6 @@ function [NLL] = nll(THETA, dth, stim, cosBasis)
     y_1 = find(dth == 1);
     y_0 = find(dth == 0);
     ll = sum(log(P(y_1))) + sum(log(1-P(y_0)));
-%     ll = sum(dth.*(log(P(y_logical))) + (1-dth).*log(1-P(y_logical)));
     NLL = -ll;
 %     ll = sum(-dth.*P + log(P));%−nλ+tlnλ.
 end

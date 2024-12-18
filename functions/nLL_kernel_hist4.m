@@ -19,7 +19,6 @@ function [NLL] = nLL_kernel_hist4(THETA, dth, dcp, dc, Basis, lambda, mask)
     %%% kernel with basis
     K_h = (alpha_h*Basis');  % dth kernel
     K_dc = (alpha_dc*Basis');  % dC kernel
-%     K_dcp = (alpha_dcp*Basis');  % dCp kernel
     dcp_win = 1:length(K_dc)-1;
     K_dcp = THETA(11) * exp(-dcp_win/THETA(12)); 
     

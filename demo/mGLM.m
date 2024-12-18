@@ -136,14 +136,10 @@ function [NLL] = nLL(THETA, dth, dcp, dc, Basis, lambda)
     
     %%% turning decision
     d2r = 1;%pi/180;
-%     padding = ones(1,floor(length(K_h)/2));
-%     filt_dth = conv([padding, abs(dth)*d2r], K_h, 'same');
-%     filt_dth = filt_dth(1:length(dth));
-    
+
     filt_dth = conv_kernel(abs(dth(1:end-1))*d2r,K_h);
     filt_dc = conv_kernel(dc(2:end),K_dc);
     P = NL(filt_dth + filt_dc, A);
-%     P = 1./(1 + exp(-beta*(filt_dth + filt_dc)));
     
     %%% weathervaning part
     C = 1/(2*pi*besseli(0,kappa_wv^2));  % normalize for von Mises
@@ -152,11 +148,9 @@ function [NLL] = nLL(THETA, dth, dcp, dc, Basis, lambda)
     
     %%% turning analge model
     VM_turn = 1/(2*pi*besseli(0,kappa_turn^2)) * exp(kappa_turn^2*cos((dth(2:end)*d2r - pi)));  %test for non-uniform turns (sharp turns)
-%     gamma = .2;
     VM_turn = gamma*1/(2*pi) + (1-gamma)*VM_turn;  %%% revisit mixture inference !!!
     
     marginalP = (1-P).*VM + VM_turn.*P;
     
-%     lambda = 10;
     NLL = -nansum(log(marginalP + 0*1e-10)) + lambda*sum(K_dc.^2);  % adding slope l2 regularization
 end

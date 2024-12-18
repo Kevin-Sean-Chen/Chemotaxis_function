@@ -33,19 +33,7 @@ for iter = 1:maxIter
     % Maximization step (M-step)
     lamb_est = sum(z_nk,1) / N;
     
-%     for k = 1:n_mixtures
-%         
-%         %%% numerical method
-%         lfun = @(xx)nLL_weighted_gamma(xx, z_nk(:,k), x, mask);  % objective function
-%         opts = optimset('display','iter');
-%         LB = zeros(1,2);
-%         UB = ones(1,2)*300;%[inf inf inf inf];
-%         prs0 = rand(1,2);%[alpha_est(k), beta_est(k)];%, alpha_est(2), beta_est(2)];
-%         [param_est,fval,EXITFLAG,OUTPUT,LAMBDA,GRAD,HESSIAN] = fmincon(lfun,prs0,[],[],[],[],LB,UB,[],opts);  % constrained optimization
-%         alpha_est(k) = param_est(1);
-%         beta_est(k) = param_est(2);
-%     end    
-        %%% closed-form method(?)
+        %%% closed-form method
     for k = 1:n_mixtures
         sum_z = sum(z_nk(:,k));
         sum_zx = sum(z_nk(:,k)'.*x);
@@ -54,9 +42,6 @@ for iter = 1:maxIter
         alpha_est(k) = sum_z*sum_zx / (sum_z*sum_zxlx - sum_zlx*sum_zx);
         beta_est(k) = (sum_z*sum_zxlx - sum_zlx*sum_zx) / sum_z^2;
     end
-    
-%     alpha_est = [param_est(1), param_est(3)];
-%     beta_est = [param_est(2), param_est(4)];
     
     % Calculate the log-likelihood
     log_likelihood(iter) = nansum(nansum(log(z_nk),1));  %sum(log(sum(z_nk, 2))); %
@@ -88,31 +73,6 @@ title('Mixture of Gamma Distributions Estimation')
 legend('Data', 'Component 1', 'Component 2')
 
 hold off
-
-
-%%
-% alpha_est = [.95 3.5];
-% beta_est = [.8 .5];
-% lamb_est = [.4, .6];
-% figure
-% histogram(x, 'Normalization', 'pdf')
-% hold on
-% 
-% x_vals = linspace(min(x), max(x), 1000);
-% y_vals = zeros(numComponents, length(x_vals));
-% for k = 1:numComponents
-%     y_vals(k, :) = lamb_est(k) * gampdf(x_vals, alpha_est(k), beta_est(k));
-%     plot(x_vals, y_vals(k, :), 'LineWidth', 2); hold on
-%     plot(x_vals, sum(y_vals,1))
-% end
-% 
-% % Customize the plot
-% xlabel('x')
-% ylabel('Probability Density')
-% title('Mixture of Gamma Distributions Estimation')
-% legend('Data', 'Component 1', 'Component 2')
-% 
-% hold off
 
 %% nLL function
 %Negative Log-likelihood for chemotaxis with kernels

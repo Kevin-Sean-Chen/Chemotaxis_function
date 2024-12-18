@@ -26,9 +26,6 @@ function [NLL] = nLL_kernel_opto(THETA, dth, dc, opto, Basis, lambda, mask)
         K_dc = alpha_dc' * Basis';
         K_opto = alpha_opto' * Basis'; 
     end
-%     h_win = 1:length(K_dc)-1;
-%     K_h = Amp_h * exp(-h_win/tau_h);  % dth kernel
-%     filt_dth = conv_kernel([abs(dth(1:end-1))], K_h);  %(1:end-1), indexed for history
     filt_dc = conv_kernel([dc(2:end)], K_dc);
     filt_opto = conv_kernel([opto(2:end)], K_opto);
     P = (A_-C_)*1 ./ (1 + exp( -(filt_dc + filt_opto) )) + C_;  %sigmoid(A_,B_,dc); 

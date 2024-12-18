@@ -111,11 +111,6 @@ for ii = 1:3
     semilogx(P_pir, bin_edges_output(1:end-1), 'Color', cols(ii),'LineWidth',1.5); hold on
     ylim([min(sig_output),max(sig_output)])
     xlabel('probability'); ylabel('P(\beta=1|C,d\theta)'); set(gcf,'color','w'); set(gca,'Fontsize',20);
-%     h = histogram(filt_ddc/1 + 1*(filt_dth), numBins, 'Normalization', 'probability','Visible', 'off');
-%     bin_edges = h.BinEdges;
-%     probabilities = h.Values;
-%     plot(bin_edges(1:end-1), probabilities, 'Color', cols(ii),'LineWidth',1.5); hold on
-%     xlabel('raw filtered signal'); ylabel('probability'); set(gcf,'color','w'); set(gca,'Fontsize',20);
 end
 
 %% emperical vs. model turn probability (histogram method!)
