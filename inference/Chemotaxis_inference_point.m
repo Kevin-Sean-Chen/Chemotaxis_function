@@ -51,8 +51,6 @@ for c = 1:length(Paths)
         perp_dir = perp_dir/norm(perp_dir);
         dCp(dd) = Fcon(subs(dd-l_window,1)+perp_dir(1)*1., subs(dd-l_window,2)+perp_dir(2)*1)...
              - Fcon(subs(dd-l_window,1)-perp_dir(1)*1, subs(dd-l_window,2)-perp_dir(2)*1);
-%         dCp(dd) = Est_con(subs(dd-l_window,1)+perp_dir(1)*1., subs(dd-l_window,2)+perp_dir(2)*1, target(1), target(2), 50)...
-%                   -Est_con(subs(dd-l_window,1)-perp_dir(1)*1, subs(dd-l_window,2)-perp_dir(2)*1, target(1), target(2), 50);
         
         %forward concentration change
         dCs(dd) = Fcon(subs(dd,1),subs(dd,2)) - Fcon(subs(dd-l_window,1),subs(dd-l_window,2));

@@ -91,5 +91,4 @@ function [NLL] = nll(THETA, dth, stim, cosBasis)
     y_0 = find(dth == 0);
     ll = sum(log(P(y_1))) + sum(log(1-P(y_0)));
     NLL = -ll;
-%     ll = sum(-dth.*P + log(P));%−nλ+tlnλ.
 end

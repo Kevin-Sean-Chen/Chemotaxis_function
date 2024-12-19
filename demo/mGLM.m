@@ -1,5 +1,7 @@
 % mGLM
-%%% mixture GLM infernece with ground truth generative model
+%%% this is the exactly the form for dPAW, which is a input-dependent mixture GLM. 
+%%% here we show simulation and infernece with ground truth generative model
+
 %% define variables
 lt = 50000; % length of simulation / data
 nB = 4;  % number of basis function for the kernel

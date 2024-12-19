@@ -42,5 +42,3 @@ nlags = 100;
 xx = -nlags:nlags;
 xcsamp = xcov(x-mean(x),nlags, 'unbiased');
 plot(xx,xcsamp, '.-');
-
-%% generalized Langevin eqn

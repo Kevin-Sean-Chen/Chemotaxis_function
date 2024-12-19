@@ -1,14 +1,14 @@
 % EM algorithm for mixture of gamma distributions,
 % which is a model for displacement (speed vectors) in worm movements
-
+% test with alldis comming from data
 %% load some displacement data
-x = alldis(1:100000)  /33/(5/14);
+x = alldis(1:100000)  /33/(5/14); % turn to cm/s
 mask = alltrials(1:100000);
 mask(find(x>6)) = NaN;
 figure
 hist(x,100)
 N = length(x);
-
+% check paper for derivation
 %%% https://minerva.it.manchester.ac.uk/~saralees/gammapaper.pdf
 
 %%
@@ -89,7 +89,6 @@ function [NLL] = nLL_weighted_gamma(THETA, alpha, dis, mask)
     dis = mask(1:end).*dis;  % remove masked elements
     L1 = (k1-1)*nansum(alpha(:)'.*log(dis)) - nansum(alpha(:)'.*dis)/theta1 - nansum(alpha(:)*k1*log(theta1) + alpha(:)*log(gamma(k1)));
 %     L2 = (k2-1)*nansum(alpha(:,2)'.*log(dis)) - nansum(alpha(:,2)'.*dis)/theta2 - 1*(N*k2*log(theta2) + N*log(gamma(k2)));
-    %%% log_likelihood = sum((k-1)*log(data) - data/theta - k*log(theta) -gammaln(k));  %nansum(alpha(:,2))
     
     marginalP = L1;% + L2;
     NLL = -marginalP;

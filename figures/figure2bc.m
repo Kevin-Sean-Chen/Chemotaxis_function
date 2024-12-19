@@ -40,7 +40,7 @@ for ci = 1:3
 end
 
 %% plotting
-% raw view
+% raw values
 figure;
 bar(CIs)
 names = {'appetitive'; 'naive'; 'aversive'};

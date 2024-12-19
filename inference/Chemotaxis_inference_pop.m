@@ -79,8 +79,6 @@ for ii = 1:ntracks
         [xil, yil] = plate_bound(M, subs(dd-0,1)+perp_dir(1), subs(dd-0,2)+perp_dir(2));
         [xir, yir] = plate_bound(M, subs(dd-0,1)-perp_dir(1), subs(dd-0,2)-perp_dir(2));
         dCp(dd) = (M(yil,xil) - M(yir,xir));
-%         dCp(dd) = (M(floor(subs(dd-l_window,2)+perp_dir(2)*perp_dist), floor(subs(dd-l_window,1)+perp_dir(1)*perp_dist))...
-%                  - M(floor(subs(dd-l_window,2)-perp_dir(2)*perp_dist), floor(subs(dd-l_window,1)-perp_dir(1)*perp_dist))) / 1;  %computing normal direction dcp
 
         %%% forward concentration
         dCs(dd) = M(floor(subs(dd-0,2)), floor(subs(dd-0,1)));
@@ -102,8 +100,6 @@ for ii = 1:ntracks
     xys = xys(:, (l_window+1):end);
     timev = timev((l_window+2):end);  % one index off because of the derivative
     
-%     pos = find(dds>dis_thr); %remove sharp jumps
-%     trials(pos) = nan;
     trials(1:50) = nan; trials(end) = nan;
     
     % store as structure
@@ -194,8 +190,7 @@ disp(['K_=',num2str(K_),' K2_',num2str(K2_),'beta',num2str(sum(B_)),'alpha',num2
 LLs = zeros(1,length(Data_fit));  % tracks used for fitting
 for ii = 1:length(LLs)
     LLs(ii) = pop_nLL(x, Data_fit(ii))/length(Data_fit(ii).dth);
-    %%% test with ration!
-%     LLs(ii) = (pop_nLL(x_ave, Data_fit(ii))) / (pop_nLL(x, Data_fit(ii)));
+
 end
 normV = [(LLs-min(LLs))./(max(LLs)-min(LLs))]';
 % blue to red. 
@@ -265,7 +260,6 @@ for ll = 1:length(cand_list)
     turn_pos = find(Pturns>0.99);
     %%% plot tracks with LL color
     plot(Data(i).xy(1,:)*pix2mm,Data(i).xy(2,:)*pix2mm, 'Color', C(i,:),'LineWidth',2); 
-%     plot(Data(i).xy(1,:)*pix2mm,Data(i).xy(2,:)*pix2mm, 'Color', 'k','LineWidth',2); 
     hold on
     plot(Data(i).xy(1,1)*pix2mm,Data(i).xy(2,1)*pix2mm,'g.', 'MarkerSize',15)
     plot(Data(i).xy(1,end)*pix2mm,Data(i).xy(2,end)*pix2mm,'r.', 'MarkerSize',15)

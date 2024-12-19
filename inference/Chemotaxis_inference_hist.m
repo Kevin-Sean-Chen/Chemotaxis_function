@@ -56,21 +56,17 @@ for c = 1:length(Tracks) %length(Paths)
     
     if isempty(find(cand==c))==0
     %%% process path to angles and distances
-%     temp = Paths{c};  %for loading deleted tracks
     temp = Tracks(c);%.Path;  %for loading saved tracks
     temp1 = zeros(round(size(temp.Path,1)/1),2);
     
     temp1(:,1) = smooth(temp.SmoothX, filt,'sgolay',poly_degree); %smooth(temp(1:round(length(temp)/1),1), filt,'sgolay',poly_degree);
     temp1(:,2) = smooth(temp.SmoothY, filt,'sgolay',poly_degree); %smooth(temp(1:round(length(temp)/1),2), filt,'sgolay',poly_degree);
-%     temp1(:,1) = smooth(temp.Path(:,1)', filt,'sgolay',poly_degree); %smooth(temp(1:round(length(temp)/1),1), filt,'sgolay',poly_degree);
-%     temp1(:,2) = smooth(temp.Path(:,2)', filt,'sgolay',poly_degree); 
     
     subs = temp1(1:bin:end,:);
     vecs = diff(subs);
     vecs = [vecs; vecs(end,:)];   % compensating for the size change/time shift after taking difference 
     angs = zeros(1,size(vecs,1));    
     ang_loc = zeros(1,size(vecs,1));
-%     subs = [subs(2:end,:); subs(end,:)];  % test for time shift
     
     %%% for time step calculations
     dCp = zeros(1,size(vecs,1));
@@ -82,39 +78,24 @@ for c = 1:length(Tracks) %length(Paths)
     %%% iterate through worms
     for dd = (l_window+1):length(angs)
         %%% angle function
-%         angs(dd) = angles(vecs(dd-1,:)/norm(vecs(dd-1,:)),vecs(dd,:)/norm(vecs(dd,:)));
         angs(dd) = angles(vecs(dd-l_window,:)/norm(vecs(dd-l_window,:)),vecs(dd,:)/norm(vecs(dd,:)));%/(norm(vecs(dd,:)));  %curving rate?
         ang_loc(dd) = angles([1,0],vecs(dd,:)/norm(vecs(dd,:)));
         
         %%% perpendicular concentration change
         perp_dir = [-vecs(dd-0,2), vecs(dd-0,1)];
         perp_dir = perp_dir/norm(perp_dir)*perp_dist;
-%         dCp(dd) = Fcon(subs(dd-l_window,1)+perp_dir(1)*1., subs(dd-l_window,2)+perp_dir(2)*1)...
-%              - Fcon(subs(dd-l_window,1)-perp_dir(1)*1, subs(dd-l_window,2)-perp_dir(2)*1);
-%         dCp(dd) = (M(floor(subs(dd-l_window,2)+perp_dir(2)), floor(subs(dd-l_window,1)+perp_dir(1)))...
-%                  - M(floor(subs(dd-l_window,2)-perp_dir(2)), floor(subs(dd-l_window,1)-perp_dir(1)))) / 1;  %computing normal direction dcp
         [xil, yil] = plate_bound(M, subs(dd-0,1)+perp_dir(1), subs(dd-0,2)+perp_dir(2));
         [xir, yir] = plate_bound(M, subs(dd-0,1)-perp_dir(1), subs(dd-0,2)-perp_dir(2));
         dCp(dd) = (M(yil,xil) - M(yir,xir));
-%         norm(vecs(dd,:))
+
         %%% forward concentration change
-%         dCs(dd) = Fcon(subs(dd,1),subs(dd,2)) - Fcon(subs(dd-l_window,1),subs(dd-l_window,2));
-%         dCs(dd) = -(M(floor(subs(dd-l_window,2)), floor(subs(dd-l_window,1))) - M(floor(subs(dd,2)), floor(subs(dd,1)))) / 1;
         dCs(dd) = M(floor(subs(dd-0,2)), floor(subs(dd-0,1)));
-%         (bin*fr2sec)
-%         dCs(dd) = (log(M(floor(subs(dd-l_window,2)), floor(subs(dd-l_window,1)))) - log(M(floor(subs(dd,2)), floor(subs(dd,1)))))*fr2sec;
-        
+
         %%% check displacement
         dds(dd) = norm([subs(dd,1)-subs(dd-l_window,1), subs(dd,2)-subs(dd-l_window,2)]);
-%         dds(dd) = sqrt((subs(dd,1)-subs(dd-l_window,1))^2*(6/6)^2 + (subs(dd,2)-subs(dd-l_window,2))^2 );   %%% testing for x-y scale factor!!!
-        %norm(vecs(dd,:));
         
         %%% record location in 2D\
         xys(:,dd) = subs(dd-0,:)';
-%         dd
-%         dds(dd)
-%         pause();
-
     end
     %remove zeros
     dCp = dCp((l_window+1):end);
@@ -220,8 +201,6 @@ ddc_fit = (alldC(1:100000));
 trials_fit = alltrials(1:100000);
 lfun = @(x)nLL_kernel_hist4(x, ang_fit, dcp_fit, ddc_fit, cosBasis, .1, trials_fit);  % objective function
 opts = optimset('display','iter');
-% LB = [ones(1,12)*-inf, 1, 1, 0, 0, 0]*1;
-% UB = [ones(1,12)*inf, 100, 100, 0.9, 1,0.5]*1;
 LB = [ones(1,10)*-inf, -100,1, 1, 1, 0, 0, 0]*1;
 UB = [ones(1,10)*inf, 100,100, 100, 100, 0.95, 1,0.5]*1;
 prs0 = [randn(1,12)*1, 10, 50, 0.5, 0.5, 0.1];
@@ -241,26 +220,6 @@ prs0 = rand(1,5);
 [x,fval,EXITFLAG,OUTPUT,LAMBDA,GRAD,HESSIAN] = fmincon(lfun,prs0,[],[],[],[],LB,UB,[],opts);  % constrained optimization
 fval
 x
-
-%% test parameter distribution
-% repeats = 10;
-% prs_rep = zeros(length(prs0), repeats);
-% for rr =1:repeats
-%     % load observation
-%     ang_fit = allas(1:end-1);
-%     dcp_fit = alldcp(1:end-1);
-%     ddc_fit = (alldC(1:end-1));
-%     lfun = @(x)nLL_kernel_hist(x,ang_fit, dcp_fit, ddc_fit, cosBasis);
-%     % fitting
-%     prs0 = [1, 0.1, randn(1,nB), 0.01, -1, 100, -1, 100, 1];  %initialization 
-%     prs0 = prs0+prs0.*randn(1,length(prs0))*.5;  %perturbation
-%     [x,fval] = fmincon(lfun,prs0,[],[],[],[],LB,UB,[]); 
-%     
-%     prs_rep(:,rr) = x;
-% end
-% 
-% figure()
-% plot(prs_rep(:,:)','-o')
 
 %% sufficient statistics
 K_ = x(1); A_ = x(2)*1; B_ = x(3:6); C_ = x(7); Amp = x(8); tau = x(9); Amp_h = x(10); tau_h = x(11); K2_ = x(12);  gamma = x(13);
@@ -407,13 +366,8 @@ dthv = zeros(1,length(xx_h));
 for t = 2:T
  
     %%% dC in a window
-%     dCv = [Fcon(tracks(t-1,1),tracks(t-1,2)) - Fcon(tracks(t-2,1),tracks(t-2,2)) ,  dCv];  % step-wise derivative
-%     dCv = [ (M(floor(tracks(t-1,2)),floor(tracks(t-1,1))) - M(floor(tracks(t-2,2)), floor(tracks(t-2,1)))) / (1) ,  dCv];
     [xi, yi] = plate_bound(M, tracks(t-1,1), tracks(t-1,2));
     dCv = [ M(yi, xi) , dCv];
-%     dCv = [M(floor(tracks(t-1,2)),floor(tracks(t-1,1))) - log(M(floor(tracks(t-2,2)), floor(tracks(t-2,1)))) ,  dCv];
-%     dCv = [Fcon(tracks(t-1,1),tracks(t-1,2)) ,  dCv];  % absolute concentration
-%     dCv = [Fcon(tracks(t-1,1),tracks(t-1,2)) - dCv(end),   dCv];  % moving threshold
     dCv = dCv(1:end-1);  %remove out of window
     perp_dir = [-dxy(2) dxy(1)];
     perp_dir = perp_dir/norm(perp_dir)*perp_dist;
@@ -438,11 +392,8 @@ for t = 2:T
     else
         rt = beta*(vmrand(0,0)*180/pi);
     end
-%     rt = beta*[(randn*kappa2-180)*gamma + (1-gamma)*(rand*360-180)];
-%     rt = beta*[(vmrand(pi,kappa2)*180/pi)*(gamma) + (1-gamma)*(vmrand(0,0)*180/pi)];
+
     dth = wv+rt;
-%     if dth>180; dth = dth-180; end;  if dth<-180; dth = dth+360; end  %within -180~180 degree range
-%     dth = sign(dth)*mod(abs(dth),180);  %periodic boundary
     dth = wrapToPi(dth*pi/180)*180/pi;
     
     %%% angular or turning history
@@ -455,9 +406,6 @@ for t = 2:T
     
 %     vv = vm+vs*randn;
     vv = alldis(randi(length(alldis)));
-%     if vv<1
-%         vv = 1;
-%     end
     ths(t) = ths(t-1)+dth*dt;
 %     if ths(t)>180; ths(t) = ths(t)-180; end;  if ths(t)<-180; ths(t) = ths(t)+360; end  %within -180~180 degree range
     e1 = [1,0];
