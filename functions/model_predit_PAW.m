@@ -23,7 +23,6 @@ for tt = length(xv)+1:lt
     ang_t = yy(1, tt-wind:tt-1);
     
     %%% choose state!
-%     state_t = bb(tt);
     prob = gams_(:,tt);
     if rand()<prob(1)
         state_t = 1;
@@ -50,7 +49,7 @@ for tt = length(xv)+1:lt
     wv = ((fliplr(K_dcp_rec)*dcp_t') + b_dcp) + (vmrand(0,K_))*180/pi;
     Pturns = (A_-C_) ./ (1 + exp( -(dc_dth/1)) + 0) + C_; %+sb
     
-    %%% test for dr!!
+    %%% test for dr
     if rand < Pturns*dt_corr %7/14
         beta = 1;
         dr = gamrnd(ks_(1), thetas_(2));
@@ -58,20 +57,6 @@ for tt = length(xv)+1:lt
         beta = 0;
         dr = gamrnd(ks_(2), thetas_(1));
     end
-    %%% for dr
-%     if state_t==1  %choose 1,2
-%         dr = gamrnd(ks_(2) + 1*dr*phis_(2)/1, thetas_(1)/1);
-%         beta = 0;
-%     else
-%         if rand(1) < (Pturns)
-%             beta=1;
-%             dr = gamrnd(ks_(1), thetas_(1));
-%         else
-%             beta=0;
-%             dr = gamrnd(ks_(2), thetas_(2));
-%         end
-%     end
-    %%%
 
     if rand < gamma
         rt = beta*(vmrand(pi,1*K2_)*180/pi);

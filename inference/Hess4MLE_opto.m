@@ -124,13 +124,6 @@ model_pr_std = zeros(1,3);
 
 for cc = 1:3
     %%% data
-%     temp_trigs = all_ang_trigs{cc};
-%     temp = temp_trigs*0;
-%     temp(abs(temp_trigs)>turn_thre) = 1;
-%     temp = sum(temp(:,wind_analysis),2) - sum(temp(:,wind_baseline),2);   % take the difference!!!
-%     temp = temp/(fr*bin)/5;   % per time unit
-%     data_pr_mean(cc) = mean(temp);
-%     data_pr_std(cc) = std(temp)/sqrt(length(temp));
     load(datas{cc})
     opto_data = extractfield(Data, 'opto');
     dth_data = extractfield(Data, 'dth');
@@ -145,8 +138,6 @@ for cc = 1:3
     data_pr_std(cc) = (std(n_turns)+std(n_turns))/2/sqrt(length(temp));
     
     %%% model
-%     load(datas{cc})  % load Data structure
-%     mlee = squeeze(nanmedian(mle_params_opto(cc,:,:),3));
     mlee = squeeze((mle_params_opto(cc,:,5)));
     Kodor = mlee(3:6)*cosBasis';
     Kopto = mlee(7:10)*cosBasis';

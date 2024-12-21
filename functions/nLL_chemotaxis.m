@@ -14,6 +14,7 @@ function [NLL] = nLL_chemotaxis(THETA, dth, dcp, dc)
     NLL = -nansum(log(marginalP + 1e-8));
 end
 
+%%% python code
 % def nLL(THETA, dth,dcp,dc):
 %     #a_, k_, A_, B_, C_, D_ = THETA  #inferred paramter
 %     a_,k_,A_,B_ = THETA

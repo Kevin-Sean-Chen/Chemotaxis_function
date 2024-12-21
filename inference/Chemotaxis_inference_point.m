@@ -82,10 +82,7 @@ fval
 %% Generative model
 figure;
 imagesc(Cmap); hold on;
-%dth = N(alpha*dcp,K) + (A/(1+exp(B*dC)))*U[0,2*pi];
 alpha = x(1);  kappa = (1/x(2))^0.5*(180/pi);  A = x(3);  B = x(4);
-% alpha = 1.1;  kappa = 0.1*(180/pi);  A = 0.4;  B = 20;  %some kind of model
-% alpha = rand(1); kappa = rand(1); A = rand(1); B = rand(1);  %initial random control
 
 origin = [size(Cmap,2)/2,size(Cmap,1)/2];
 

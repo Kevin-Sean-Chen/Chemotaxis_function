@@ -14,7 +14,7 @@ data_n2 = {'/projects/LEIFER/Kevin/Data_learn/N2/data_analysis/Data_app_test2.ma
 rep = 3;  % repetition per fold to make sure that it is the better fit
 n_strains = 5;  % number of stains in the folder
 L = length(fileList);  % K-fold cross-validation
-n_params = 13-1+2;  % number of parameters in our model for now
+n_params = 13+1;  % number of parameters in our model for now
 mle_mut_params = zeros(L, n_params); % L x N
 trainLL = zeros(L,1);
 
@@ -75,7 +75,6 @@ imagesc(CIs)
 load('/projects/LEIFER/Kevin/Data_learn/Mutants/data_analysis/N2_params7.mat')  % 7,3
 mut_idex = zeros(2,3,n_strains);  % id x condition x strain
 N2_param = squeeze(mle_params(2,:,:));
-% N2_param = squeeze(mean(mle_params(:,:,:),1));
 N2_param = N2_param([1,3,2],:);
 mut_param = reshape(mle_mut_params,[3,n_strains,n_params]);
 xtickLabels = {'AIA','AIB-','AIY-','AIZ-','RIA-'};
@@ -100,7 +99,6 @@ subplot(133); imagesc(squeeze(mut_idex(2,:,:))); colorbar(); title('WV'); xtickl
 mut_idex2 = zeros(2,3,n_strains);  % id x condition x strain
 mut_sig = zeros(2,3,n_strains);  % for variance significance test
 N2_param = squeeze(mle_params(2,:,:));
-% N2_param = squeeze(median(mle_params(:,:,:),1));
 N2_param = N2_param([1,3,2],:);
 mut_param = reshape(mle_mut_params,[3,n_strains,n_params]);
 xtickLabels = {'AIA','AIB-','AIY-','AIZ-','RIA-'};
@@ -116,7 +114,7 @@ for ss = 1:n_strains  % strain
         temp_n2_param = N2_param(cc,:);
         ii = ii+1;
         mut_idex2(1,cc,ss) = BRW_Kc_conv(temp_param, Data) - BRW_Kc_conv(temp_n2_param, Data_n2_i.Data);  % BRW index comparison
-        mut_idex2(2,cc,ss) = WV_Kcp_conv(temp_param, Data) - WV_Kcp_conv(temp_n2_param, Data_n2_i.Data);% / temp_n2_param(8);  % WV index comparison
+        mut_idex2(2,cc,ss) = WV_Kcp_conv(temp_param, Data) - WV_Kcp_conv(temp_n2_param, Data_n2_i.Data);  % WV index comparison
         
         [h_brw, h_wv] = significant_test(temp_param, Data, temp_n2_param, Data_n2_i.Data);
         mut_sig(1,cc,ss) = h_brw;
@@ -134,7 +132,7 @@ subplot(121); imagesc(squeeze(mut_sig(1,:,:))); colorbar(); title('BRW'); xtickl
 subplot(122); imagesc(squeeze(mut_sig(2,:,:))); colorbar(); title('WV'); xticklabels(xtickLabels); yticklabels(ytickLabels); xticks([1:n_strains]);yticks([1:3]);%colormap(jet(256))
 
 %% samp of samp
-% for realiability, resample the subsample more times!
+% for realiability, resample the subsample more times
 rng(123)
 n_resamp = 1;
 mut_sig_resamp = ones(2,3,n_strains);
@@ -172,9 +170,7 @@ end
 %% arrow plots
 figure
 N2_param = squeeze(mle_params(2,:,:));
-% N2_param = squeeze(median(mle_params(:,:,:),1));
 N2_param = N2_param([1,3,2],:);
-% N2_ci = [0.42, 0.02, 0.21];
 n2_ci_std = load('/projects/LEIFER/Kevin/Data_learn/Mutants/data_analysis/N2_CI_std.mat');
 N2_ci = [n2_ci_std.m_ap(1),    n2_ci_std.m_av(1)   n2_ci_std.m_na(1)];
 arrowHeadSize = 2;
@@ -183,9 +179,6 @@ jj = 1;
 test = zeros(3,5);
 for cc = 1:3
     for ss = 1:5
-%         fileName = fileList(jj).name;
-%         filePath = fullfile(data_path, fileName);
-%         load(filePath);
         load(data_mut{cc,ss});
         Data_n2_i = load(data_n2{cc});
         
@@ -225,7 +218,7 @@ end
 
 %% test parameter cluster
 % Sample data (replace this with your actual data)
-data = [mle_mut_params(:,:)];% reshape(CIs,12,1)]; %randn(100, 3);  % 100 observations with 3 features each
+data = [mle_mut_params(:,:)];  % 100 observations with 3 features each
 
 [coeff, score, ~, ~, explained] = pca(data);
 firstTwoPCs = coeff(:, 1:2);
@@ -261,11 +254,6 @@ customMap = [r', g', b'];
 figure
 for cc = 1:3
     for ss = 1:5
-        %%% kernel norm measurement
-%         temp_param = squeeze(mut_param(cc,ss,:))';
-%         B(1,ss) = BRW_id(temp_param);
-%         B(2,ss) =  WV_id(temp_param);
-        
         %%% normalized index
         load(data_mut{cc,ss});
         temp_param = squeeze(mut_param(cc,ss,:))';
@@ -273,13 +261,12 @@ for cc = 1:3
         B(2,ss) = WV_Kcp_conv(temp_param, Data);
     end
     B = B./vecnorm(B,1,2);  % normalize behavior readout?
-    wtemp = B/P;%B*inv(P);
+    wtemp = B/P;
     Ws(cc,:,:) = wtemp;
     
     subplot(1,3,cc)
     imagesc(wtemp); xticklabels(xtickLabels); yticklabels(ytickLabels); xticks([1:n_strains]); yticks([1:2]); title(ttls(cc)); caxis([-0.3,.3])
     set(gcf,'color','w'); set(gca,'Fontsize',20);
-%     caxis([-max(abs(wtemp(:))), max(abs(wtemp(:)))]);
 end
 
 %%
@@ -337,7 +324,7 @@ function [wv] = WV_id(x);
     [cosBasis, tgrid, basisPeaks] = makeRaisedCosBasis(4, [0, 8], 1.3);
     tt = 0:length(cosBasis)-1;
     vec = x(8)*exp(-tt/x(9));
-    wv = abs(x(8));% norm(vec) *1; %
+    wv = abs(x(8));
 end
 
 function [brw] = BRW_id(x)
@@ -362,7 +349,7 @@ function [varargout] = BRW_Kc_conv(x, Data);
     compute_nl = (x(2)-x(7))./(1+exp(-dc_dth - 0*(filt_dth))) + x(7);
     test_nl = (x(2)-x(7))./(1+exp(-ddc_fit - 0*(filt_dth))) + x(7);
     if nargout > 1
-        varargout{1} = norm(Kc)/nanstd(ddc_fit.*1);%norm(Kc);   %(nanstd(compute_nl));% - nanstd(filt_dc);
+        varargout{1} = norm(Kc)/nanstd(ddc_fit.*1);
         temp = (conv_kernel(ddc_fit.*trials_fit, Kc));
         varargout{2} = dc_dth;
     else
@@ -386,11 +373,10 @@ function [varargout] = WV_Kcp_conv(x, Data)
     [cosBasis, tgrid, basisPeaks] = makeRaisedCosBasis(4, [0, 8], 1.3);
     tt = 0:length(cosBasis)-1;
     Kcp = x(8)*exp(-tt/x(9));
-    [xx_train, yy_train, mask_train] = data2xy(Data);%(Data(1:400));%(Data(idvec(1:400)));
+    [xx_train, yy_train, mask_train] = data2xy(Data);
     dcp_fit = xx_train(2,:);
     trials_fit = ones(1,length(mask_train));
     trials_fit(find(mask_train==0)) = NaN;
-%     wv = nanstd(conv_kernel(dcp_fit.*trials_fit, Kcp));
     if nargout > 1
         varargout{1} = nanstd(conv_kernel(dcp_fit.*trials_fit, Kcp));
         temp = (conv_kernel(dcp_fit.*trials_fit, Kcp));

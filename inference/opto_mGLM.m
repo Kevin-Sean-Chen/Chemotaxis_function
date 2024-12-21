@@ -14,7 +14,6 @@ Tracks = loadtracks(folder_names,fields_to_load);
 nn = length(Tracks);
 
 %% load odor map
-Cmap = load('/projects/LEIFER/Kevin/Data_odor_flow_equ/Landscape_low_0623.mat')
 Cmap = load('/projects/LEIFER/Kevin/Data_odor_flow_equ/Landscape_low_0623_2.mat')
 
 M = Cmap.vq1;
@@ -105,8 +104,6 @@ for ii = 1:nn
     opto_i = opto_i((l_window+2):end);
     dCs = dCs((l_window+1):end);
     
-%     pos = find(dds>dis_thr); %remove sharp jumps
-%     trials(pos) = nan;
     trials(1) = nan; trials(end) = nan;
     
     % store as structure
@@ -143,11 +140,9 @@ lfun = @(x)pop_nLL_opto(x, Data_fit);
 
 opts = optimset('display','iter');
 % opts.Algorithm = 'sqp';
-% LB = [1e-0, 1e-1, ones(1,nB)*-inf, 0,     1., 0.1];%, -inf, -180];
-% UB = [200, 1., ones(1,nB)*inf, 0.1     20, 1.];%, inf, 180];
-LB = [1e-0, 1e-1, ones(1,nB*2)*-inf, 0,    1., 0.1];%, -inf, -180];
-UB = [200, 1., ones(1,nB*2)*inf, 0.1    20, 1.];%, inf, 180];
-prs0 = [50, 0.5, randn(1,nB*2)*1, 0.01,     5, .5];%, 0, 10];
+LB = [1e-0, 1e-1, ones(1,nB*2)*-inf, 0,    1., 0.1];
+UB = [200, 1., ones(1,nB*2)*inf, 0.1    20, 1.];
+prs0 = [50, 0.5, randn(1,nB*2)*1, 0.01,     5, .5];
 prs0 = prs0 + prs0.*randn(1,length(UB))*0.2;
 % [x,fval] = fmincon(lfun,prs0,[],[],[],[],LB,UB,[],opts);
 [x,fval,EXITFLAG,OUTPUT,LAMBDA,GRAD,HESSIAN] = fmincon(lfun,prs0,[],[],[],[],LB,UB,[],opts);
