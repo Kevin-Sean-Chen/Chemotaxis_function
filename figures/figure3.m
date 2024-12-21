@@ -72,8 +72,6 @@ M0 = (y_*0+1) .* gradient_x;
 gradient_x = x_ * 1;
 M100 = (y_*0+1) .* gradient_x;
 
-[ci_, brw_index, wv_index] = compute_index(Tracks(1:end), M0, 15);
-
 %% looping files and conditions
 rng(123)
 fields_to_load = {'Path','Time','Runs','Pirouettes'};
@@ -133,7 +131,7 @@ legend([hBar(1), hBar(2)], '0-50','50-100')
 ylim([-1,1])
 
 %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% Figure 3 g,h
+%% Figure 3 e,f
 % extracted from script 'dPAW_salt.m'
 % here we load in Data for 0-50 and 100-50 mM salt chemotaxis
 % load in the fitted dPAW parameters runned with Chemotaxis_model_pop.m
@@ -173,7 +171,7 @@ CI_data(1) = Data2CI(data0_fit);
 CI_data(2) = Data2CI(data100_fit);
 CI_data
 
-%% sim tracks (fig. 3h)
+%% sim tracks (fig. 3g,h)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% landscape
 rows=2500; cols=3000;
@@ -197,6 +195,7 @@ specs.dt = 1;
 specs.REP = 100;
 reps = 10;
 
+x_0(8) = -x_0(8);  x_100(8) = -x_100(8);
 CI_sim = zeros(reps, 2);
 for rr = 1:reps
     rr

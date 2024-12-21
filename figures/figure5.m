@@ -71,16 +71,13 @@ end
 %% information analysis
 figure
 col = {'b','k','r'};
-tils = {'full','K_c','K_{c^\perp}'};
-for nn = 1:3
-    subplot(1,3,nn)
-    temp_m = squeeze(mean(testLL(:,:,nn),1));
-    temp_s = squeeze(std(testLL(:,:,nn),0,1))/sqrt(K);
-    for cc = 1:3
-        bar(cc, temp_m(cc), 'FaceColor',col{cc})
-        hold on
-        errorbar(cc, temp_m(cc), temp_s(cc), 'k.');
-    end
-    title(tils{nn})
-    xticklabels([]);
+nn = 1;
+temp_m = squeeze(mean(testLL(:,:,nn),1));
+temp_s = squeeze(std(testLL(:,:,nn),0,1))/sqrt(K);
+for cc = 1:3
+    bar(cc, temp_m(cc), 'FaceColor',col{cc})
+    hold on
+    errorbar(cc, temp_m(cc), temp_s(cc), 'k.');
 end
+xticks(1:3); xticklabels({'app', 'nai', 'ave'}); % Set the tick labels
+ylabel('bits/s')
