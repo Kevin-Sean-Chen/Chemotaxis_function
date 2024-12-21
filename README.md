@@ -11,12 +11,13 @@ Figures should be self-contained in this folder. To generate figures from the or
 
 ## Model demonstration
 
+In this work, we developed dynamic Pirouette and Weathervaning (dPAW) statistical model to analyze learned-chemotaxis in worms.
 To validate the generative model and inference procedure, we use code in the `/demo/` folder to simulate behavioral output given random odor concentration and infer ground-truth parameters.
 Run `mGLM.m` for the dPAW model proposed in our paper. A simplified turning model is shown in `bGLM.m`.
 
 ## Model fitting
 
-We use scripts in `/inference/` folder and optimize objectives in the `/functions/` folder to fit models. Specifically, we use `Chemotaxis_inference_pop.m` and `classify_learn3.m` to fit MLE of parameters and to run cross-validation,
+We use scripts in `/inference/` folder and optimize objectives in the `/functions/` folder to fit models. Specifically, we use `Chemotaxis_inference_pop.m` and `classify_learn3.m` to fit MLE of parameters for dPAW and to run cross-validation,
 use `mutant_fit.m` to fit to different worm strains, and use `opto_mGLM.m` to fit to perturbation data.
 
 ## Track analysis
