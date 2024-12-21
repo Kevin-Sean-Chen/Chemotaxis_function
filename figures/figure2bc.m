@@ -22,14 +22,15 @@ specs.cosBasis = cosBasis;
 specs.T = floor(30*60*14/5);
 specs.dt = 1;
 specs.REP = 100;
+rng(42)
 
 %% simulation loop
 kfold = size(mle,1);
 CIs = zeros(3, kfold);
 BWs = zeros(3,kfold, 2);
 for ci = 1:3
-    for ki = 1:kfold
-        x = squeeze(mle(ki,ci,:))';  %squeeze(median(mle(:,ci,:),1))';  % 
+    parfor ki = 1:10
+        x = squeeze(median(mle(:,ci,:),1))';  %  %squeeze(mle(ki,ci,:))';  %
         [tracks, CI] = param2tracks(x, specs, []);  % check if alldis is given from data
         [brw_index, wv_index] = track2strat(tracks, M);
         CIs(ci,ki) = CI;
@@ -49,11 +50,11 @@ set(gca,'xticklabel',names,'FontSize',20); set(gcf,'color','w');  % compare this
 % stats
 figure;
 ctr = [1,2,3];
-hBar = bar(median(CIs'));
+hBar = bar(mean(CIs'));
 for kl = 1:3
-    bar(ctr(kl), median(CIs(kl,:)))
+    bar(ctr(kl), mean(CIs(kl,:)))
     hold on
-    errorbar(ctr(kl), median(CIs(kl,:)), std(CIs(kl,:))/sqrt(kfold), '.k')               
+    errorbar(ctr(kl), mean(CIs(kl,:)), std(CIs(kl,:))/sqrt(kfold), '.k')               
 end
 names = {'appetitive'; 'naive'; 'aversive'};
 ylabel('CI')
