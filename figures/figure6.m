@@ -92,7 +92,7 @@ for cc = 1:3
 end
 
 %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% Figure 5e
+%% Figure 6e
 % extracted from script 'Path_triggered.m'
 
 %% load data
