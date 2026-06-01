@@ -3,7 +3,7 @@
 % after running inference, with the data set allXs (as,dis,dC,dcp) and the
 % trained mmhat structure, we can analyze the distributions and parameters
 %%%
-% load('/projects/LEIFER/Kevin/Data_salt/data_analysis/Data_salt0_50_staPAW.mat')
+load('/projects/LEIFER/Kevin/Data_salt/data_analysis/Data_salt0_50_staPAW.mat')
 
 %%
 % with Data structure
@@ -435,8 +435,14 @@ for tt = wind+1:length(bb)
     sim_dth(tt) = dth;
 end
 
+%%% simple calculation of turn rate in state
+pos_state = find(bb==2);
+pos_turn = find(abs(yy(1,:))>50);
+length(pos_turn)/length(pos_state) / (5/14)
+
 %% analyze <dr,dr'>
 model = @(params, x) params(1)*exp(-1/params(2)*x) + params(3)*exp(-1/params(4)*x);% + params(5);
+% model = @(params, x) params(1)*exp(-1/params(2)*x);% + params(5); %%% for single-exp
 
 nlag = 60;
 dr_data = yyf(2,1:150000);
@@ -446,6 +452,7 @@ dv = dr_data(find(dr_data<dis_cutoff));
 
 %%% data fitting
 initialGuess = [.5, 1, .1, 10];
+% initialGuess = [.1, 10];  %%% for single-exp
 paramsFit = lsqcurvefit(model, initialGuess, lgs*5/14, (As_data));
 yFit = model(paramsFit, lgs*5/14);
 figure; plot(lgs*5/14, yFit, 'LineWidth',3); hold on;
@@ -453,6 +460,10 @@ plot(lgs*5/14, As_data, 'k.', 'MarkerSize',15);
 set(gcf,'color','w'); set(gca,'Fontsize',20);
 xlabel('time (s)'); ylabel('<drdr''>')
 
+% Residual sum of squares
+SS_res = sum((As_data - yFit).^2);
+SS_tot = sum((As_data - mean(As_data)).^2);
+R_squared = 1 - SS_res / SS_tot;
 %%
 %%% model prediction
 figure;
@@ -466,13 +477,14 @@ pos = find(abs(yy(1,:))>50); %.7
 % pos = find(abs(sim_dth)>50); %.6
 iti = diff(pos)*5/14;  % duration in seconds
 % figure; hist(iti,100)
-bins = 0:.7:70;
+bins = 0:1.:70;
 H1 = histogram(iti, bins, 'Normalization', 'pdf'); H1.Visible = 'off'; %,
 iti_cnt = H1.Values;
 iti_bin = H1.BinEdges(1:end-1) + diff(H1.BinEdges)/2;
 
 % Double exponential model function
 initialGuess = [.5, 1, .1, 100];
+% initialGuess = [1, 20];
 paramsFit = lsqcurvefit(model, initialGuess, iti_bin, (iti_cnt));
 yFit = model(paramsFit, iti_bin);
 figure; 
@@ -481,6 +493,15 @@ semilogy(iti_bin, iti_cnt, 'k.','MarkerSize',15); xlim([0, 70]);
 a1=paramsFit(1); tau1=paramsFit(2); a2=paramsFit(3); tau2=paramsFit(4);
 tau_c = 1/(1/tau1-1/tau2)*log(a1/a2)
 set(gcf,'color','w'); set(gca,'Fontsize',20);  ylabel('probability');  xlabel('turn interval (s)')
+
+% Residual sum of squares
+log_data = log(iti_cnt);
+log_fit = log(yFit);
+valid_id = isfinite(log_data) & isfinite(log_fit);
+log_data = log_data(valid_id);  log_fit = log_fit(valid_id);
+SS_res = sum((log_data - log_fit).^2);
+SS_tot = sum((log_data - mean(log_data)).^2);
+R_squared = 1 - SS_res / SS_tot
 
 %%
 %%% model prediction
@@ -497,7 +518,7 @@ set(gcf,'color','w'); set(gca,'Fontsize',20);  ylabel('probability');  xlabel('t
 
 %% descriptive stats plots
 figure;
-full_data = yy(1,1:150000);
+full_data = yy(1,1:100000);
 % temp_y = full_data(find(full_data<dis_cutoff));
 temp_y = full_data;
 [counts, edges] = histcounts(temp_y, 100); %nbins 60, 100
