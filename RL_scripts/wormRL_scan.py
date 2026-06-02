@@ -30,8 +30,8 @@ matplotlib.rc('ytick', labelsize=20)
 ### states: up or down ... noisy estimates?
 
 # %% seeed
-seed = 37 #37 #37 (RL curve) #13 (bars) #17 (good both but weaker) #42
-random.seed(seed) #37 42 17
+seed = 37 
+random.seed(seed)
 np.random.seed(seed)
 
 def set_seed(seed):

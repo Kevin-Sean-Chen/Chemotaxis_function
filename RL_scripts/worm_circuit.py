@@ -21,8 +21,7 @@ matplotlib.rc('xtick', labelsize=20)
 matplotlib.rc('ytick', labelsize=20)
 
 # %% seeed
-seed = 1 #42
-# random.seed(seed) #37 42 17
+seed = 1
 np.random.seed(seed)
 
 # %%

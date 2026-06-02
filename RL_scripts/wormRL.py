@@ -505,7 +505,7 @@ plt.ylim([0,1])
 
 # %% noise comparison
 sd = 37
-random.seed(sd) #37 42 17
+random.seed(sd)
 np.random.seed(sd)
 
 n_tracks = 100

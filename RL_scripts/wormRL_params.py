@@ -30,8 +30,8 @@ matplotlib.rc('ytick', labelsize=20)
 ### states: up or down ... noisy estimates?
 
 # %% seeed
-seed = 37 #37 #37 (RL curve) #13 (bars) #17 (good both but weaker) #42
-random.seed(seed) #37 42 17
+seed = 37
+random.seed(seed)
 np.random.seed(seed)
 
 def set_seed(seed):
@@ -230,9 +230,6 @@ class Learner(nn.Module):
             #     # P = torch.exp([b1, w10*dc])
             #     # P = P/torch.sum(P)
             logit = torch.Tensor([w01*dc+b0, w10*dc+b1])   # remove a dependency
-        ######
-        ### Check this!!!
-        ######
         else:
             # logit = torch.zeros(len(a_past),2)
             # pos0 = torch.where(a_past==0)[0]
@@ -551,14 +548,14 @@ plt.ylim([0,1])
 
 # %% noise comparison
 ###
-seed = 13 #37 #37 (RL curve) #13 (bars) #17 (good both but weaker) #42
-random.seed(seed) #37 42 17
+seed = 13
+random.seed(seed)
 np.random.seed(seed)
 
 n_tracks = 200 #100
 new_dpaw = dPAW() # None
-new_dpaw.C = 100#80   #40
-new_dpaw.sigC = 100#80  #60
+new_dpaw.C = 100   #40
+new_dpaw.sigC = 100  #60
 new_dpaw.noise = 0.
 rl_pos_n = run_chemotaxis('RL', n_tracks, new_dpaw)
 rand_pos_n = run_chemotaxis('random', n_tracks, new_dpaw)
@@ -566,7 +563,7 @@ wv_pos_n = run_chemotaxis('WV', n_tracks, new_dpaw)
 pr_pos_n = run_chemotaxis('PR', n_tracks, new_dpaw)
 new_dpaw = dPAW() # None
 new_dpaw.C = 80
-new_dpaw.sigC = 60#60  #60
+new_dpaw.sigC = 60
 rl_pos = run_chemotaxis('RL', n_tracks, new_dpaw)
 rand_pos = run_chemotaxis('random', n_tracks, new_dpaw)
 wv_pos = run_chemotaxis('WV', n_tracks, new_dpaw)
@@ -596,8 +593,8 @@ plt.ylim([0,1])
 # %%
 ###############################################################################
 # %% analyze historgam, for RL vs random
-new_dpaw.C = 80 #80
-new_dpaw.sigC = 60#60
+new_dpaw.C = 80
+new_dpaw.sigC = 60
 
 _, dths, acts, bearing = run_chemotaxis('RL', 500, new_dpaw, return_dth=True)
 _, dths_r, acts_r, bearing_r = run_chemotaxis('random', 500, new_dpaw, return_dth=True)

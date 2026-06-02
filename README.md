@@ -26,7 +26,7 @@ To load from raw data, please include https://github.com/Kevin-Sean-Chen/leifer-
 
 ## Citation
 
-If you use the design files and/or codes provided in this repository, please cite:
+This repo is the last project developed pre-AI (might be obvious from typos). If you use the design files and/or codes provided in this repository, please cite:
 > Kevin S. Chen, Jonathan W. Pillow, Andrew M. Leifer. (2025). State-switching navigation strategies in C. elegans are beneficial for chemotaxis arXiv:2508.00191
 
 ## Lisence
