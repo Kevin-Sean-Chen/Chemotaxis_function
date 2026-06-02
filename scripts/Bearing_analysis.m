@@ -37,7 +37,7 @@ pos_state_turn = find(abs(yy(1,:))>18);
 
 %%% logics
 pos_state = setdiff(pos_state_turn, pos_state_stapaw);  % only turns not states
-% pos_state = setdiff(pos_state_stapaw, pos_state_turn);  % only state-switches not turns
+pos_state = setdiff(pos_state_stapaw, pos_state_turn);  % only state-switches not turns
 
 % pos_state = pos_state_stapaw; 
 % pos_state = pos_state_turn;
