@@ -1,4 +1,6 @@
-
+# Editor backup files
+*~
+*.m~
 ~$temp_figures.pptx
 # Windows default autosave extension
 *.asv
