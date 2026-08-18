@@ -34,3 +34,7 @@ codegen/
 
 # Octave session info
 octave-workspace
+*.avi
+*.mp4
+*.mov
+*.mkv
